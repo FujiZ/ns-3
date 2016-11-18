@@ -12,7 +12,7 @@
 /.lock-waf_freebsd7_build
 /.lock-waf_freebsd8_build
 /.lock-waf_freebsd9_build
-/.waf
+/.waf*
 /doc/introspected-doxygen.h
 *.py[co]
 *.pcap
