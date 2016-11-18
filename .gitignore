@@ -36,3 +36,4 @@ massif.*
 /.patch
 /.diff
 /.tr
+/.qtcreator-*
