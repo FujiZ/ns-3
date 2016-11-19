@@ -1,0 +1,32 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+# def options(opt):
+#     pass
+
+# def configure(conf):
+#     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
+
+def build(bld):
+    module = bld.create_ns3_module('dcn', ['core'])
+    module.source = [
+        'model/dcn.cc',
+        'helper/dcn-helper.cc',
+        ]
+
+    module_test = bld.create_ns3_module_test_library('dcn')
+    module_test.source = [
+        'test/dcn-test-suite.cc',
+        ]
+
+    headers = bld(features='ns3header')
+    headers.module = 'dcn'
+    headers.source = [
+        'model/dcn.h',
+        'helper/dcn-helper.h',
+        ]
+
+    if bld.env.ENABLE_EXAMPLES:
+        bld.recurse('examples')
+
+    # bld.ns3_python_bindings()
+
