@@ -38,8 +38,8 @@ main (int argc, char *argv[])
       Ptr<C3L3_5Protocol> agent = CreateObject<C3L3_5Protocol> ();
       // deal with the downtargets, install UdpL4Protocol, TcpL4Protocol, Icmpv4L4Protocol
       Ptr<UdpL4Protocol> udp = (*i)->GetObject<UdpL4Protocol> ();
-      agent->SetDownTarget (udp->GetDownTarget ());
       udp->SetDownTarget (MakeCallback (&C3L3_5Protocol::Send, agent));
+      (*i)->AggregateObject (agent);
     }
 
   Ipv4AddressHelper address;

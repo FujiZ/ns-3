@@ -2,8 +2,11 @@
 #include "ns3/assert.h"
 #include "ns3/packet.h"
 #include "ns3/node.h"
+#include "ns3/ipv4.h"
 #include "ns3/ipv4-route.h"
 #include "ns3/ipv4-interface.h"
+#include "ns3/ipv6.h"
+#include "ns3/ipv6-route.h"
 #include "ns3/ipv6-interface.h"
 #include "ns3/ipv4-l3-protocol.h"
 
@@ -144,6 +147,40 @@ IpL4Protocol::DownTargetCallback6
 C3L3_5Protocol::GetDownTarget6 (void) const
 {
   return m_downTarget6;
+}
+
+void
+C3L3_5Protocol::NotifyNewAggregate (void)
+{
+  NS_LOG_FUNCTION (this);
+  Ptr<Node> node = this->GetObject<Node> ();
+  Ptr<Ipv4> ipv4 = this->GetObject<Ipv4> ();
+  Ptr<Ipv6> ipv6 = this->GetObject<Ipv6> ();
+
+  if (m_node == 0)
+    {
+      if ((node != 0) && (ipv4 != 0 || ipv6 != 0))
+        {
+          this->SetNode (node);
+        }
+    }
+
+  // We set at least one of our 2 down targets to the IPv4/IPv6 send
+  // functions.  Since these functions have different prototypes, we
+  // need to keep track of whether we are connected to an IPv4 or
+  // IPv6 lower layer and call the appropriate one.
+
+  if (ipv4 != 0 && m_downTarget.IsNull())
+    {
+      ipv4->Insert (this);
+      this->SetDownTarget (MakeCallback (&Ipv4::Send, ipv4));
+    }
+  if (ipv6 != 0 && m_downTarget6.IsNull())
+    {
+      ipv6->Insert (this);
+      this->SetDownTarget6 (MakeCallback (&Ipv6::Send, ipv6));
+    }
+  IpL4Protocol::NotifyNewAggregate ();
 }
 
 }

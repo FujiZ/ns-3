@@ -7,6 +7,7 @@
 
 #include "ns3/ptr.h"
 #include "ns3/packet.h"
+#include "ns3/ipv4-l3-protocol.h"
 
 #include "ip-l3_5-protocol.h"
 
@@ -62,6 +63,14 @@ public:
   // From IpL4Protocol
   virtual IpL4Protocol::DownTargetCallback GetDownTarget (void) const;
   virtual IpL4Protocol::DownTargetCallback6 GetDownTarget6 (void) const;
+
+protected:
+  /**
+   * This function will notify other components connected to the node that a new stack member is now connected
+   * This will be used to notify Layer 3 protocol of layer 4 protocol stack to connect them together.
+   */
+  virtual void NotifyNewAggregate (void);
+
 
 private:
   Ptr<Node> m_node;   //!< the node this stack is associated with
