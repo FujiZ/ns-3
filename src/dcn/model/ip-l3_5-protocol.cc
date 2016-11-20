@@ -1,6 +1,8 @@
 #include "ns3/log.h"
 #include "ns3/assert.h"
 #include "ns3/packet.h"
+#include "ns3/ipv4-l3-protocol.h"
+#include "ns3/ipv6-l3-protocol.h"
 #include "ns3/node.h"
 #include "ns3/ipv4.h"
 #include "ns3/ipv6.h"
@@ -8,8 +10,6 @@
 #include "ns3/ipv6-route.h"
 #include "ns3/ipv4-interface.h"
 #include "ns3/ipv6-interface.h"
-#include "ns3/ipv4-l3-protocol.h"
-#include "ns3/ipv6-l3-protocol.h"
 
 #include "ip-l3_5-protocol.h"
 

@@ -5,15 +5,22 @@
 
 #include <stdint.h>
 
-#include "ns3/ptr.h"
 #include "ns3/ip-l4-protocol.h"
+#include "ns3/type-id.h"
+#include "ns3/ptr.h"
+#include "ns3/ipv4-address.h"
+#include "ns3/ipv6-address.h"
 #include "ns3/ipv4-header.h"
 #include "ns3/ipv6-header.h"
 
 namespace ns3 {
 
 class Node;
-class IpL4Protocol;
+class Packet;
+class Ipv4Route;
+class Ipv6Route;
+class Ipv4Interface;
+class Ipv6Interface;
 
 /**
  * \ingroup dcn
