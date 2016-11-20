@@ -45,6 +45,7 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
 
   // From Header
   virtual uint32_t GetSerializedSize (void) const;

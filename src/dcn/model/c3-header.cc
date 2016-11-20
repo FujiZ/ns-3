@@ -2,7 +2,7 @@
 
 namespace ns3 {
 
-NS_OBJECT_ENSURE_REGISTERED (UdpHeader);
+NS_OBJECT_ENSURE_REGISTERED (C3Header);
 
 C3Header::C3Header ()
   : m_nextHeader(0)
@@ -20,7 +20,7 @@ C3Header::SetNextHeader (uint8_t protocol)
 }
 
 uint8_t
-C3Header::GetNextHeader ()
+C3Header::GetNextHeader () const
 {
   return m_nextHeader;
 }
@@ -34,6 +34,12 @@ C3Header::GetTypeId (void)
     .AddConstructor<C3Header> ()
   ;
   return tid;
+}
+
+TypeId
+C3Header::GetInstanceTypeId (void) const
+{
+  return GetTypeId ();
 }
 
 uint32_t
