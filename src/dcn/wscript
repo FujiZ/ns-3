@@ -7,11 +7,12 @@
 #     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
 
 def build(bld):
-    module = bld.create_ns3_module('dcn', ['internet'])
+    module = bld.create_ns3_module('dcn', ['network','internet'])
     module.source = [
         'model/c3-header.cc',
         'model/c3-l3_5-protocol.cc',
         'model/ip-l3_5-protocol.cc',
+        'helper/ip-l3_5-protocol-helper.cc',
         ]
 
     module_test = bld.create_ns3_module_test_library('dcn')
@@ -24,6 +25,7 @@ def build(bld):
 	'model/c3-header.h',
 	'model/c3-l3_5-protocol.h',
 	'model/ip-l3_5-protocol.h',
+        'helper/ip-l3_5-protocol-helper.h',
         ]
 
     if bld.env.ENABLE_EXAMPLES:

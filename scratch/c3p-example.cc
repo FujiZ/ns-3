@@ -32,15 +32,11 @@ main (int argc, char *argv[])
   InternetStackHelper stack;
   stack.Install (nodes);
 
-  // function of l3_5 helper
-  for(NodeContainer::Iterator i = nodes.Begin (); i != nodes.End (); ++i)
-    {
-      Ptr<C3L3_5Protocol> agent = CreateObject<C3L3_5Protocol> ();
-      // deal with the downtargets, install UdpL4Protocol, TcpL4Protocol, Icmpv4L4Protocol
-      Ptr<UdpL4Protocol> udp = (*i)->GetObject<UdpL4Protocol> ();
-      udp->SetDownTarget (MakeCallback (&C3L3_5Protocol::Send, agent));
-      (*i)->AggregateObject (agent);
-    }
+  IpL3_5ProtocolHelper l3_5Helper;
+  l3_5Helper.SetIpL3_5Protocol (C3L3_5Protocol::GetTypeId ());
+  l3_5Helper.AddIpL4Protocol (UdpL4Protocol::GetTypeId ());
+  l3_5Helper.AddIpL4Protocol (TcpL4Protocol::GetTypeId ());
+  l3_5Helper.Install(nodes);
 
   Ipv4AddressHelper address;
   address.SetBase ("10.1.1.0", "255.255.255.0");
