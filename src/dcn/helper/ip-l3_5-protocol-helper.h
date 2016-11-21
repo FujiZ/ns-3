@@ -48,6 +48,18 @@ public:
    */
   void Install (NodeContainer nodes) const;
 
+  /**
+   * Set an attribute value to be propagated to each protocol created by the
+   * helper.
+   *
+   * \param name the name of the attribute to set
+   * \param value the value of the attribute to set
+   *
+   * Set these attribute on each ns3::IpL3_5Protocol created
+   * by IpL3_5ProtocolHelper::Install
+   */
+  void SetAttribute (std::string name, const AttributeValue &value);
+
   void SetIpL3_5Protocol (TypeId tid);
   void SetIpL3_5Protocol (std::string tid);
 

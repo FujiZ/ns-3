@@ -66,6 +66,11 @@ IpL3_5ProtocolHelper::Install (NodeContainer nodes) const
     }
 }
 
+void
+IpL3_5ProtocolHelper::SetAttribute (std::string name, const AttributeValue &value)
+{
+  m_agentFactory.Set (name, value);
+}
 
 void
 IpL3_5ProtocolHelper::SetIpL3_5Protocol (TypeId tid)
