@@ -21,6 +21,7 @@ public:
    * people who want to install L3_5 protocol to nodes.
    */
   IpL3_5ProtocolHelper ();
+  IpL3_5ProtocolHelper (std::string tid);
   ~IpL3_5ProtocolHelper ();
 
   /**
@@ -48,7 +49,10 @@ public:
   void Install (NodeContainer nodes) const;
 
   void SetIpL3_5Protocol (TypeId tid);
+  void SetIpL3_5Protocol (std::string tid);
+
   void AddIpL4Protocol (TypeId tid);
+  void AddIpL4Protocol (std::string tid);
 
 private:
   /**

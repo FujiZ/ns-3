@@ -19,6 +19,12 @@ IpL3_5ProtocolHelper::IpL3_5ProtocolHelper()
   NS_LOG_FUNCTION (this);
 }
 
+IpL3_5ProtocolHelper::IpL3_5ProtocolHelper(std::string tid)
+  : m_agentFactory (tid)
+{
+  NS_LOG_FUNCTION (this);
+}
+
 IpL3_5ProtocolHelper::~IpL3_5ProtocolHelper ()
 {
   NS_LOG_FUNCTION (this);
@@ -68,9 +74,21 @@ IpL3_5ProtocolHelper::SetIpL3_5Protocol (TypeId tid)
 }
 
 void
+IpL3_5ProtocolHelper::SetIpL3_5Protocol (std::string tid)
+{
+  SetIpL3_5Protocol (TypeId::LookupByName (tid));
+}
+
+void
 IpL3_5ProtocolHelper::AddIpL4Protocol (TypeId tid)
 {
   m_ipL4Protocols.push_back (tid);
+}
+
+void
+IpL3_5ProtocolHelper::AddIpL4Protocol (std::string tid)
+{
+  AddIpL4Protocol (TypeId::LookupByName (tid));
 }
 
 }

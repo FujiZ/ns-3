@@ -32,10 +32,9 @@ main (int argc, char *argv[])
   InternetStackHelper stack;
   stack.Install (nodes);
 
-  IpL3_5ProtocolHelper l3_5Helper;
-  l3_5Helper.SetIpL3_5Protocol (C3L3_5Protocol::GetTypeId ());
-  l3_5Helper.AddIpL4Protocol (UdpL4Protocol::GetTypeId ());
-  l3_5Helper.AddIpL4Protocol (TcpL4Protocol::GetTypeId ());
+  IpL3_5ProtocolHelper l3_5Helper ("ns3::C3L3_5Protocol");
+  l3_5Helper.AddIpL4Protocol ("ns3::UdpL4Protocol");
+  l3_5Helper.AddIpL4Protocol ("ns3::TcpL4Protocol");
   l3_5Helper.Install(nodes);
 
   Ipv4AddressHelper address;
