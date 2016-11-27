@@ -193,6 +193,21 @@ TypeId RedQueueDisc::GetTypeId (void)
                    TimeValue (MilliSeconds (20)),
                    MakeTimeAccessor (&RedQueueDisc::m_linkDelay),
                    MakeTimeChecker ())
+    .AddAttribute ("UseEcn",
+                   "Checks if queue-disc is ECN Capable",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&RedQueueDisc::m_useEcn),
+                   MakeBooleanChecker ())
+    .AddAttribute ("UseMarkP",
+                   "Check if markP is enabled",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&RedQueueDisc::m_useMarkP),
+                   MakeBooleanChecker ())
+    .AddAttribute ("MarkP",
+                   "MarkP for deciding when to drop if queue is not full",
+                   DoubleValue (2.0),
+                   MakeDoubleAccessor (&RedQueueDisc::m_markP),
+                   MakeDoubleChecker <double> (0, 2))
   ;
 
   return tid;
@@ -351,8 +366,9 @@ RedQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
   uint32_t dropType = DTYPE_NONE;
   if (m_qAvg >= m_minTh && nQueued > 1)
     {
-      if ((!m_isGentle && m_qAvg >= m_maxTh) ||
-          (m_isGentle && m_qAvg >= 2 * m_maxTh))
+      if (!m_useMarkP &&
+          ((!m_isGentle && m_qAvg >= m_maxTh) ||
+          (m_isGentle && m_qAvg >= 2 * m_maxTh)))
         {
           NS_LOG_DEBUG ("adding DROP FORCED MARK");
           dropType = DTYPE_FORCED;
@@ -412,13 +428,18 @@ RedQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
 
   bool retval = GetInternalQueue (0)->Enqueue (item);
 
+  if (!retval)
+    {
+      m_stats.qLimDrop++;
+    }
+
   // If Queue::Enqueue fails, QueueDisc::Drop is called by the internal queue
   // because QueueDisc::AddInternalQueue sets the drop callback
 
   NS_LOG_LOGIC ("Number packets " << GetInternalQueue (0)->GetNPackets ());
   NS_LOG_LOGIC ("Number bytes " << GetInternalQueue (0)->GetNBytes ());
 
-  return retval;
+  return retval; 
 }
 
 /*
@@ -471,6 +492,7 @@ RedQueueDisc::InitializeParams (void)
   m_stats.forcedDrop = 0;
   m_stats.unforcedDrop = 0;
   m_stats.qLimDrop = 0;
+  m_stats.unforcedMark = 0;
 
   m_qAvg = 0.0;
   m_count = 0;
@@ -645,7 +667,16 @@ RedQueueDisc::DropEarly (Ptr<QueueDiscItem> item, uint32_t qSize)
       m_count = 0;
       m_countBytes = 0;
       /// \todo Implement set bit to mark
-
+      /// implemented by FujiZ
+      if (m_useEcn && (!m_useMarkP || m_vProb1 < m_markP))
+        {
+          if (item->Mark ())
+            {
+              NS_LOG_DEBUG ("\t Marking due to Prob Mark " << m_qAvg);
+              m_stats.unforcedMark++;
+              return 0; // mark without drop
+            }
+        }
       return 1; // drop
     }
 

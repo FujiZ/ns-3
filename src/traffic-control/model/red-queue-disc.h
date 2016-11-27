@@ -108,9 +108,10 @@ public:
     uint32_t unforcedDrop;  //!< Early probability drops
     uint32_t forcedDrop;    //!< Forced drops, qavg > max threshold
     uint32_t qLimDrop;      //!< Drops due to queue limits
+    uint32_t unforcedMark;  //!< Early probability marks
   } Stats;
 
-  /** 
+  /**
    * \brief Drop types
    */
   enum
@@ -298,6 +299,10 @@ private:
   bool m_isNs1Compat;       //!< Ns-1 compatibility
   DataRate m_linkBandwidth; //!< Link bandwidth
   Time m_linkDelay;         //!< Link delay
+  bool m_useEcn;            //!< True for enabling red-queue-disc to use ECN
+  /// set useMarkP true and set markP to 2.0 to always mark instead of drop
+  bool m_useMarkP;          //!< For deciding when to drop
+  double m_markP;           //!< when p < markP, mark chosen packets; else drop
 
   // ** Variables maintained by RED
   double m_vProb1;          //!< Prob. of packet drop before "count"
