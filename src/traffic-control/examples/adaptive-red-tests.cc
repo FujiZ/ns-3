@@ -23,14 +23,14 @@
  * NOTE: These validation tests are same as provided in ns-2 
  * (ns/tcl/test/test-suite-adaptive-red.tcl)
  *
- * In this code, tests 1, 2, 6, 7, 8, 9, 10, 12, 13, 14 and 15 refer to tests
- * named red1, red1Adapt, fastlink, fastlinkAutowq, fastlinkAutothresh,
- * fastlinkAdaptive, fastlinkAllAdapt, fastlinkAllAdapt1, longlink,
+ * In this code, tests 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14 and 15 refer to tests
+ * named red1, red1Adapt, red1ECN, fastlink, fastlinkECN, fastlinkAutowq, fastlinkAutothresh,
+ * fastlinkAdaptive, fastlinkAllAdapt, fastlinkAllAdaptECN, fastlinkAllAdapt1, longlink,
  * longlinkAdapt and longlinkAdapt1, respectively in the ns-2 file
  * mentioned above.
  */
 
-/** Network topology for tests: 1 and 2
+/** Network topology for tests: 1, 2, 3 and 4
  *
  *    10Mb/s, 2ms                            10Mb/s, 4ms
  * n0--------------|                    |---------------n4
@@ -41,7 +41,7 @@
  *
  */
 
-/** Network topology for tests: 6, 7, 8, 9, 10 and 12
+/** Network topology for tests: 6, 7, 8, 9, 10, 11 and 12
  *
  *    100Mb/s, 2ms                          100Mb/s, 4ms
  * n0--------------|                    |---------------n4
@@ -202,16 +202,16 @@ main (int argc, char *argv[])
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory
   CommandLine cmd;
-  cmd.AddValue ("testNumber", "Run test 1, 2, 6, 7, 8, 9, 10, 12, 13, 14 or 15", aredTest);
+  cmd.AddValue ("testNumber", "Run test 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14 or 15", aredTest);
   cmd.AddValue ("pathOut", "Path to save results from --writeForPlot/--writePcap/--writeFlowMonitor", pathOut);
   cmd.AddValue ("writeForPlot", "<0/1> to write results for plot (gnuplot)", writeForPlot);
   cmd.AddValue ("writePcap", "<0/1> to write results in pcapfile", writePcap);
   cmd.AddValue ("writeFlowMonitor", "<0/1> to enable Flow Monitor and write their results", flowMonitor);
 
   cmd.Parse (argc, argv);
-  if ( (aredTest != 1) && (aredTest != 2) && (aredTest != 6) && (aredTest != 7) && (aredTest != 8) && (aredTest != 9) && (aredTest != 10) && (aredTest != 12) && (aredTest != 13) && (aredTest != 14) && (aredTest != 15) )
+  if ((aredTest < 1) || (aredTest == 5) || (aredTest > 15))
     {
-      std::cout << "Invalid test number. Supported tests are 1, 2, 6, 7, 8, 9, 10, 12, 13, 14 or 15" << std::endl;
+      std::cout << "Invalid test number. Supported tests are 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14 or 15" << std::endl;
       exit (1);
     }
 
@@ -259,6 +259,18 @@ main (int argc, char *argv[])
       Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
       Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (25));
     }
+  else if (aredTest == 3) //test 3: red1ECN
+    {
+      Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (25));
+      Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
+    } 
+  else if (aredTest == 4) // test 4: red1AdaptECN
+    {
+      Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
+      Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
+      Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (25));
+      Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
+    }
   else if (aredTest == 7) // test 7: fastlinkAutowq
     {
       Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (0.0));
@@ -277,6 +289,12 @@ main (int argc, char *argv[])
     {
       Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
       Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
+    }
+  else if (aredTest == 11) // test 11: fastlinkAllAdaptECN      
+    {
+      Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
+      Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
+      Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
     }
   else if (aredTest == 12) // test 12: fastlinkAllAdapt1
     {
@@ -327,7 +345,7 @@ main (int argc, char *argv[])
 
   QueueDiscContainer queueDiscs;
 
-  if (aredTest == 1 || aredTest == 2)
+  if (aredTest == 1 || aredTest == 2 || aredTest == 3 || aredTest == 4)
     {
       p2p.SetQueue ("ns3::DropTailQueue");
       p2p.SetDeviceAttribute ("DataRate", StringValue ("10Mbps"));
@@ -393,7 +411,7 @@ main (int argc, char *argv[])
       devn3n5 = p2p.Install (n3n5);
       tchPfifo.Install (devn3n5);
     }
-  else if (aredTest == 6 || aredTest == 7 || aredTest == 8 || aredTest == 9 || aredTest == 10 || aredTest == 12)
+  else if (aredTest == 6 || aredTest == 7 || aredTest == 8 || aredTest == 9 || aredTest == 10 || aredTest ==11 || aredTest == 12)
     {
       p2p.SetQueue ("ns3::DropTailQueue");
       p2p.SetDeviceAttribute ("DataRate", StringValue ("100Mbps"));
@@ -494,6 +512,32 @@ main (int argc, char *argv[])
           std::cout << "There should be some drops due to queue full" << std::endl;
           exit (-1);
         }
+      
+      if (st.unforcedMark != 0)
+        {
+          std::cout << "There should be no unforced marks when ECN is disabled" << std::endl;
+          exit (-1);
+        }
+    }
+  else if (aredTest == 3 || aredTest == 4)
+    {
+      if (st.unforcedMark > st.forcedDrop)
+        {
+          std::cout << "Marks due to prob mark should be less than the drops due to hard mark" << std::endl;
+          exit (-1);
+        }
+
+      if (st.qLimDrop == 0)
+        {
+          std::cout << "There should be some drops due to queue full" << std::endl;
+          exit (-1);
+        }
+
+      if (st.unforcedDrop != 0)
+        {
+          std::cout << "There should be no unforced drop when ECN is enabled" << std::endl;
+          exit (-1);
+        }
     }
   else if (aredTest == 6 || aredTest == 7 || aredTest == 8 || aredTest == 9 || aredTest == 10 || aredTest == 14 || aredTest ==15)
     {
@@ -506,6 +550,32 @@ main (int argc, char *argv[])
       if (st.qLimDrop != 0)
         {
           std::cout << "There should be zero drops due to queue full" << std::endl;
+          exit (-1);
+        }
+      
+      if (st.unforcedMark != 0)
+        {
+          std::cout << "There should be no unforced marks when ECN is disabled" << std::endl;
+          exit (-1);
+        }
+    }
+  else if (aredTest == 11)
+    {
+      if (st.unforcedMark > st.forcedDrop)
+        {
+          std::cout << "Marks due to prob mark should be less than the drops due to hard mark" << std::endl;
+          exit (-1);
+        }
+
+      if (st.qLimDrop != 0)
+        {
+          std::cout << "There should be zero drops due to queue full" << std::endl;
+          exit (-1);
+        }
+     
+      if (st.unforcedDrop != 0)
+        {
+          std::cout << "There should be no unforced drop when ECN is enabled" << std::endl;
           exit (-1);
         }
     }
@@ -522,6 +592,12 @@ main (int argc, char *argv[])
           std::cout << "There should be zero drops due to queue full" << std::endl;
           exit (-1);
         }
+
+      if (st.unforcedMark != 0)
+        {
+          std::cout << "There should be no unforced marks when ECN is disabled" << std::endl;
+          exit (-1);
+        }
     }
 
   if (flowMonitor)
@@ -536,6 +612,7 @@ main (int argc, char *argv[])
     {
       std::cout << "*** ARED stats from Node 2 queue ***" << std::endl;
       std::cout << "\t " << st.unforcedDrop << " drops due to prob mark" << std::endl;
+      std::cout << "\t " << st.unforcedMark << " marks due to prob mark" << std::endl;
       std::cout << "\t " << st.forcedDrop << " drops due to hard mark" << std::endl;
       std::cout << "\t " << st.qLimDrop << " drops due to queue full" << std::endl;
     }

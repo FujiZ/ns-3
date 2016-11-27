@@ -129,6 +129,10 @@ TcpSocketBase::GetTypeId (void)
                    BooleanValue (true),
                    MakeBooleanAccessor (&TcpSocketBase::m_limitedTx),
                    MakeBooleanChecker ())
+    .AddAttribute ("UseEcn", "True to use ECN functionality",
+                    BooleanValue (false),
+                    MakeBooleanAccessor (&TcpSocketBase::m_ecn),
+                    MakeBooleanChecker ())
     .AddTraceSource ("RTO",
                      "Retransmission timeout",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_rto),
@@ -185,6 +189,22 @@ TcpSocketBase::GetTypeId (void)
                      "Receive tcp packet from IP protocol",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_rxTrace),
                      "ns3::TcpSocketBase::TcpTxRxTracedCallback")
+    .AddTraceSource ("ECNState",
+                     "Current ECN State of TCP Socket",
+                     MakeTraceSourceAccessor (&TcpSocketBase::m_ecnState),
+                     "ns3::EcnStatesTracedValueCallback")
+    .AddTraceSource ("ECNEchoSeq",
+                     "Sequence of last received ECN Echo",
+                     MakeTraceSourceAccessor (&TcpSocketBase::m_ecnEchoSeq),
+                     "ns3::SequenceNumber32TracedValueCallback")
+    .AddTraceSource ("ECNCESeq",
+                     "Sequence of last received CE ",
+                     MakeTraceSourceAccessor (&TcpSocketBase::m_ecnCESeq),
+                     "ns3::SequenceNumber32TracedValueCallback")
+    .AddTraceSource ("ECNCWRSeq",
+                     "Sequence of last received CWR",
+                     MakeTraceSourceAccessor (&TcpSocketBase::m_ecnCWRSeq),
+                     "ns3::SequenceNumber32TracedValueCallback")
   ;
   return tid;
 }
@@ -318,7 +338,11 @@ TcpSocketBase::TcpSocketBase (void)
     m_limitedTx (false),
     m_retransOut (0),
     m_congestionControl (0),
-    m_isFirstPartialAck (true)
+    m_isFirstPartialAck (true),
+    m_ecnState (NO_ECN),
+    m_ecnEchoSeq (0),
+    m_ecnCESeq (0),
+    m_ecnCWRSeq (0)
 {
   NS_LOG_FUNCTION (this);
   m_rxBuffer = CreateObject<TcpRxBuffer> ();
@@ -395,7 +419,11 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
     m_retransOut (sock.m_retransOut),
     m_isFirstPartialAck (sock.m_isFirstPartialAck),
     m_txTrace (sock.m_txTrace),
-    m_rxTrace (sock.m_rxTrace)
+    m_rxTrace (sock.m_rxTrace),
+    m_ecn (sock.m_ecn),
+    m_ecnState (sock.m_ecnState),
+    m_ecnEchoSeq (sock.m_ecnEchoSeq),
+    m_ecnCWRSeq (sock.m_ecnCWRSeq)    
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_LOGIC ("Invoked the copy constructor");
@@ -1034,9 +1062,18 @@ TcpSocketBase::DoConnect (void)
   // A new connection is allowed only if this socket does not have a connection
   if (m_state == CLOSED || m_state == LISTEN || m_state == SYN_SENT || m_state == LAST_ACK || m_state == CLOSE_WAIT)
     { // send a SYN packet and change state into SYN_SENT
-      SendEmptyPacket (TcpHeader::SYN);
+      // send a SYN packet with ECE and CWR flags set if sender is ECN capable
+      if (m_ecn)
+        {
+          SendEmptyPacket (TcpHeader::SYN | TcpHeader::ECE | TcpHeader::CWR);
+        }
+      else
+        {
+          SendEmptyPacket (TcpHeader::SYN);
+        }
       NS_LOG_DEBUG (TcpStateName[m_state] << " -> SYN_SENT");
       m_state = SYN_SENT;
+      m_ecnState = NO_ECN;    // because sender is not yet aware about receiver's ECN capability 
     }
   else if (m_state != TIME_WAIT)
     { // In states SYN_RCVD, ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2, and CLOSING, an connection
@@ -1143,7 +1180,15 @@ TcpSocketBase::ForwardUp (Ptr<Packet> packet, Ipv4Header header, uint16_t port,
   Address fromAddress = InetSocketAddress (header.GetSource (), port);
   Address toAddress = InetSocketAddress (header.GetDestination (),
                                          m_endPoint->GetLocalPort ());
-
+  TcpHeader tcpHeader;
+  packet->PeekHeader (tcpHeader);
+  if (header.GetEcn() == Ipv4Header::ECN_CE && m_ecnCESeq < tcpHeader.GetAckNumber ())
+    {
+      NS_LOG_INFO ("Received CE flag is valid");
+      NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_CE_RCVD");
+      m_ecnCESeq = tcpHeader.GetAckNumber ();
+      m_ecnState = ECN_CE_RCVD; 
+    }
   DoForwardUp (packet, fromAddress, toAddress);
 }
 
@@ -1161,6 +1206,15 @@ TcpSocketBase::ForwardUp6 (Ptr<Packet> packet, Ipv6Header header, uint16_t port,
   Address toAddress = Inet6SocketAddress (header.GetDestinationAddress (),
                                           m_endPoint6->GetLocalPort ());
 
+  TcpHeader tcpHeader;
+  packet->PeekHeader (tcpHeader);
+  if (header.GetEcn() == Ipv6Header::ECN_CE && m_ecnCESeq < tcpHeader.GetAckNumber ())
+    {
+      NS_LOG_INFO ("Received CE flag is valid");
+      NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_CE_RCVD");
+      m_ecnCESeq = tcpHeader.GetAckNumber ();
+      m_ecnState = ECN_CE_RCVD;  
+    }
   DoForwardUp (packet, fromAddress, toAddress);
 }
 
@@ -1218,7 +1272,29 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
       // Acknowledgement should be sent for all unacceptable packets (RFC793, p.69)
       if (m_state == ESTABLISHED && !(tcpHeader.GetFlags () & TcpHeader::RST))
         {
-          SendEmptyPacket (TcpHeader::ACK);
+          // Check if the sender has responded to ECN echo by reducing the Congestion Window
+          if (tcpHeader.GetFlags () & TcpHeader::CWR )
+            {
+              // Check if a packet with CE bit set is received. If there is no CE bit set, then change the state to ECN_IDLE to 
+              // stop sending ECN Echo messages. If there is CE bit set, the packet should continue sending ECN Echo messages
+              //
+              if (m_ecnState != ECN_CE_RCVD) 
+                {
+                  m_ecnState = ECN_IDLE;
+                  NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_IDLE");
+                }
+            }
+          if (m_ecnState == ECN_CE_RCVD || m_ecnState == ECN_ECE_SENT)
+            {
+              // Receiver sets ECE flags when it receives a packet with CE bit on or sender hasn’t responded to ECN echo sent by receiver
+              SendEmptyPacket (TcpHeader::ACK | TcpHeader::ECE);
+              m_ecnState = ECN_ECE_SENT;  
+              NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_ECE_SENT");
+            }
+          else
+            {
+              SendEmptyPacket (TcpHeader::ACK);
+            }
         }
       return;
     }
@@ -1321,6 +1397,17 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
         { // Since m_endPoint is not configured yet, we cannot use SendRST here
           TcpHeader h;
           Ptr<Packet> p = Create<Packet> ();
+          // Send a packet tag for setting ECT bits in IP header
+          if (m_ecnState != NO_ECN )
+            {
+              SocketIpTosTag ipTosTag;
+              ipTosTag.SetTos (0x02);
+              p->AddPacketTag (ipTosTag);
+                
+              SocketIpv6TclassTag ipTclassTag;
+              ipTclassTag.SetTclass (0x02);
+              p->AddPacketTag (ipTclassTag);
+            }
           h.SetFlags (TcpHeader::RST);
           h.SetSequenceNumber (m_tcb->m_nextTxSequence);
           h.SetAckNumber (m_rxBuffer->NextRxSequence ());
@@ -1376,8 +1463,8 @@ TcpSocketBase::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeade
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
-  // Extract the flags. PSH and URG are not honoured.
-  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
+  // Extract the flags. PSH, URG, CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
 
   // Different flags are different events
   if (tcpflags == TcpHeader::ACK)
@@ -1399,7 +1486,17 @@ TcpSocketBase::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeade
           NS_LOG_LOGIC ("Ignored ack of " << tcpHeader.GetAckNumber () <<
                         " HighTxMark = " << m_tcb->m_highTxMark);
 
-          SendEmptyPacket (TcpHeader::ACK);
+          // Receiver sets ECE flags when it receives a packet with CE bit on or sender hasn’t responded to ECN echo sent by receiver
+          if (m_ecnState == ECN_CE_RCVD || m_ecnState == ECN_ECE_SENT)
+            {
+              SendEmptyPacket (TcpHeader::ACK | TcpHeader::ECE);
+              m_ecnState = ECN_ECE_SENT;
+              NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_ECE_SENT");
+            }
+          else
+            {
+              SendEmptyPacket (TcpHeader::ACK);
+            }
         }
       else
         {
@@ -1562,6 +1659,17 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
       NS_LOG_LOGIC (" Bytes acked: " << bytesAcked <<
                     " Segments acked: " << segsAcked <<
                     " bytes left: " << m_bytesAckedNotProcessed);
+
+      if ((m_ecnState != NO_ECN) && (tcpHeader.GetFlags () & TcpHeader::ECE))
+        {
+          if (m_ecnEchoSeq < tcpHeader.GetAckNumber ())
+            {
+              NS_LOG_INFO ("Received ECN Echo is valid");
+              m_ecnEchoSeq = tcpHeader.GetAckNumber ();
+              m_ecnState = ECN_ECE_RCVD;
+              NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_ECE_RCVD");
+            }
+        }
 
       /* The following switch is made because m_dupAckCount can be
        * "inflated" through out-of-order segments (e.g. from retransmission,
@@ -1733,8 +1841,8 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
-  // Extract the flags. PSH and URG are not honoured.
-  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
+  // Extract the flags. PSH, URG, CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
 
   // Fork a socket if received a SYN. Do nothing otherwise.
   // C.f.: the LISTEN part in tcp_v4_do_rcv() in tcp_ipv4.c in Linux kernel
@@ -1762,8 +1870,8 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
-  // Extract the flags. PSH and URG are not honoured.
-  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
+  // Extract the flags. PSH, URG, CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
 
   if (tcpflags == 0)
     { // Bare data, accept it and move to ESTABLISHED state. This is not a normal behaviour. Remove this?
@@ -1785,7 +1893,22 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
       m_state = SYN_RCVD;
       m_synCount = m_synRetries;
       m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
-      SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
+
+      /* Check if we recieved an ECN SYN packet. Change the ECN state of receiver to ECN_IDLE if the traffic is ECN capable and 
+       * sender has sent ECN SYN packet
+       */
+      if (m_ecn && (tcpHeader.GetFlags () & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
+        {
+          NS_LOG_INFO ("Received ECN SYN packet");
+          SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK | TcpHeader::ECE);
+          m_ecnState = ECN_IDLE;
+          NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_IDLE");
+        }
+      else
+        {
+          m_ecnState = NO_ECN;
+          SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);    
+        }
     }
   else if (tcpflags == (TcpHeader::SYN | TcpHeader::ACK)
            && m_tcb->m_nextTxSequence + SequenceNumber32 (1) == tcpHeader.GetAckNumber ())
@@ -1799,6 +1922,21 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
       m_tcb->m_highTxMark = ++m_tcb->m_nextTxSequence;
       m_txBuffer->SetHeadSequence (m_tcb->m_nextTxSequence);
       SendEmptyPacket (TcpHeader::ACK);
+
+      /* Check if we received an ECN SYN-ACK packet. Change the ECN state of sender to ECN_IDLE if receiver has sent an ECN SYN-ACK 
+       * packet and the  traffic is ECN Capable
+       */
+      if (m_ecn && (tcpHeader.GetFlags () & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::ECE))
+        {
+          NS_LOG_INFO ("Received ECN SYN-ACK packet.");
+          m_ecnState = ECN_IDLE;
+          NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_IDLE");
+        }
+      else
+        {
+          m_ecnState = NO_ECN;
+        }
+
       SendPendingData (m_connected);
       Simulator::ScheduleNow (&TcpSocketBase::ConnectionSucceeded, this);
       // Always respond to first data packet to speed up the connection.
@@ -1824,8 +1962,8 @@ TcpSocketBase::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
-  // Extract the flags. PSH and URG are not honoured.
-  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
+  // Extract the flags. PSH, URG, CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE );
 
   if (tcpflags == 0
       || (tcpflags == TcpHeader::ACK
@@ -1864,7 +2002,22 @@ TcpSocketBase::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
   else if (tcpflags == TcpHeader::SYN)
     { // Probably the peer lost my SYN+ACK
       m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
-      SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
+
+      /* Check if we received an ECN SYN packet. Change the ECN state of receiver to ECN_IDLE if sender has sent an ECN SYN 
+       * packet and the  traffic is ECN Capable
+       */
+      if (m_ecn && (tcpHeader.GetFlags () & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
+        {
+          NS_LOG_INFO ("Received ECN SYN packet");
+          SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK |TcpHeader::ECE);
+          m_ecnState = ECN_IDLE;
+          NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_IDLE");
+        }
+      else
+        {
+          m_ecnState = NO_ECN;
+          SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
+        }
     }
   else if (tcpflags == (TcpHeader::FIN | TcpHeader::ACK))
     {
@@ -1915,8 +2068,8 @@ TcpSocketBase::ProcessWait (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
-  // Extract the flags. PSH and URG are not honoured.
-  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
+  // Extract the flags. PSH, URG, CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
 
   if (packet->GetSize () > 0 && tcpflags != TcpHeader::ACK)
     { // Bare data, accept it
@@ -1987,8 +2140,8 @@ TcpSocketBase::ProcessClosing (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
-  // Extract the flags. PSH and URG are not honoured.
-  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
+  // Extract the flags. PSH , URG , CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
 
   if (tcpflags == TcpHeader::ACK)
     {
@@ -2019,8 +2172,8 @@ TcpSocketBase::ProcessLastAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
-  // Extract the flags. PSH and URG are not honoured.
-  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
+  // Extract the flags. PSH, URG, CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
 
   if (tcpflags == 0)
     {
@@ -2436,7 +2589,20 @@ TcpSocketBase::CompleteFork (Ptr<Packet> p, const TcpHeader& h,
   // Set the sequence number and send SYN+ACK
   m_rxBuffer->SetNextRxSequence (h.GetSequenceNumber () + SequenceNumber32 (1));
 
-  SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
+  /* Check if we received an ECN SYN packet. Change the ECN state of receiver to ECN_IDLE if sender has sent an ECN SYN 
+   * packet and the traffic is ECN Capable
+   */
+  if (m_ecn && (h.GetFlags () & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
+    {
+      SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK | TcpHeader::ECE);
+      m_ecnState = ECN_IDLE;
+      NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_IDLE");
+    }
+  else
+    {
+      SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
+      m_ecnState = NO_ECN;
+    }  
 }
 
 void
@@ -2477,6 +2643,25 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
       m_delAckCount = 0;
     }
 
+  // Sender should reduce the Congestion Window as a response to receiver's ECN Echo notification only once per window 
+  if (m_ecnState ==  ECN_ECE_RCVD && m_ecnEchoSeq.Get() > m_ecnCWRSeq.Get()) 
+    {
+      NS_LOG_INFO ("Backoff mechanism by reducing CWND  by half because we've received ECN Echo");
+      m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());  
+      m_tcb->m_cWnd = std::max ((uint32_t)m_tcb->m_cWnd/2, m_tcb->m_segmentSize);
+      flags |= TcpHeader::CWR; 
+      m_ecnCWRSeq = seq;
+      m_ecnState = ECN_CWR_SENT;
+      NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_CWR_SENT");
+      NS_LOG_INFO ("CWR flags set");
+      NS_LOG_DEBUG (TcpSocketState::TcpCongStateName[m_tcb->m_congState] << " -> CA_CWR");
+      if (m_tcb->m_congState == TcpSocketState::CA_OPEN)
+        {
+          m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_CWR);
+          m_tcb->m_congState = TcpSocketState::CA_CWR;
+        }
+    }
+
   /*
    * Add tags for each socket option.
    * Note that currently the socket adds both IPv4 tag and IPv6 tag
@@ -2486,15 +2671,48 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
   if (GetIpTos ())
     {
       SocketIpTosTag ipTosTag;
-      ipTosTag.SetTos (GetIpTos ());
+      NS_LOG_LOGIC (" ECT bits should not be set on retranmsitted packets ");
+      if (m_ecnState != NO_ECN && (GetIpTos () & 0x3) == 0 && !isRetransmission)
+        { 
+          ipTosTag.SetTos (GetIpTos () | 0x2);
+        }
+      else
+        {
+          ipTosTag.SetTos (GetIpTos ());
+        }
       p->AddPacketTag (ipTosTag);
+    }
+  else
+    {
+      if (m_ecnState != NO_ECN && !isRetransmission)
+        {
+          SocketIpTosTag ipTosTag;
+          ipTosTag.SetTos (0x02);
+          p->AddPacketTag (ipTosTag);
+        }
     }
 
   if (IsManualIpv6Tclass ())
     {
       SocketIpv6TclassTag ipTclassTag;
-      ipTclassTag.SetTclass (GetIpv6Tclass ());
+      if (m_ecnState != NO_ECN && (GetIpv6Tclass () & 0x3) == 0 && !isRetransmission)
+        {
+          ipTclassTag.SetTclass (GetIpv6Tclass () | 0x2);
+        }
+      else
+        {
+          ipTclassTag.SetTclass (GetIpv6Tclass ());
+        }
       p->AddPacketTag (ipTclassTag);
+    }
+  else
+    {
+      if (m_ecnState != NO_ECN && !isRetransmission)
+        {
+          SocketIpv6TclassTag ipTclassTag;
+          ipTclassTag.SetTclass (0x02);
+          p->AddPacketTag (ipTclassTag);
+        }
     }
 
   if (IsManualIpTtl ())
@@ -2774,13 +2992,31 @@ TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
   SequenceNumber32 expectedSeq = m_rxBuffer->NextRxSequence ();
   if (!m_rxBuffer->Add (p, tcpHeader))
     { // Insert failed: No data or RX buffer full
-      SendEmptyPacket (TcpHeader::ACK);
+       if (m_ecnState == ECN_CE_RCVD || m_ecnState == ECN_ECE_SENT)
+         {
+           SendEmptyPacket (TcpHeader::ACK | TcpHeader::ECE);
+           m_ecnState = ECN_ECE_SENT;
+           NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_ECE_SENT");
+         }
+       else
+         {
+           SendEmptyPacket (TcpHeader::ACK);
+         } 
       return;
     }
   // Now send a new ACK packet acknowledging all received and delivered data
   if (m_rxBuffer->Size () > m_rxBuffer->Available () || m_rxBuffer->NextRxSequence () > expectedSeq + p->GetSize ())
     { // A gap exists in the buffer, or we filled a gap: Always ACK
-      SendEmptyPacket (TcpHeader::ACK);
+       if (m_ecnState == ECN_CE_RCVD || m_ecnState == ECN_ECE_SENT)
+         {
+           SendEmptyPacket (TcpHeader::ACK | TcpHeader::ECE);
+           m_ecnState = ECN_ECE_SENT;
+           NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_ECE_SENT");
+         }
+       else
+         {
+           SendEmptyPacket (TcpHeader::ACK);
+         }
     }
   else
     { // In-sequence packet: ACK if delayed ack count allows
@@ -2788,7 +3024,16 @@ TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
         {
           m_delAckEvent.Cancel ();
           m_delAckCount = 0;
-          SendEmptyPacket (TcpHeader::ACK);
+          if (m_ecnState == ECN_CE_RCVD || m_ecnState == ECN_ECE_SENT)
+            {
+              SendEmptyPacket (TcpHeader::ACK | TcpHeader::ECE);
+              m_ecnState = ECN_ECE_SENT;
+              NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_ECE_SENT");
+            }
+          else
+            {
+              SendEmptyPacket (TcpHeader::ACK);
+            }
         }
       else if (m_delAckEvent.IsExpired ())
         {
@@ -2942,7 +3187,15 @@ void
 TcpSocketBase::DelAckTimeout (void)
 {
   m_delAckCount = 0;
-  SendEmptyPacket (TcpHeader::ACK);
+  if (m_ecnState == ECN_CE_RCVD || m_ecnState == ECN_ECE_SENT)
+    {
+      SendEmptyPacket (TcpHeader::ACK | TcpHeader::ECE);
+      m_ecnState = ECN_ECE_SENT;
+    }
+  else
+    {
+      SendEmptyPacket (TcpHeader::ACK);
+    }
 }
 
 void
@@ -2985,7 +3238,17 @@ TcpSocketBase::PersistTimeout ()
       tcpHeader.SetDestinationPort (m_endPoint6->GetPeerPort ());
     }
   AddOptions (tcpHeader);
-
+  //Send a packet tag for setting ECT bits in IP header
+  if (m_ecnState != NO_ECN)
+    {
+      SocketIpTosTag ipTosTag;
+      ipTosTag.SetTos (0x02);
+      p->AddPacketTag (ipTosTag);
+ 
+      SocketIpv6TclassTag ipTclassTag;
+      ipTclassTag.SetTclass (0x02);
+      p->AddPacketTag (ipTclassTag);
+    }
   m_txTrace (p, tcpHeader, this);
 
   if (m_endPoint != 0)
@@ -3075,7 +3338,15 @@ TcpSocketBase::DoRetransmit ()
     {
       if (m_synCount > 0)
         {
-          SendEmptyPacket (TcpHeader::SYN);
+          if (m_ecn)
+            {
+              SendEmptyPacket (TcpHeader::SYN | TcpHeader::ECE | TcpHeader::CWR);
+            }
+          else
+            {
+              SendEmptyPacket (TcpHeader::SYN);
+            }
+          m_ecnState = NO_ECN;
         }
       else
         {
@@ -3168,7 +3439,16 @@ TcpSocketBase::SetRcvBufSize (uint32_t size)
    */
   if (oldSize < size && m_connected)
     {
-      SendEmptyPacket (TcpHeader::ACK);
+      if (m_ecnState == ECN_CE_RCVD || m_ecnState == ECN_ECE_SENT)
+        {
+          SendEmptyPacket (TcpHeader::ACK | TcpHeader::ECE);
+          m_ecnState = ECN_ECE_SENT;
+          NS_LOG_DEBUG (EcnStateName[m_ecnState] << " -> ECN_ECE_SENT");
+        }
+      else
+        {
+          SendEmptyPacket (TcpHeader::ACK);
+        }
     }
 }
 

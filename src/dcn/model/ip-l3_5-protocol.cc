@@ -98,7 +98,7 @@ IpL3_5Protocol::ForwardUp (Ptr<Packet> p,
 }
 
 IpL4Protocol::RxStatus
-IpL3_5Protocol::ForwardUp (Ptr<Packet> p,
+IpL3_5Protocol::ForwardUp6 (Ptr<Packet> p,
                            const Ipv6Header &header,
                            Ptr<Ipv6Interface> incomingInterface,
                            uint8_t protocolNumber)
@@ -137,7 +137,7 @@ IpL3_5Protocol::ForwardDown (Ptr<Packet> p, Ipv4Address source,
 }
 
 void
-IpL3_5Protocol::ForwardDown (Ptr<Packet> p, Ipv6Address source,
+IpL3_5Protocol::ForwardDown6 (Ptr<Packet> p, Ipv6Address source,
                              Ipv6Address destination, Ptr<Ipv6Route> route)
 {
   NS_LOG_FUNCTION (this << p << source << destination << route);

@@ -41,6 +41,11 @@ TcpSocket::TcpStateName[TcpSocket::LAST_STATE] = { "CLOSED", "LISTEN", "SYN_SENT
                                         "LAST_ACK", "FIN_WAIT_1", "FIN_WAIT_2",
                                         "CLOSING", "TIME_WAIT" };
 
+
+const char* const
+TcpSocket::EcnStateName[TcpSocket::ECN_CWR_SENT+1] = { "NO_ECN", "ECN_IDLE", "ECN_CE_RCVD",
+                                        "ECN_ECE_SENT", "ECN_ECE_RCVD", "ECN_CWR_SENT" };
+
 TypeId
 TcpSocket::GetTypeId (void)
 {

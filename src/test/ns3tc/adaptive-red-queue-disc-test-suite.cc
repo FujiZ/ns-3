@@ -36,7 +36,7 @@ public:
   virtual void DoRun (void);
 private:
   void Enqueue (Ptr<RedQueueDisc> queue, uint32_t size, uint32_t nPkt);
-  void RunAutoRedDiscTest (StringValue mode);
+  void RunAutoRedQueueDiscTest (StringValue mode);
 };
 
 AutoRedQueueDiscTestCase::AutoRedQueueDiscTestCase ()
@@ -45,15 +45,15 @@ AutoRedQueueDiscTestCase::AutoRedQueueDiscTestCase ()
 }
 
 void
-AutoRedQueueDiscTestCase::RunAutoRedDiscTest (StringValue mode)
+AutoRedQueueDiscTestCase::RunAutoRedQueueDiscTest (StringValue mode)
 {
   uint32_t pktSize = 0;
   uint32_t modeSize = 1;                // 1 for packets; pktSize for bytes
   Ptr<RedQueueDisc> queue = CreateObject<RedQueueDisc> ();
-
+ 
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
                          "Verify that we can actually set the attribute Mode");
-
+ 
   Ipv4Header ipHeader;
   Address dest;
 
@@ -248,11 +248,10 @@ AutoRedQueueDiscTestCase::Enqueue (Ptr<RedQueueDisc> queue, uint32_t size, uint3
 void
 AutoRedQueueDiscTestCase::DoRun (void)
 {
-  RunAutoRedDiscTest (StringValue ("QUEUE_MODE_PACKETS"));
-  RunAutoRedDiscTest (StringValue ("QUEUE_MODE_BYTES"));
+  RunAutoRedQueueDiscTest (StringValue ("QUEUE_MODE_PACKETS"));
+  RunAutoRedQueueDiscTest (StringValue ("QUEUE_MODE_BYTES"));
   Simulator::Destroy ();
 }
-
 
 // Tests to verify the working of *adaptive* parameter in ARED
 class AdaptiveRedQueueDiscTestCase : public TestCase
@@ -261,7 +260,7 @@ public:
   AdaptiveRedQueueDiscTestCase ();
   virtual void DoRun (void);
 private:
-  void RunAdaptiveRedDiscTest (StringValue mode);
+  void RunAdaptiveRedQueueDiscTest (StringValue mode, BooleanValue useEcn);
 };
 
 AdaptiveRedQueueDiscTestCase::AdaptiveRedQueueDiscTestCase ()
@@ -270,7 +269,7 @@ AdaptiveRedQueueDiscTestCase::AdaptiveRedQueueDiscTestCase ()
 }
 
 void
-AdaptiveRedQueueDiscTestCase::RunAdaptiveRedDiscTest (StringValue mode)
+AdaptiveRedQueueDiscTestCase::RunAdaptiveRedQueueDiscTest (StringValue mode, BooleanValue useEcn)
 {
   uint32_t    pktSize = 1000;
   uint32_t    modeSize = 1;             // 1 for packets; pktSize for bytes
@@ -313,19 +312,19 @@ AdaptiveRedQueueDiscTestCase::RunAdaptiveRedDiscTest (StringValue mode)
   uint32_t meanPktSize = 1000;
 
   Ptr<RedQueueDisc> queue = CreateObject<RedQueueDisc> ();
-
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
                          "Verify that we can actually set the attribute Mode");
-
   Ipv4Header ipHeader;
 
   if (queue->GetMode () == Queue::QUEUE_MODE_BYTES)
     {
       modeSize = pktSize + ipHeader.GetSerializedSize ();
+      Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_BYTES"));
     }
 
-  uint32_t    qSize = 25 * modeSize;
-
+  uint32_t    qSize = 30 * modeSize;
+  
+  Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue(useEcn));
   Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10.0));
   Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (qSize));
@@ -443,8 +442,17 @@ AdaptiveRedQueueDiscTestCase::RunAdaptiveRedDiscTest (StringValue mode)
   Simulator::Run ();
 
   RedQueueDisc::Stats st = StaticCast<RedQueueDisc> (queueDiscs.Get (0))->GetStats ();
-
-  NS_TEST_EXPECT_MSG_LT (st.unforcedDrop, st.forcedDrop, "forcedDrop should be more than unforcedDrop");
+  
+  if(useEcn == false)
+    {
+      NS_TEST_EXPECT_MSG_LT (st.unforcedDrop, st.forcedDrop, "forcedDrop should be more than unforcedDrop");
+      NS_TEST_EXPECT_MSG_EQ (st.unforcedMark, 0, "unforced and forcedMark should be zero");
+    }
+  else 
+    {
+      NS_TEST_EXPECT_MSG_LT (st.unforcedMark, st.forcedDrop, "forcedMark should be more than unforcedMark");
+      NS_TEST_EXPECT_MSG_EQ (st.unforcedDrop, 0, "unforced Drop should be zero");
+    }
 
   Simulator::Destroy ();
 }
@@ -452,8 +460,11 @@ AdaptiveRedQueueDiscTestCase::RunAdaptiveRedDiscTest (StringValue mode)
 void
 AdaptiveRedQueueDiscTestCase::DoRun (void)
 {
-  RunAdaptiveRedDiscTest (StringValue ("QUEUE_MODE_PACKETS"));
-  RunAdaptiveRedDiscTest (StringValue ("QUEUE_MODE_BYTES"));
+  RunAdaptiveRedQueueDiscTest (StringValue ("QUEUE_MODE_PACKETS"), false);
+  RunAdaptiveRedQueueDiscTest (StringValue ("QUEUE_MODE_BYTES"), false);
+  RunAdaptiveRedQueueDiscTest (StringValue ("QUEUE_MODE_PACKETS"), true);
+  RunAdaptiveRedQueueDiscTest (StringValue ("QUEUE_MODE_BYTES"), true);
+  
   Simulator::Destroy ();
 }
 

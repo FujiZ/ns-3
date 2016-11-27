@@ -88,7 +88,7 @@ protected:
    * \param protocolNumber the protocol number of upper layer
    * \returns Rx status code
    */
-  enum IpL4Protocol::RxStatus ForwardUp (Ptr<Packet> p,
+  enum IpL4Protocol::RxStatus ForwardUp6 (Ptr<Packet> p,
                                          Ipv6Header const &header,
                                          Ptr<Ipv6Interface> incomingInterface,
                                          uint8_t protocolNumber);
@@ -101,7 +101,7 @@ protected:
   /**
    * \brief This function is called by subclass protocol when sending packets
    */
-  void ForwardDown (Ptr<Packet> p, Ipv6Address source,
+  void ForwardDown6 (Ptr<Packet> p, Ipv6Address source,
                     Ipv6Address destination, Ptr<Ipv6Route> route);
 
   /**

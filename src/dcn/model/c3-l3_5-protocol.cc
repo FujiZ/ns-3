@@ -61,7 +61,7 @@ C3L3_5Protocol::Send6 (Ptr<Packet> packet, Ipv6Address source,
   C3Header c3Header;
   c3Header.SetNextHeader (protocol);
   copy->AddHeader (c3Header);
-  ForwardDown (copy, source, destination, route);
+  ForwardDown6 (copy, source, destination, route);
 }
 
 int
@@ -86,7 +86,7 @@ C3L3_5Protocol::Receive (Ptr<Packet> p,
 
   uint8_t nextHeader = c3Header.GetNextHeader ();
 
-  //todo: implementation of c3p
+  /// \todo implementation of c3p
   return ForwardUp (copy, header, incomingInterface, nextHeader);
 
 }
@@ -106,8 +106,8 @@ C3L3_5Protocol::Receive (Ptr<Packet> p,
 
   uint8_t nextHeader = c3Header.GetNextHeader ();
 
-  //todo: implementation of c3p
-  return ForwardUp (copy, header, incomingInterface, nextHeader);
+  ///\todo implementation of c3p
+  return ForwardUp6 (copy, header, incomingInterface, nextHeader);
 }
 
 }
