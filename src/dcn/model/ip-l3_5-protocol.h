@@ -14,13 +14,13 @@
 #include "ns3/ipv6-header.h"
 
 namespace ns3 {
-
 class Node;
 class Packet;
 class Ipv4Route;
 class Ipv6Route;
 class Ipv4Interface;
 class Ipv6Interface;
+namespace dcn {
 
 /**
  * \ingroup dcn
@@ -117,6 +117,7 @@ private:
   IpL4Protocol::DownTargetCallback6 m_downTarget6; //!< Callback to send packets over IPv6
 };
 
-}
+} //namespace dcn
+} //namespace ns3
 
 #endif // IP_L3_5_PROTOCOL_H

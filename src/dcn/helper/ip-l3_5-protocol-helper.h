@@ -10,6 +10,7 @@
 #include "ns3/node-container.h"
 
 namespace ns3 {
+namespace dcn {
 
 class IpL3_5Protocol;
 
@@ -76,7 +77,7 @@ private:
   std::vector<TypeId> m_ipL4Protocols;
 };
 
-}
-
+} //namespace dcn
+} //namespace ns3
 
 #endif // IP_L3_5_PROTOCOL_HELPER_H

@@ -34,7 +34,7 @@ TokenBucketFilter::GetTypeId (void)
 TokenBucketFilter::TokenBucketFilter ()
 {
   NS_LOG_FUNCTION (this);
-  m_tokens = bucket;
+  m_tokens = m_bucket;
   m_lastUpdateTime = Simulator::Now ();
   m_queue = GetObject<DropTailQueue> ();
 }
@@ -103,7 +103,7 @@ TokenBucketFilter::Timeout ()
   NS_ASSERT (!m_queue->IsEmpty ());
   Ptr<Packet> p = m_queue->Dequeue ()->GetPacket ();
   UpdateTokens ();
-  uint64_t packetSize =  (uint64_t)p->GetSize ()<<3; //packet size in bits
+  uint64_t packetSize = (uint64_t)p->GetSize ()<<3; //packet size in bits
 
   //We simply send the packet here without checking if we have enough tokens
   //since the timer is supposed to fire at the right time

@@ -56,7 +56,14 @@ public:
    * \brief This function is called by sender end when sending packets
    * \param p the packet for filter to receive
    */
-  void Receive(Ptr<Packet> p);
+  void Receive (Ptr<Packet> p);
+
+protected:
+  /**
+   * \brief This function is called when filter is ready to send a packet
+   * \param p the packet to send
+   */
+  void Send (Ptr<Packet> p);
 
 private:
   /**
@@ -65,13 +72,13 @@ private:
   void UpdateTokens (void);
 
   /**
-   * @brief Schedule the event that send the specific packet
-   * @param p the packet tobe send
+   * \brief Schedule the event that send the specific packet
+   * \param p the packet to be send
    */
   void ScheduleSend (Ptr<Packet> p);
 
   /**
-   * @brief Timeout function called by timer
+   * \brief Timeout function called by timer
    */
   void Timeout (void);
 

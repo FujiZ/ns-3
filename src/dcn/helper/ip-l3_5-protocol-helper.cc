@@ -14,6 +14,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("IpL3_5ProtocolHelper");
 
+namespace dcn {
+
 IpL3_5ProtocolHelper::IpL3_5ProtocolHelper()
 {
   NS_LOG_FUNCTION (this);
@@ -96,4 +98,5 @@ IpL3_5ProtocolHelper::AddIpL4Protocol (std::string tid)
   AddIpL4Protocol (TypeId::LookupByName (tid));
 }
 
-}
+} //namespace dcn
+} //namespace ns3

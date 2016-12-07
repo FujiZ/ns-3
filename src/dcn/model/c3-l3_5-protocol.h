@@ -11,9 +11,9 @@
 #include "ip-l3_5-protocol.h"
 
 namespace ns3 {
-
 class Node;
 class Packet;
+namespace dcn {
 
 /**
  * \ingroup dcn
@@ -60,6 +60,7 @@ public:
                                                Ptr<Ipv6Interface> incomingInterface);
 };
 
-}
+} //namespace dcn
+} //namespace ns3
 
 #endif // C3_L3_5_PROTOCOL_H

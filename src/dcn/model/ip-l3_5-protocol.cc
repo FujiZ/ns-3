@@ -17,12 +17,14 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("IpL3_5Protocol");
 
+namespace dcn {
+
 NS_OBJECT_ENSURE_REGISTERED (IpL3_5Protocol);
 
 TypeId
 IpL3_5Protocol::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::IpL3_5Protocol")
+  static TypeId tid = TypeId ("ns3::dcn:IpL3_5Protocol")
     .SetParent<IpL4Protocol> ()
     .SetGroupName ("DCN")
   ;
@@ -186,5 +188,5 @@ IpL3_5Protocol::NotifyNewAggregate (void)
   IpL4Protocol::NotifyNewAggregate ();
 }
 
-
+} //namespace dcn
 } //namespace ns3

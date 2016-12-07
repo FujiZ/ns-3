@@ -6,6 +6,8 @@
 #include "ns3/header.h"
 
 namespace ns3 {
+namespace dcn {
+
 /**
  * \ingroup dcn
  * \brief Packet header for c3 packets
@@ -57,6 +59,7 @@ private:
   uint8_t m_nextHeader;	//!< The "next header" field.
 };
 
-}
+} //namespace dcn
+} //namespace ns3
 
 #endif // C3_HEADER_H

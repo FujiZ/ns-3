@@ -12,6 +12,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3L3_5Protocol");
 
+namespace dcn {
+
 NS_OBJECT_ENSURE_REGISTERED (C3L3_5Protocol);
 
 /* see http://www.iana.org/assignments/protocol-numbers */
@@ -20,7 +22,7 @@ const uint8_t C3L3_5Protocol::PROT_NUMBER = 253;
 TypeId
 C3L3_5Protocol::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::C3L3_5Protocol")
+  static TypeId tid = TypeId ("ns3::dcn::C3L3_5Protocol")
     .SetParent<IpL3_5Protocol> ()
     .SetGroupName ("DCN")
     .AddConstructor<C3L3_5Protocol> ()
@@ -110,4 +112,5 @@ C3L3_5Protocol::Receive (Ptr<Packet> p,
   return ForwardUp6 (copy, header, incomingInterface, nextHeader);
 }
 
-}
+} //namespace dcn
+} //namespace ns3

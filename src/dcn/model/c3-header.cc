@@ -1,6 +1,7 @@
 #include "c3-header.h"
 
 namespace ns3 {
+namespace dcn {
 
 NS_OBJECT_ENSURE_REGISTERED (C3Header);
 
@@ -28,7 +29,7 @@ C3Header::GetNextHeader () const
 TypeId
 C3Header::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::C3Header")
+  static TypeId tid = TypeId ("ns3::dcn::C3Header")
     .SetParent<Header> ()
     .SetGroupName ("DCN")
     .AddConstructor<C3Header> ()
@@ -72,4 +73,5 @@ C3Header::Print (std::ostream &os) const
   os << "nextHeader: " << (uint32_t)GetNextHeader ();
 }
 
+} // namespace dcn
 } // namespace ns3
