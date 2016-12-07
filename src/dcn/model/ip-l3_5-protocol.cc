@@ -127,8 +127,8 @@ IpL3_5Protocol::ForwardUp6 (Ptr<Packet> p,
 }
 
 void
-IpL3_5Protocol::ForwardDown (Ptr<Packet> p, Ipv4Address source,
-                             Ipv4Address destination, Ptr<Ipv4Route> route)
+IpL3_5Protocol::ForwardDown (Ipv4Address source, Ipv4Address destination,
+                             Ptr<Ipv4Route> route, Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p << source << destination << route);
   NS_ASSERT_MSG (!m_downTarget.IsNull (), "Error, IpL3.5Protocol cannot send downward");
@@ -137,8 +137,8 @@ IpL3_5Protocol::ForwardDown (Ptr<Packet> p, Ipv4Address source,
 }
 
 void
-IpL3_5Protocol::ForwardDown6 (Ptr<Packet> p, Ipv6Address source,
-                             Ipv6Address destination, Ptr<Ipv6Route> route)
+IpL3_5Protocol::ForwardDown6 (Ipv6Address source, Ipv6Address destination,
+                              Ptr<Ipv6Route> route, Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p << source << destination << route);
   NS_ASSERT_MSG (!m_downTarget.IsNull (), "Error, IpL3.5Protocol cannot send downward");

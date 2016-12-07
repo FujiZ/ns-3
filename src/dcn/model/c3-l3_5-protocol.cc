@@ -48,7 +48,7 @@ C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source,
   C3Header c3Header;
   c3Header.SetNextHeader (protocol);
   copy->AddHeader (c3Header);
-  ForwardDown (copy, source, destination, route);
+  ForwardDown (source, destination, route, copy);
 }
 
 void
@@ -61,7 +61,7 @@ C3L3_5Protocol::Send6 (Ptr<Packet> packet, Ipv6Address source,
   C3Header c3Header;
   c3Header.SetNextHeader (protocol);
   copy->AddHeader (c3Header);
-  ForwardDown6 (copy, source, destination, route);
+  ForwardDown6 (source, destination, route, copy);
 }
 
 int

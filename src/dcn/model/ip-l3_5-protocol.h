@@ -95,14 +95,16 @@ protected:
 
   /**
    * \brief This function is called by subclass protocol when sending packets
+   * change parameter order to make callback easier
    */
-  void ForwardDown (Ptr<Packet> p, Ipv4Address source,
-                    Ipv4Address destination, Ptr<Ipv4Route> route);
+  void ForwardDown (Ipv4Address source, Ipv4Address destination,
+                    Ptr<Ipv4Route> route, Ptr<Packet> p);
   /**
    * \brief This function is called by subclass protocol when sending packets
+   * change parameter order to make callback easier
    */
-  void ForwardDown6 (Ptr<Packet> p, Ipv6Address source,
-                    Ipv6Address destination, Ptr<Ipv6Route> route);
+  void ForwardDown6 (Ipv6Address source, Ipv6Address destination,
+                     Ptr<Ipv6Route> route, Ptr<Packet> p);
 
   /**
    * This function will notify other components connected to the node that a new stack member is now connected
