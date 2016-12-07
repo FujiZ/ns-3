@@ -9,6 +9,7 @@
 #include "ns3/ptr.h"
 
 #include "ip-l3_5-protocol.h"
+#include "token-bucket-filter.h"
 
 namespace ns3 {
 class Node;
@@ -58,6 +59,11 @@ public:
   virtual enum IpL4Protocol::RxStatus Receive (Ptr<Packet> p,
                                                Ipv6Header const &header,
                                                Ptr<Ipv6Interface> incomingInterface);
+protected:
+  virtual void DoInitialize (void);
+  virtual void DoDispose (void);
+private:
+  Ptr<TokenBucketFilter> m_tbf;
 };
 
 } //namespace dcn

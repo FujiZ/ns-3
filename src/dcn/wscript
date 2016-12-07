@@ -11,22 +11,26 @@ def build(bld):
     module.source = [
         'model/c3-header.cc',
         'model/c3-l3_5-protocol.cc',
+        'model/connector.cc',
         'model/ip-l3_5-protocol.cc',
+        'model/token-bucket-filter.cc',
         'helper/ip-l3_5-protocol-helper.cc',
-        ]
+    ]
 
     module_test = bld.create_ns3_module_test_library('dcn')
     module_test.source = [
-        ]
+    ]
 
     headers = bld(features='ns3header')
     headers.module = 'dcn'
     headers.source = [
-	'model/c3-header.h',
-	'model/c3-l3_5-protocol.h',
-	'model/ip-l3_5-protocol.h',
+        'model/c3-header.h',
+        'model/connector.h',
+        'model/c3-l3_5-protocol.h',
+        'model/ip-l3_5-protocol.h',
+        'model/token-bucket-filter.h',
         'helper/ip-l3_5-protocol-helper.h',
-        ]
+    ]
 
     if bld.env.ENABLE_EXAMPLES:
         bld.recurse('examples')

@@ -14,12 +14,14 @@
 #include "ns3/ipv6-header.h"
 
 namespace ns3 {
+
 class Node;
 class Packet;
 class Ipv4Route;
 class Ipv6Route;
 class Ipv4Interface;
 class Ipv6Interface;
+
 namespace dcn {
 
 /**
@@ -67,6 +69,13 @@ public:
   virtual IpL4Protocol::DownTargetCallback6 GetDownTarget6 (void) const;
 
 protected:
+  virtual void DoDispose (void);
+  /*
+   * This function will notify other components connected to the node that a new stack member is now connected
+   * This will be used to notify Layer 3 protocol of layer 4 protocol stack to connect them together.
+   */
+  virtual void NotifyNewAggregate (void);
+
   /**
    * \brief forward a packet to upper layers(without any change)
    * \param p packet to forward up
@@ -95,22 +104,23 @@ protected:
 
   /**
    * \brief This function is called by subclass protocol when sending packets
-   * change parameter order to make callback easier
    */
-  void ForwardDown (Ipv4Address source, Ipv4Address destination,
-                    Ptr<Ipv4Route> route, Ptr<Packet> p);
+  void ForwardDown (Ptr<Packet> p,
+                    Ipv4Address source, Ipv4Address destination,
+                    Ptr<Ipv4Route> route);
   /**
    * \brief This function is called by subclass protocol when sending packets
-   * change parameter order to make callback easier
    */
-  void ForwardDown6 (Ipv6Address source, Ipv6Address destination,
-                     Ptr<Ipv6Route> route, Ptr<Packet> p);
+  void ForwardDown6 (Ptr<Packet> p,
+                     Ipv6Address source, Ipv6Address destination,
+                     Ptr<Ipv6Route> route);
 
   /**
-   * This function will notify other components connected to the node that a new stack member is now connected
-   * This will be used to notify Layer 3 protocol of layer 4 protocol stack to connect them together.
+   * \brief static version of forwardDown
    */
-  virtual void NotifyNewAggregate (void);
+  static void ForwardDownStatic (IpL3_5Protocol *protocol, Ptr<Ipv4Route> route,
+                                 Ptr<Packet> p);
+
 private:
   Ptr<Node> m_node;   //!< the node this stack is associated with
   IpL4Protocol::DownTargetCallback m_downTarget;   //!< Callback to send packets over IPv4

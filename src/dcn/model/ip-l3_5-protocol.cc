@@ -69,6 +69,55 @@ IpL3_5Protocol::GetDownTarget6 (void) const
   return m_downTarget6;
 }
 
+void
+IpL3_5Protocol::DoDispose (void)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+  m_node = 0;
+  m_downTarget.Nullify ();
+  m_downTarget6.Nullify ();
+  IpL4Protocol::DoDispose ();
+}
+
+void
+IpL3_5Protocol::NotifyNewAggregate (void)
+{
+  NS_LOG_FUNCTION (this);
+  Ptr<Node> node = this->GetObject<Node> ();
+  Ptr<Ipv4> ipv4 = this->GetObject<Ipv4> ();
+  Ptr<Ipv6> ipv6 = this->GetObject<Ipv6> ();
+
+  if (m_node == 0)
+    {
+      if ((node != 0) && (ipv4 != 0 || ipv6 != 0))
+        {
+          // had internet stack on it
+          this->SetNode (node);
+        }
+    }
+
+  // We set at least one of our 2 down targets to the IPv4/IPv6 send
+  // functions.  Since these functions have different prototypes, we
+  // need to keep track of whether we are connected to an IPv4 or
+  // IPv6 lower layer and call the appropriate one.
+  if (ipv4 != 0)
+    {
+      ipv4->Insert (this);
+      if (m_downTarget.IsNull ())
+        {
+          this->SetDownTarget (MakeCallback (&Ipv4::Send, ipv4));
+        }
+    }
+  if (ipv6 != 0)
+    {
+      ipv6->Insert (this);
+      if (m_downTarget6.IsNull ())
+        {
+          this->SetDownTarget6 (MakeCallback (&Ipv6::Send, ipv6));
+        }
+    }
+  IpL4Protocol::NotifyNewAggregate ();
+}
 
 IpL4Protocol::RxStatus
 IpL3_5Protocol::ForwardUp (Ptr<Packet> p,
@@ -129,8 +178,9 @@ IpL3_5Protocol::ForwardUp6 (Ptr<Packet> p,
 }
 
 void
-IpL3_5Protocol::ForwardDown (Ipv4Address source, Ipv4Address destination,
-                             Ptr<Ipv4Route> route, Ptr<Packet> p)
+IpL3_5Protocol::ForwardDown (Ptr<Packet> p,
+                             Ipv4Address source, Ipv4Address destination,
+                             Ptr<Ipv4Route> route)
 {
   NS_LOG_FUNCTION (this << p << source << destination << route);
   NS_ASSERT_MSG (!m_downTarget.IsNull (), "Error, IpL3.5Protocol cannot send downward");
@@ -139,8 +189,9 @@ IpL3_5Protocol::ForwardDown (Ipv4Address source, Ipv4Address destination,
 }
 
 void
-IpL3_5Protocol::ForwardDown6 (Ipv6Address source, Ipv6Address destination,
-                              Ptr<Ipv6Route> route, Ptr<Packet> p)
+IpL3_5Protocol::ForwardDown6 (Ptr<Packet> p,
+                              Ipv6Address source, Ipv6Address destination,
+                              Ptr<Ipv6Route> route)
 {
   NS_LOG_FUNCTION (this << p << source << destination << route);
   NS_ASSERT_MSG (!m_downTarget.IsNull (), "Error, IpL3.5Protocol cannot send downward");
@@ -149,43 +200,10 @@ IpL3_5Protocol::ForwardDown6 (Ipv6Address source, Ipv6Address destination,
 }
 
 void
-IpL3_5Protocol::NotifyNewAggregate (void)
+IpL3_5Protocol::ForwardDownStatic (IpL3_5Protocol *protocol, Ptr<Ipv4Route> route,
+                                   Ptr<Packet> p)
 {
-  NS_LOG_FUNCTION (this);
-  Ptr<Node> node = this->GetObject<Node> ();
-  Ptr<Ipv4> ipv4 = this->GetObject<Ipv4> ();
-  Ptr<Ipv6> ipv6 = this->GetObject<Ipv6> ();
-
-  if (m_node == 0)
-    {
-      if ((node != 0) && (ipv4 != 0 || ipv6 != 0))
-        {
-          // had internet stack on it
-          this->SetNode (node);
-        }
-    }
-
-  // We set at least one of our 2 down targets to the IPv4/IPv6 send
-  // functions.  Since these functions have different prototypes, we
-  // need to keep track of whether we are connected to an IPv4 or
-  // IPv6 lower layer and call the appropriate one.
-  if (ipv4 != 0)
-    {
-      ipv4->Insert (this);
-      if (m_downTarget.IsNull ())
-        {
-          this->SetDownTarget (MakeCallback (&Ipv4::Send, ipv4));
-        }
-    }
-  if (ipv6 != 0)
-    {
-      ipv6->Insert (this);
-      if (m_downTarget6.IsNull ())
-        {
-          this->SetDownTarget6 (MakeCallback (&Ipv6::Send, ipv6));
-        }
-    }
-  IpL4Protocol::NotifyNewAggregate ();
+  protocol->ForwardDown (p, route->GetSource (), route->GetDestination (), route);
 }
 
 } //namespace dcn

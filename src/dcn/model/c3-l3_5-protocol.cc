@@ -50,7 +50,11 @@ C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source,
   C3Header c3Header;
   c3Header.SetNextHeader (protocol);
   copy->AddHeader (c3Header);
-  ForwardDown (source, destination, route, copy);
+  /// \todo implement c3p
+  m_tbf->SetSendTarget (MakeBoundCallback (&C3L3_5Protocol::ForwardDownStatic,
+                                           this, route));
+  m_tbf->Receive (packet);
+  //ForwardDown (source, destination, route, copy);
 }
 
 void
@@ -63,7 +67,7 @@ C3L3_5Protocol::Send6 (Ptr<Packet> packet, Ipv6Address source,
   C3Header c3Header;
   c3Header.SetNextHeader (protocol);
   copy->AddHeader (c3Header);
-  ForwardDown6 (source, destination, route, copy);
+  ForwardDown6 (copy, source, destination, route);
 }
 
 int
@@ -110,6 +114,19 @@ C3L3_5Protocol::Receive (Ptr<Packet> p,
 
   ///\todo implementation of c3p
   return ForwardUp6 (copy, header, incomingInterface, nextHeader);
+}
+
+void
+C3L3_5Protocol::DoInitialize ()
+{
+  m_tbf = CreateObject<TokenBucketFilter> ();
+}
+
+void
+C3L3_5Protocol::DoDispose ()
+{
+  ///\todo dispose
+  IpL3_5Protocol::DoDispose ();
 }
 
 } //namespace dcn

@@ -3,25 +3,28 @@
 
 #include <stdint.h>
 
-#include "ns3/object.h"
 #include "ns3/ptr.h"
-#include "ns3/type-id.h"
 #include "ns3/data-rate.h"
 #include "ns3/nstime.h"
 #include "ns3/timer.h"
 
+#include "connector.h"
+
 namespace ns3 {
 
 class Queue;
+class QueueItem;
 class Packet;
+
+namespace dcn {
 
 /**
  * \ingroup dcn
  *
- * \brief implementation of TBF in ns-2
+ * \brief implement the ns-2 TBF in ns-3
  * yet another implementation of TBF(Token Bucket filter)
  */
-class TokenBucketFilter : public Object
+class TokenBucketFilter : public Connector
 {
 public:
   /**
@@ -33,56 +36,37 @@ public:
   TokenBucketFilter ();
   virtual ~TokenBucketFilter ();
 
-  /**
-   * \brief callback to send packets
-   */
-  typedef Callback<void,Ptr<Packet> > SendTargetCallback;
-
-  /**
-   * This method allows a caller to set the current send target callback
-   *
-   * \param cb current Callback for send target
-   */
-  void SetSendTarget (SendTargetCallback cb);
-
-  /**
-   * This method allows a caller to get the current send target callback
-   *
-   * \return current Callback for send target
-   */
-  void GetSendTarget (void);
-
+protected:
+  virtual void DoInitialize (void);
+  virtual void DoDispose (void);
   /**
    * \brief This function is called by sender end when sending packets
    * \param p the packet for filter to receive
    */
-  void Receive (Ptr<Packet> p);
-
-protected:
-  /**
-   * \brief This function is called when filter is ready to send a packet
-   * \param p the packet to send
-   */
-  void Send (Ptr<Packet> p);
+  virtual void DoReceive (Ptr<Packet> p);
 
 private:
+  /**
+   * \brief called when packet drop
+   * \param item droped item
+   * this is mainly used for callback
+   */
+  void DropItem (Ptr<QueueItem> item);
   /**
    * \brief Update the tokens in TBF
    */
   void UpdateTokens (void);
-
   /**
-   * \brief Schedule the event that send the specific packet
+   * \brief get the delay time to send the packet
    * \param p the packet to be send
+   * \return the time delay
    */
-  void ScheduleSend (Ptr<Packet> p);
-
+  Time GetSendDelay (Ptr<Packet> p);
   /**
    * \brief Timeout function called by timer
    */
   void Timeout (void);
 
-  SendTargetCallback m_sendTarget;
   DataRate m_rate;
   uint64_t m_bucket;
   double m_tokens;
@@ -91,7 +75,7 @@ private:
   Timer m_timer;
 };
 
-}
-
+} //namespace dcn
+} //namespace ns3
 
 #endif // TOKEN_BUCKET_FILTER_H
