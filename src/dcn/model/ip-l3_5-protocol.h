@@ -118,8 +118,8 @@ protected:
   /**
    * \brief static version of forwardDown
    */
-  static void ForwardDownStatic (IpL3_5Protocol *protocol, Ptr<Ipv4Route> route,
-                                 Ptr<Packet> p);
+  static void ForwardDownStatic (IpL3_5Protocol *protocol, Ipv4Address destination,
+                                 Ptr<Ipv4Route> route, Ptr<Packet> p);
 
 private:
   Ptr<Node> m_node;   //!< the node this stack is associated with

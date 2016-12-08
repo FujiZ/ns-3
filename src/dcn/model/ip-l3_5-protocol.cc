@@ -200,10 +200,11 @@ IpL3_5Protocol::ForwardDown6 (Ptr<Packet> p,
 }
 
 void
-IpL3_5Protocol::ForwardDownStatic (IpL3_5Protocol *protocol, Ptr<Ipv4Route> route,
-                                   Ptr<Packet> p)
+IpL3_5Protocol::ForwardDownStatic (IpL3_5Protocol *protocol, Ipv4Address destination,
+                                   Ptr<Ipv4Route> route, Ptr<Packet> p)
 {
-  protocol->ForwardDown (p, route->GetSource (), route->GetDestination (), route);
+  NS_LOG_FUNCTION (protocol << route->GetSource () << destination << p);
+  protocol->ForwardDown (p, route->GetSource (), destination, route);
 }
 
 } //namespace dcn

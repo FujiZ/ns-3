@@ -52,9 +52,9 @@ C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source,
   copy->AddHeader (c3Header);
   /// \todo implement c3p
   m_tbf->SetSendTarget (MakeBoundCallback (&C3L3_5Protocol::ForwardDownStatic,
-                                           this, route));
-  m_tbf->Receive (packet);
-  //ForwardDown (source, destination, route, copy);
+                                           this, destination, route));
+  m_tbf->Receive (copy);
+  //ForwardDown (copy, source, destination, route);
 }
 
 void

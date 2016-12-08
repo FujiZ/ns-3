@@ -28,7 +28,7 @@ TokenBucketFilter::GetTypeId (void)
                      MakeDataRateChecker ())
       .AddAttribute ("Bucket",
                      "The default bucket for TBF",
-                     UintegerValue (32768),
+                     UintegerValue (2048),
                      MakeUintegerAccessor (&TokenBucketFilter::m_bucket),
                      MakeUintegerChecker<uint64_t> ())
   ;
@@ -39,6 +39,10 @@ TokenBucketFilter::TokenBucketFilter ()
   : m_queue (CreateObject<DropTailQueue> ()), m_timer (Timer::CANCEL_ON_DESTROY)
 {
   NS_LOG_FUNCTION (this);
+  m_tokens = m_bucket;
+  m_lastUpdateTime = Simulator::Now ();
+  m_queue->SetDropCallback (MakeCallback (&TokenBucketFilter::DropItem, this));
+  m_timer.SetFunction (&TokenBucketFilter::Timeout, this);
 }
 
 TokenBucketFilter::~TokenBucketFilter ()
@@ -50,10 +54,6 @@ void
 TokenBucketFilter::DoInitialize (void)
 {
   NS_LOG_FUNCTION (this);
-  m_tokens = m_bucket;
-  m_lastUpdateTime = Simulator::Now ();
-  m_queue->SetDropCallback (MakeCallback (&TokenBucketFilter::DropItem, this));
-  m_timer.SetFunction (&TokenBucketFilter::Timeout, this);
   Connector::DoInitialize ();
 }
 
@@ -76,12 +76,14 @@ TokenBucketFilter::DoReceive (Ptr<Packet> p)
   if (!m_queue->IsEmpty ())
     {
       // leave the drop decision to queue
+      NS_LOG_DEBUG ("Enqueue packet: " << p);
       m_queue->Enqueue (Create<QueueItem> (p));
     }
   else
     {
       UpdateTokens ();
       uint64_t packetSize =  (uint64_t)p->GetSize ()<<3; //packet size in bits
+      NS_LOG_DEBUG ("tokens: "<< m_tokens << " size: " << packetSize);
       if (m_tokens >= packetSize)
         {
           Send (p);
