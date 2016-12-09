@@ -61,12 +61,13 @@ private:
    * \param p the packet to be send
    * \return the time delay
    */
-  Time GetSendDelay (Ptr<Packet> p);
+  Time GetSendDelay (Ptr<Packet> p) const;
   /**
-   * \brief Timeout function called by timer
+   * Start Sending the first Packet in the queue to the receive end.
    */
-  void Timeout (void);
+  void Transmit (void);
 
+private:
   DataRate m_rate;
   uint64_t m_bucket;
   double m_tokens;

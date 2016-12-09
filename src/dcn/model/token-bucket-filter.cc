@@ -42,7 +42,7 @@ TokenBucketFilter::TokenBucketFilter ()
   m_tokens = m_bucket;
   m_lastUpdateTime = Simulator::Now ();
   m_queue->SetDropCallback (MakeCallback (&TokenBucketFilter::DropItem, this));
-  m_timer.SetFunction (&TokenBucketFilter::Timeout, this);
+  m_timer.SetFunction (&TokenBucketFilter::Transmit, this);
 }
 
 TokenBucketFilter::~TokenBucketFilter ()
@@ -61,7 +61,7 @@ void
 TokenBucketFilter::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
-  m_queue->Cleanup ();
+  m_queue->DequeueAll ();
   m_timer.Cancel ();
   Connector::DoDispose ();
 }
@@ -116,7 +116,7 @@ TokenBucketFilter::UpdateTokens (void)
 }
 
 void
-TokenBucketFilter::Timeout (void)
+TokenBucketFilter::Transmit (void)
 {
   NS_LOG_FUNCTION (this);
   NS_ASSERT (!m_queue->IsEmpty ());
@@ -136,7 +136,7 @@ TokenBucketFilter::Timeout (void)
 }
 
 Time
-TokenBucketFilter::GetSendDelay (Ptr<Packet> p)
+TokenBucketFilter::GetSendDelay (Ptr<Packet> p) const
 {
   uint64_t packetSize = (uint64_t)p->GetSize ()<<3;
   return Time::FromDouble ((packetSize-m_tokens)/m_rate.GetBitRate (), Time::S);

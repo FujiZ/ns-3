@@ -34,7 +34,7 @@ Connector::SetSendTarget (SendTargetCallback cb)
 }
 
 Connector::SendTargetCallback
-Connector::GetSendTarget (void)
+Connector::GetSendTarget (void) const
 {
   return m_sendTarget;
 }
@@ -47,7 +47,7 @@ Connector::SetDropTarget (DropTargetCallback cb)
 }
 
 Connector::DropTargetCallback
-Connector::GetDropTarget (void)
+Connector::GetDropTarget (void) const
 {
   return m_dropTarget;
 }

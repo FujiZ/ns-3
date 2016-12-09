@@ -46,7 +46,7 @@ main (int argc, char *argv[])
 
   ApplicationContainer serverApps = echoServer.Install (nodes.Get (1));
   serverApps.Start (Seconds (1.0));
-  serverApps.Stop (Seconds (100.0));
+  serverApps.Stop (Seconds (50.0));
 
   UdpEchoClientHelper echoClient (interfaces.GetAddress (1), 9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (10));
@@ -55,7 +55,7 @@ main (int argc, char *argv[])
 
   ApplicationContainer clientApps = echoClient.Install (nodes.Get (0));
   clientApps.Start (Seconds (2.0));
-  clientApps.Stop (Seconds (5.0));
+  clientApps.Stop (Seconds (50.0));
 
   Simulator::Run ();
   Simulator::Destroy ();

@@ -44,7 +44,7 @@ public:
    *
    * \return current Callback for send target
    */
-  SendTargetCallback GetSendTarget (void);
+  SendTargetCallback GetSendTarget (void) const;
   /**
    * This method allows a caller to set the current drop target callback
    *
@@ -56,7 +56,7 @@ public:
    *
    * \return current Callback for drop target
    */
-  DropTargetCallback GetDropTarget (void);
+  DropTargetCallback GetDropTarget (void) const;
   /**
    * \brief This function is called by sender end when sending packets
    * \param p the packet for filter to receive
