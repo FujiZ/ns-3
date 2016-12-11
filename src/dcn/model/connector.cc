@@ -23,7 +23,7 @@ Connector::GetTypeId (void)
 
 Connector::~Connector ()
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION_NOARGS ();
 }
 
 void

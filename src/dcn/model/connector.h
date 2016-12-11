@@ -25,6 +25,8 @@ public:
   static TypeId GetTypeId (void);
 
   virtual ~Connector ();
+
+public:
   /**
    * \brief callback to send packets
    */

@@ -33,7 +33,7 @@ IpL3_5Protocol::GetTypeId (void)
 
 IpL3_5Protocol::~IpL3_5Protocol ()
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION_NOARGS ();
 }
 
 void

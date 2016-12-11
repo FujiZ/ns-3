@@ -37,7 +37,7 @@ C3L3_5Protocol::C3L3_5Protocol ()
 
 C3L3_5Protocol::~C3L3_5Protocol ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
 }
 
 void
@@ -46,10 +46,12 @@ C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source,
 {
   NS_LOG_FUNCTION (this << packet << source << destination << (uint32_t)protocol << route);
 
+
   Ptr<Packet> copy = packet->Copy ();
   C3Header c3Header;
   c3Header.SetNextHeader (protocol);
   copy->AddHeader (c3Header);
+  NS_ASSERT (destination == route->GetDestination ());
   /// \todo implement c3p
   m_tbf->SetSendTarget (MakeBoundCallback (&C3L3_5Protocol::ForwardDownStatic,
                                            this, destination, route));
