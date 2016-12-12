@@ -53,33 +53,12 @@ Connector::GetDropTarget (void) const
 }
 
 void
-Connector::Receive (Ptr<Packet> p)
-{
-  NS_LOG_FUNCTION (this);
-  DoReceive (p);
-}
-
-void
 Connector::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
-  m_sendTarget.Nullify ();
   m_dropTarget.Nullify ();
+  m_sendTarget.Nullify ();
   Object::DoDispose ();
-}
-
-void
-Connector::Send (Ptr<Packet> p)
-{
-  NS_LOG_FUNCTION (this << p);
-  m_sendTarget (p);
-}
-
-void
-Connector::Drop (Ptr<Packet> p)
-{
-  NS_LOG_FUNCTION (this << p);
-  m_dropTarget (p);
 }
 
 }

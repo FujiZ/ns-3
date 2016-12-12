@@ -39,6 +39,7 @@ IpL3_5Protocol::~IpL3_5Protocol ()
 void
 IpL3_5Protocol::SetNode (Ptr<Node> node)
 {
+  NS_LOG_FUNCTION (this);
   m_node = node;
 }
 
@@ -73,9 +74,9 @@ void
 IpL3_5Protocol::DoDispose (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  m_node = 0;
-  m_downTarget.Nullify ();
   m_downTarget6.Nullify ();
+  m_downTarget.Nullify ();
+  m_node = 0;
   IpL4Protocol::DoDispose ();
 }
 

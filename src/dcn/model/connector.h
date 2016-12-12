@@ -63,28 +63,12 @@ public:
    * \brief This function is called by sender end when sending packets
    * \param p the packet for filter to receive
    */
-  void Receive (Ptr<Packet> p);
+  virtual void Send (Ptr<Packet> p) = 0;
 
 protected:
   virtual void DoDispose (void);
-  /**
-   * \brief send a packet to the sendTarget
-   * \param p the packet to send
-   */
-  void Send (Ptr<Packet> p);
-  /**
-   * \brief call dropTarget
-   * \param p the packet to drop
-   */
-  void Drop (Ptr<Packet> p);
 
-  /**
-   * \brief implementation of receive(p)
-   * \param p the packet for filter to receive
-   */
-  virtual void DoReceive(Ptr<Packet> p) = 0;
-
-private:
+protected:
   SendTargetCallback m_sendTarget;
   DropTargetCallback m_dropTarget;
 };

@@ -36,14 +36,11 @@ public:
   TokenBucketFilter ();
   virtual ~TokenBucketFilter ();
 
+  //inherited from Connector
+  virtual void Send (Ptr<Packet> p);
+
 protected:
-  virtual void DoInitialize (void);
   virtual void DoDispose (void);
-  /**
-   * \brief This function is called by sender end when sending packets
-   * \param p the packet for filter to receive
-   */
-  virtual void DoReceive (Ptr<Packet> p);
 
 private:
   /**
@@ -63,7 +60,7 @@ private:
    */
   Time GetSendDelay (Ptr<Packet> p) const;
   /**
-   * Start Sending the first Packet in the queue to the receive end.
+   * \brief Sending the first Packet in the queue to the sendTarget
    */
   void Transmit (void);
 

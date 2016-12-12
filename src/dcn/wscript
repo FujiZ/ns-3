@@ -13,6 +13,7 @@ def build(bld):
         'model/c3-l3_5-protocol.cc',
         'model/connector.cc',
         'model/ip-l3_5-protocol.cc',
+        'model/rate-control-connector.cc',
         'model/token-bucket-filter.cc',
         'helper/ip-l3_5-protocol-helper.cc',
     ]
@@ -28,6 +29,7 @@ def build(bld):
         'model/connector.h',
         'model/c3-l3_5-protocol.h',
         'model/ip-l3_5-protocol.h',
+        'model/rate-control-connector.h',
         'model/token-bucket-filter.h',
         'helper/ip-l3_5-protocol-helper.h',
     ]

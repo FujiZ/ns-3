@@ -2,6 +2,7 @@
 #define RATE_CONTROL_CONNECTOR_H
 
 #include "ns3/data-rate.h"
+#include "ns3/traced-value.h"
 
 #include "connector.h"
 
@@ -39,20 +40,32 @@ public:
    * called by outer layer to get the current rate
    * request.
    */
-  DataRate GetRateRequest(void) const;
+  DataRate GetRateRequest (void) const;
   /**
    * \brief setRateResponse
    * \param rate the rate response
    * called by outer layer to set the rate allocated to this.
    */
-  virtual void SetRateResponse(const DataRate &rate) = 0;
+  virtual void SetRateResponse (const DataRate &rate) = 0;
 
 protected:
-  DataRate m_rateRequest;
-  DataRate m_rateResponse;
+  TracedValue<DataRate> m_rateRequest;
+  TracedValue<DataRate> m_rateResponse;
 };
 
 } //namespace dcn
+
+namespace TracedValueCallback {
+  /**
+   * TracedValue callback signature for DataRate
+   *
+   * \param [in] oldValue Original value of the traced variable
+   * \param [in] newValue New value of the traced variable
+   */
+  typedef void (* DataRate)(DataRate oldValue, DataRate newValue);
+
+}  // namespace TracedValueCallback
+
 } //namespace ns3
 
 #endif // RATE_CONTROL_CONNECTOR_H

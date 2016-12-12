@@ -11,12 +11,19 @@ namespace dcn {
 NS_OBJECT_ENSURE_REGISTERED (RateControlConnector);
 
 TypeId
-Connector::GetTypeId (void)
+RateControlConnector::GetTypeId (void)
 {
-  ///\todo set trace of rate request/response
   static TypeId tid = TypeId ("ns3::dcn::RateControlConnector")
       .SetParent<Connector> ()
       .SetGroupName ("DCN")
+      .AddTraceSource ("RateRequest",
+                       "Current rate request",
+                       MakeTraceSourceAccessor (&RateControlConnector::m_rateRequest),
+                       "ns3::DateRate::TracedValueCallback")
+      .AddTraceSource ("RateResponse",
+                       "rate response from outer layer",
+                       MakeTraceSourceAccessor (&RateControlConnector::m_rateResponse),
+                       "ns3::DateRate::TracedValueCallback")
   ;
   return tid;
 }
@@ -27,7 +34,7 @@ RateControlConnector::~RateControlConnector (void)
 }
 
 DataRate
-RateControlConnector::getRateRequest (void) const
+RateControlConnector::GetRateRequest (void) const
 {
   return m_rateRequest;
 }

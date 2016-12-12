@@ -36,7 +36,8 @@ TokenBucketFilter::GetTypeId (void)
 }
 
 TokenBucketFilter::TokenBucketFilter ()
-  : m_queue (CreateObject<DropTailQueue> ()), m_timer (Timer::CANCEL_ON_DESTROY)
+  : m_queue (CreateObject<DropTailQueue> ()),
+    m_timer (Timer::CANCEL_ON_DESTROY)
 {
   NS_LOG_FUNCTION (this);
   m_tokens = m_bucket;
@@ -51,24 +52,20 @@ TokenBucketFilter::~TokenBucketFilter ()
 }
 
 void
-TokenBucketFilter::DoInitialize (void)
-{
-  NS_LOG_FUNCTION (this);
-  Connector::DoInitialize ();
-}
-
-void
 TokenBucketFilter::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
-  m_queue->DequeueAll ();
   m_timer.Cancel ();
+  // drop all packet in the queue
+  while (!m_queue->IsEmpty ())
+    {
+      m_dropTarget (m_queue->Dequeue ()->GetPacket ());
+    }
   Connector::DoDispose ();
 }
 
-
 void
-TokenBucketFilter::DoReceive (Ptr<Packet> p)
+TokenBucketFilter::Send (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p);
 
@@ -86,7 +83,7 @@ TokenBucketFilter::DoReceive (Ptr<Packet> p)
       NS_LOG_DEBUG ("tokens: "<< m_tokens << " size: " << packetSize);
       if (m_tokens >= packetSize)
         {
-          Send (p);
+          m_sendTarget (p);
           m_tokens -= packetSize;
         }
       else
@@ -103,7 +100,8 @@ TokenBucketFilter::DoReceive (Ptr<Packet> p)
 void
 TokenBucketFilter::DropItem (Ptr<QueueItem> item)
 {
-  Drop (item->GetPacket ());
+  NS_LOG_FUNCTION (this << item->GetPacket ());
+  m_dropTarget (item->GetPacket ());
 }
 
 void
@@ -126,7 +124,7 @@ TokenBucketFilter::Transmit (void)
 
   //We simply send the packet here without checking if we have enough tokens
   //since the timer is supposed to fire at the right time
-  Send (p);
+  m_sendTarget (p);
   m_tokens -= packetSize;
   if(!m_queue->IsEmpty ())
     {

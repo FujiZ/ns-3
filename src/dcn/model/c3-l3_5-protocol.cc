@@ -46,16 +46,15 @@ C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source,
 {
   NS_LOG_FUNCTION (this << packet << source << destination << (uint32_t)protocol << route);
 
-
   Ptr<Packet> copy = packet->Copy ();
   C3Header c3Header;
   c3Header.SetNextHeader (protocol);
   copy->AddHeader (c3Header);
-  NS_ASSERT (destination == route->GetDestination ());
+  NS_ASSERT (source == route->GetSource ());
   /// \todo implement c3p
   m_tbf->SetSendTarget (MakeBoundCallback (&C3L3_5Protocol::ForwardDownStatic,
                                            this, destination, route));
-  m_tbf->Receive (copy);
+  m_tbf->Send (copy);
   //ForwardDown (copy, source, destination, route);
 }
 
@@ -91,7 +90,6 @@ C3L3_5Protocol::Receive (Ptr<Packet> p,
    */
   C3Header c3Header;
   copy->RemoveHeader (c3Header);          // Remove the c3 header in whole
-
   uint8_t nextHeader = c3Header.GetNextHeader ();
 
   /// \todo implementation of c3p
