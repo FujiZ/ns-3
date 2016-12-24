@@ -35,9 +35,9 @@ TokenBucketFilter::GetTypeId (void)
   return tid;
 }
 
-TokenBucketFilter::TokenBucketFilter ()
-  : m_queue (CreateObject<DropTailQueue> ()),
-    m_timer (Timer::CANCEL_ON_DESTROY)
+TokenBucketFilter::TokenBucketFilter ():
+  m_queue (CreateObject<DropTailQueue> ()),
+  m_timer (Timer::CANCEL_ON_DESTROY)
 {
   NS_LOG_FUNCTION (this);
   m_tokens = m_bucket;

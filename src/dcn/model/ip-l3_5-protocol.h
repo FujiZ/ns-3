@@ -116,7 +116,7 @@ protected:
                      Ptr<Ipv6Route> route);
 
   /**
-   * \brief static version of forwardDown
+   * \brief static version of ForwardDown
    */
   static void ForwardDownStatic (IpL3_5Protocol *protocol, Ipv4Address destination,
                                  Ptr<Ipv4Route> route, Ptr<Packet> p);

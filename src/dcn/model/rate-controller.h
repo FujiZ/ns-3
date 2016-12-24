@@ -3,20 +3,24 @@
 
 #include "ns3/data-rate.h"
 #include "ns3/traced-value.h"
+#include "ns3/object.h"
+#include "ns3/ptr.h"
 
-#include "connector.h"
 
 namespace ns3 {
+
+class Packet;
+
 namespace dcn {
 
 /**
  * \ingroup dcn
  *
- * \brief connector with rate control function
+ * \brief rate controller
  * the base class of Connector wiht rate control
  * which is the base class of division/tunnel/flow(session)
  */
-class RateControlConnector : public Connector
+class RateController : public Object
 {
 public:
   /**
@@ -25,7 +29,7 @@ public:
    */
   static TypeId GetTypeId (void);
 
-  virtual ~RateControlConnector ();
+  virtual ~RateController ();
 public:
   /**
    * \brief updateRateRequest

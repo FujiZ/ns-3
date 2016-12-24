@@ -1,6 +1,6 @@
 #include "ns3/log.h"
 
-#include "rate-control-connector.h"
+#include "rate-controller.h"
 
 namespace ns3 {
 
@@ -8,33 +8,33 @@ NS_LOG_COMPONENT_DEFINE ("RateControlConnector");
 
 namespace dcn {
 
-NS_OBJECT_ENSURE_REGISTERED (RateControlConnector);
+NS_OBJECT_ENSURE_REGISTERED (RateController);
 
 TypeId
-RateControlConnector::GetTypeId (void)
+RateController::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::RateControlConnector")
-      .SetParent<Connector> ()
+  static TypeId tid = TypeId ("ns3::dcn::RateController")
+      .SetParent<Object> ()
       .SetGroupName ("DCN")
       .AddTraceSource ("RateRequest",
                        "Current rate request",
-                       MakeTraceSourceAccessor (&RateControlConnector::m_rateRequest),
+                       MakeTraceSourceAccessor (&RateController::m_rateRequest),
                        "ns3::DateRate::TracedValueCallback")
       .AddTraceSource ("RateResponse",
                        "rate response from outer layer",
-                       MakeTraceSourceAccessor (&RateControlConnector::m_rateResponse),
+                       MakeTraceSourceAccessor (&RateController::m_rateResponse),
                        "ns3::DateRate::TracedValueCallback")
   ;
   return tid;
 }
 
-RateControlConnector::~RateControlConnector (void)
+RateController::~RateController (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
 
 DataRate
-RateControlConnector::GetRateRequest (void) const
+RateController::GetRateRequest (void) const
 {
   return m_rateRequest;
 }
