@@ -18,10 +18,10 @@ class TokenBucketFilter;
 /**
  * \ingroup dcn
  *
- * \brief c3 session
- * the base class for various type of session(eg: LS, DS)
+ * \brief c3 flow
+ * the base class for various type of flow (eg: LS, DS)
  */
-class C3Session : public RateController
+class C3Flow : public RateController
 {
 public:
   /**
@@ -29,10 +29,8 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId (void);
-
-  C3Session ();
-
-  virtual ~C3Session ();
+  C3Flow ();
+  virtual ~C3Flow ();
   /**
    * \brief callback to forward packets
    */
@@ -54,6 +52,9 @@ protected:
 
   //ForwardTargetCallback m_forwardTargetCallback;  //!< forward target, maybe not necessary
   Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
+  ///\todo add counter to count the send/receive byte
+  /// in order to decide when to dispose the flow
+  /// separate send and doSend ?
 };
 
 } //namespace dcn

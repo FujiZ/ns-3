@@ -52,6 +52,8 @@ C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source,
   copy->AddHeader (c3Header);
   NS_ASSERT (source == route->GetSource ());
   /// \todo implement c3p
+  /// \todo the calculation of packet size can be placed here
+  /// set packet size before forward down
   m_tbf->SetSendTarget (MakeBoundCallback (&C3L3_5Protocol::ForwardDownStatic,
                                            this, destination, route));
   m_tbf->Send (copy);
