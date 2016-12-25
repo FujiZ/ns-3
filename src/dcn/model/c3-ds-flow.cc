@@ -42,8 +42,8 @@ C3DsFlow::UpdateRateRequest (void)
   NS_LOG_FUNCTION (this);
   ///\todo if current time >= deadline, free current flow
   //calculate the rate request in bps
-  uint64_t rate = (m_remainSize << 3)/m_deadline.ToDouble (Time::S);
-  m_rateRequest = DataRate (rate);
+  m_rateRequest =
+      DataRate (m_remainSize << 3)/m_deadline.ToDouble (Time::S);
   return m_rateRequest;
 }
 
@@ -59,10 +59,8 @@ void
 C3DsFlow::DoSend (Ptr<Packet> p)
 {
   C3Tag c3Tag;
-  if (p->FindFirstMatchingByteTag (c3Tag))
-    {
-      m_deadline = c3Tag.GetDeadline ();
-    }
+  NS_ASSERT (p->FindFirstMatchingByteTag (c3Tag));
+  m_deadline = c3Tag.GetDeadline ();
   m_tbf->Send (p);
 }
 

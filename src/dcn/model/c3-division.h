@@ -74,7 +74,7 @@ private:
   Ipv4Address m_destination;  //!< dst address of division
   Ptr<Ipv4Route> m_route; //!< route of connection
   ForwardTargetCallback m_forwardTarget;  //!< forward target
-  //std::map<C3Tag, C3Tunnel> tunnels;
+  //std::map<C3Tag, Ptr<C3Tunnel> > tunnelMap;
   //c3tag, c3dstag, c3cstag etc.
   //std::map<fid_t, C3Tunnel> flows;
 };

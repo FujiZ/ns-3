@@ -52,12 +52,10 @@ public:
 protected:
 
   virtual DoDispose (void);
-
   /**
    * \brief DoSend
    * \param p the packet to send
-   * actual function that do the send job
-   * called by Send
+   * actual function that do the send job, called by Send
    */
   virtual void DoSend (Ptr<Packet> p) = 0;
 
