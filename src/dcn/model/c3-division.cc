@@ -38,7 +38,7 @@ void C3Division::SetRoute (Ptr<Ipv4Route> route)
   this->m_route = route;
 }
 
-void C3Division::SetForwardTargetCallback (ForwardTargetCallback cb)
+void C3Division::SetForwardTarget (ForwardTargetCallback cb)
 {
   NS_LOG_FUNCTION (this << cb);
   this->m_forwardTargetCallback = cb;
@@ -48,7 +48,7 @@ void C3Division::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
   ///\todo dispose all tunnels inside class
-  m_forwardTargetCallback.Nullify ();
+  m_forwardTarget.Nullify ();
   m_route = 0;
   RateController::DoDispose ();
 }
@@ -56,7 +56,7 @@ void C3Division::DoDispose (void)
 void C3Division::Forward (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p);
-  m_forwardTargetCallback (p, m_source, m_destination, m_route);
+  m_forwardTarget (p, m_source, m_destination, m_route);
 }
 
 } //namespace dcn

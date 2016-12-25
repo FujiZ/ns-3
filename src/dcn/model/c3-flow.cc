@@ -22,8 +22,8 @@ C3Flow::GetTypeId (void)
   return tid;
 }
 
-C3Flow::C3Flow ():
-  m_tbf (CreateObject<TokenBucketFilter> ())
+C3Flow::C3Flow ()
+  : m_tbf (CreateObject<TokenBucketFilter> ())
 {
   NS_LOG_FUNCTION (this);
 }
@@ -34,7 +34,7 @@ C3Flow::~C3Flow ()
 }
 
 void
-C3Flow::SetForwardTargetCallback (ForwardTargetCallback cb)
+C3Flow::SetForwardTarget (ForwardTargetCallback cb)
 {
   NS_LOG_FUNCTION (this << cb);
   this->m_tbf->SetSendTarget (cb);

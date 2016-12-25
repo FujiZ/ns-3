@@ -4,7 +4,6 @@
 #include "c3-flow.h"
 
 namespace ns3 {
-
 namespace dcn {
 
 /**
@@ -25,9 +24,11 @@ public:
   //inherited from RateController
   virtual DataRate UpdateRateRequest (void);
   virtual void SetRateResponse (const DataRate &rate);
+protected:
   //inherited from C3Flow
-  virtual void Send (Ptr<Packet> p);
+  virtual void DoSend (Ptr<Packet> p);
 private:
+  Time m_deadline;
 };
 
 } //namespace dcn

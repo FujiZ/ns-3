@@ -54,7 +54,7 @@ public:
   /**
    * \brief set forward target
    */
-  void SetForwardTargetCallback(ForwardTargetCallback cb);
+  void SetForwardTarget (ForwardTargetCallback cb);
 
   /**
    * \todo callback to send packets back to src
@@ -62,9 +62,9 @@ public:
    */
 protected:
   virtual void DoDispose (void);
-
   /**
    * \brief forward a packet to dest
+   * \param p packet to be forward
    * usually used for callback
    */
   void Forward (Ptr<Packet> p);
@@ -73,7 +73,7 @@ private:
   Ipv4Address m_source;   //!< source address of division
   Ipv4Address m_destination;  //!< dst address of division
   Ptr<Ipv4Route> m_route; //!< route of connection
-  ForwardTargetCallback m_forwardTargetCallback;  //!< forward target
+  ForwardTargetCallback m_forwardTarget;  //!< forward target
   //std::map<C3Tag, C3Tunnel> tunnels;
   //c3tag, c3dstag, c3cstag etc.
   //std::map<fid_t, C3Tunnel> flows;
