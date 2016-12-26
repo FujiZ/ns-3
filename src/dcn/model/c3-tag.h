@@ -31,33 +31,35 @@ public:
    */
   C3Tag (uint32_t flowSize, uint32_t packetSize);
   /**
-   *  Sets the flow size for the tag
-   *  \param flowSize size to assign to the tag
+   * Sets the flow size for the tag
+   * \param flowSize size to assign to the tag
    */
   void SetFlowSize (uint32_t flowSize);
   /**
-   *  Gets the flow size for the tag
-   *  \returns current flow size for this tag
+   * Gets the flow size for the tag
+   * \returns current flow size for this tag
    */
   uint32_t GetFlowSize (void) const;
   /**
-   *  Sets the packet size for the tag
-   *  \param packetSize size to assign to the tag
+   * Sets the packet size for the tag
+   * \param packetSize size to assign to the tag
    */
   void SetPacketSize (uint32_t packetSize);
   /**
-   *  Gets the packet size for the tag
-   *  \returns current packet size for this tag
+   * Gets the packet size for the tag
+   * \returns current packet size for this tag
    */
   uint32_t GetPacketSize (void) const;
   /**
-   *  Sets the deadline for the tag
-   *  \param deadline deadline to assign to the tag
+   * Sets the deadline for the tag
+   * \param deadline deadline to assign to the tag
+   * used in DS flow
    */
   void SetDeadline (Time deadline);
   /**
-   *  Gets the deadline for the tag
-   *  \returns current deadline for this tag
+   * Gets the deadline for the tag
+   * \returns current deadline for this tag
+   * used in DS flow
    */
   Time GetDeadline (void) const;
 

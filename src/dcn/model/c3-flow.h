@@ -1,5 +1,5 @@
-#ifndef C3_SESSION_H
-#define C3_SESSION_H
+#ifndef C3_FLOW_H
+#define C3_FLOW_H
 
 #include <stdint.h>
 
@@ -12,7 +12,6 @@
 namespace ns3 {
 
 class Packet;
-class Ipv4Route;
 
 namespace dcn {
 
@@ -40,6 +39,7 @@ public:
   typedef TokenBucketFilter::SendTargetCallback ForwardTargetCallback;
   /**
    * \brief set forward target
+   * \param cb forward target
    */
   void SetForwardTarget (ForwardTargetCallback cb);
   /**
@@ -48,23 +48,15 @@ public:
    * make sure that the packet contain c3tag before pass in it
    * the packet size should be marked in c3l3.5p
    */
-  void Send (Ptr<Packet> p);
-protected:
-
-  virtual DoDispose (void);
-  /**
-   * \brief DoSend
-   * \param p the packet to send
-   * actual function that do the send job, called by Send
-   */
-  virtual void DoSend (Ptr<Packet> p) = 0;
+  virtual void Send (Ptr<Packet> p) = 0;
 
 protected:
+  virtual void DoDispose (void);
 
-  //ForwardTargetCallback m_forwardTargetCallback;  //!< forward target, maybe not necessary
+protected:
   Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
-  uint32_t m_remainSize;  //!< the remain size of current flow
-  uint32_t m_bufferSize;//!< the size of current buffer
+  //uint32_t m_remainSize;  //!< the remain size of current flow
+  //uint32_t m_bufferSize;//!< the size of current buffer
   ///\todo add counter to count the send/receive byte
   /// in order to decide when to dispose the flow
   /// separate send and doSend ?
@@ -73,4 +65,4 @@ protected:
 } //namespace dcn
 } //namespace ns3
 
-#endif // C3_SESSION_H
+#endif // C3_FLOW_H

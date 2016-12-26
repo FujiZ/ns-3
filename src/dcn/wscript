@@ -11,6 +11,8 @@ def build(bld):
     module.source = [
         'model/c3-header.cc',
         'model/c3-tag.cc',
+        'model/c3-flow.cc',
+        'model/c3-ds-flow.cc',
         'model/c3-l3_5-protocol.cc',
         'model/ip-l3_5-protocol.cc',
         'model/connector.cc',
@@ -28,6 +30,8 @@ def build(bld):
     headers.source = [
         'model/c3-header.h',
         'model/c3-tag.h',
+        'model/c3-ds-flow.h',
+        'model/c3-flow.h',
         'model/c3-l3_5-protocol.h',
         'model/ip-l3_5-protocol.h',
         'model/connector.h',

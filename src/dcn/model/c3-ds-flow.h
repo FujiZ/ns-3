@@ -1,6 +1,8 @@
 #ifndef C3_DS_FLOW_H
 #define C3_DS_FLOW_H
 
+#include <stdint.h>
+
 #include "c3-flow.h"
 
 namespace ns3 {
@@ -24,11 +26,13 @@ public:
   //inherited from RateController
   virtual DataRate UpdateRateRequest (void);
   virtual void SetRateResponse (const DataRate &rate);
-protected:
   //inherited from C3Flow
-  virtual void DoSend (Ptr<Packet> p);
+  virtual void Send (Ptr<Packet> p);
 private:
-  Time m_deadline;
+  uint32_t m_flowSize;    //!< the total size of current flow
+  uint32_t m_sendedSize;  //!< the sended size of current flow
+  uint32_t m_bufferSize;  //!< the size of current buffer
+  Time m_deadline;        //!< deadline of current flow
 };
 
 } //namespace dcn

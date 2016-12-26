@@ -36,16 +36,8 @@ C3Flow::~C3Flow ()
 void
 C3Flow::SetForwardTarget (ForwardTargetCallback cb)
 {
-  NS_LOG_FUNCTION (this << cb);
+  NS_LOG_FUNCTION (this);
   this->m_tbf->SetSendTarget (cb);
-}
-
-void
-C3Flow::Send (Ptr<Packet> p)
-{
-  NS_LOG_FUNCTION (this << p);
-  ///\todo count receive byte
-  DoSend (p);
 }
 
 void
