@@ -1,6 +1,6 @@
-#include "ns3/log.h"
-
 #include "c3-tunnel.h"
+
+#include "ns3/log.h"
 
 namespace ns3 {
 
@@ -26,9 +26,9 @@ C3Tunnel::~C3Tunnel ()
 }
 
 void
-C3Tunnel::SetForwardTargetCallback (ForwardTargetCallback cb)
+C3Tunnel::SetForwardTarget (ForwardTargetCallback cb)
 {
-  NS_LOG_FUNCTION (this << cb);
+  NS_LOG_FUNCTION (this);
   m_forwardTarget = cb;
 }
 

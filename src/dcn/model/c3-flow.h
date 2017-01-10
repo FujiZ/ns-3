@@ -3,19 +3,13 @@
 
 #include <stdint.h>
 
-#include "ns3/callback.h"
-#include "ns3/ipv4-address.h"
+#include "ns3/packet.h"
 
 #include "rate-controller.h"
 #include "token-bucket-filter.h"
 
 namespace ns3 {
-
-class Packet;
-
 namespace dcn {
-
-class TokenBucketFilter;
 
 /**
  * \ingroup dcn

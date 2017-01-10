@@ -1,27 +1,25 @@
 // DCN - Layer 3.5 Protocol base class
 // Fuji Z, Winter 2016
-#ifndef IP_L3_5PROTOCOL_H
-#define IP_L3_5PROTOCOL_H
+#ifndef IP_L3_5_PROTOCOL_H
+#define IP_L3_5_PROTOCOL_H
 
 #include <stdint.h>
 
 #include "ns3/ip-l4-protocol.h"
 #include "ns3/type-id.h"
 #include "ns3/ptr.h"
+#include "ns3/node.h"
+#include "ns3/packet.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv6-address.h"
 #include "ns3/ipv4-header.h"
 #include "ns3/ipv6-header.h"
+#include "ns3/ipv4-route.h"
+#include "ns3/ipv6-route.h"
+#include "ns3/ipv4-interface.h"
+#include "ns3/ipv6-interface.h"
 
 namespace ns3 {
-
-class Node;
-class Packet;
-class Ipv4Route;
-class Ipv6Route;
-class Ipv4Interface;
-class Ipv6Interface;
-
 namespace dcn {
 
 /**

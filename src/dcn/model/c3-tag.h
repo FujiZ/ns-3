@@ -17,11 +17,14 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId (void);
+
+  // inherited from Tag
   virtual TypeId GetInstanceTypeId (void) const;
   virtual uint32_t GetSerializedSize (void) const;
   virtual void Serialize (TagBuffer buf) const;
   virtual void Deserialize (TagBuffer buf);
   virtual void Print (std::ostream &os) const;
+
   C3Tag ();
 
   /**

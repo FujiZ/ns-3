@@ -1,6 +1,6 @@
-#include "ns3/log.h"
-
 #include "c3-tag.h"
+
+#include "ns3/log.h"
 
 namespace ns3 {
 

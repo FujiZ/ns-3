@@ -36,25 +36,24 @@ C3DsFlow::~C3DsFlow ()
   NS_LOG_FUNCTION (this);
 }
 
-DataRate
+uint64_t
 C3DsFlow::UpdateRateRequest (void)
 {
   NS_LOG_FUNCTION (this);
   ///\todo if current time >= deadline, free current flow
   //calculate the rate request in bps
-  ///\todo the calculation of remain size didnt consider retransmission
-  uint32_t remainSize = m_flowSize - m_sendedSize;
-  m_rateRequest = DataRate ((uint64_t)((remainSize << 3)
-                                       /m_deadline.ToDouble (Time::S)));
+  ///\todo the calculation of remain size didnt consider retransmission(dont consider in the first version)
+  uint64_t remainSize = m_flowSize - m_sendedSize;
+  m_rateRequest = (remainSize << 3) / m_deadline.ToDouble (Time::S);
   return m_rateRequest;
 }
 
 void
-C3DsFlow::SetRateResponse (const DataRate &rate)
+C3DsFlow::SetRateResponse (uint64_t rate)
 {
   NS_LOG_FUNCTION (this << rate);
   m_rateResponse = rate;
-  m_tbf->SetAttribute ("DataRate", DataRateValue (rate));
+  m_tbf->SetAttribute ("DataRate", DataRateValue (DataRate (rate)));
 }
 
 void

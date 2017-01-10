@@ -3,22 +3,18 @@
 
 #include <map>
 
-#include "ns3/ipv4-address.h"
 #include "ns3/ptr.h"
 #include "ns3/callback.h"
+#include "ns3/packet.h"
+#include "ns3/ipv4-route.h"
+#include "ns3/ipv4-interface.h"
 #include "ns3/ipv4-header.h"
+#include "ns3/ipv4-address.h"
 
 #include "rate-controller.h"
 
 namespace ns3 {
-
-class Packet;
-class Ipv4Route;
-class Ipv4Interface;
-
 namespace dcn {
-
-class C3Tunnel;
 
 /**
  * \ingroup dcn
@@ -48,8 +44,7 @@ public:
   /**
    * \brief callback to forward packets to dest
    */
-  typedef Callback<void, Ptr<Packet>,
-  Ipv4Address, Ipv4Address, Ptr<Ipv4Route> > ForwardTargetCallback;
+  typedef Callback<void, Ptr<Packet>, Ipv4Address, Ipv4Address, Ptr<Ipv4Route> > ForwardTargetCallback;
 
   /**
    * \brief set forward target
@@ -74,9 +69,9 @@ private:
   Ipv4Address m_destination;  //!< dst address of division
   Ptr<Ipv4Route> m_route; //!< route of connection
   ForwardTargetCallback m_forwardTarget;  //!< forward target
+
   //std::map<C3Tag, Ptr<C3Tunnel> > tunnelMap;
   //c3tag, c3dstag, c3cstag etc.
-  //std::map<fid_t, C3Tunnel> flows;
 };
 
 } //namespace dcn

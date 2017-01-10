@@ -24,8 +24,8 @@ public:
   virtual ~C3DsFlow ();
 
   //inherited from RateController
-  virtual DataRate UpdateRateRequest (void);
-  virtual void SetRateResponse (const DataRate &rate);
+  virtual uint64_t UpdateRateRequest (void);
+  virtual void SetRateResponse (uint64_t rate);
   //inherited from C3Flow
   virtual void Send (Ptr<Packet> p);
 private:

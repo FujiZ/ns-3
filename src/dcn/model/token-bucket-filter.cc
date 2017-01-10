@@ -1,10 +1,9 @@
+#include "token-bucket-filter.h"
+
 #include "ns3/log.h"
 #include "ns3/assert.h"
 #include "ns3/uinteger.h"
 #include "ns3/drop-tail-queue.h"
-#include "ns3/callback.h"
-
-#include "token-bucket-filter.h"
 
 namespace ns3 {
 

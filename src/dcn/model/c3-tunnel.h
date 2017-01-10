@@ -5,13 +5,12 @@
 #include <stdint.h>
 
 #include "ns3/ptr.h"
+#include "ns3/callback.h"
 
 #include "rate-controller.h"
 
 namespace ns3 {
 namespace dcn {
-
-class C3Flow;
 
 /**
  * \ingroup dcn

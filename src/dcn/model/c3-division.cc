@@ -1,6 +1,6 @@
-#include "ns3/log.h"
-
 #include "c3-division.h"
+
+#include "ns3/log.h"
 
 namespace ns3 {
 
@@ -21,8 +21,8 @@ C3Division::GetTypeId (void)
   return tid;
 }
 
-C3Division::C3Division (Ipv4Address src, Ipv4Address dst):
-  m_source (src), m_destination (dst)
+C3Division::C3Division (Ipv4Address src, Ipv4Address dst)
+  : m_source (src), m_destination (dst)
 {
   NS_LOG_FUNCTION (this);
 }

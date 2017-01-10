@@ -3,19 +3,16 @@
 
 #include <stdint.h>
 
-#include "ns3/ptr.h"
 #include "ns3/data-rate.h"
 #include "ns3/nstime.h"
 #include "ns3/timer.h"
+#include "ns3/queue.h"
+#include "ns3/queue-disc.h"
+#include "ns3/packet.h"
 
 #include "connector.h"
 
 namespace ns3 {
-
-class Queue;
-class QueueItem;
-class Packet;
-
 namespace dcn {
 
 /**

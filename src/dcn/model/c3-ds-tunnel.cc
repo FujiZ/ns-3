@@ -1,10 +1,9 @@
+#include "c3-ds-tunnel.h"
+
 #include <algorithm>
 
 #include "ns3/log.h"
 #include "ns3/flow-id-tag.h"
-#include "ns3/packet.h"
-
-#include "c3-ds-tunnel.h"
 
 namespace ns3 {
 
@@ -35,21 +34,21 @@ C3DsTunnel::~C3DsTunnel ()
   NS_LOG_FUNCTION (this);
 }
 
-DataRate
+uint64_t
 C3DsTunnel::UpdateRateRequest (void)
 {
   NS_LOG_FUNCTION (this);
   uint64_t totalBitRate;
-  for (auto it = flowMap.begin (); it != flowMap.end (); ++it)
+  for (auto it = m_flowMap.begin (); it != m_flowMap.end (); ++it)
     {
       totalBitRate += it->second->UpdateRateRequest ();
     }
-  m_rateRequest = DataRate (totalBitRate);
+  m_rateRequest = totalBitRate;
   return m_rateRequest;
 }
 
 void
-C3DsTunnel::SetRateResponse (const DataRate &rate)
+C3DsTunnel::SetRateResponse (uint64_t rate)
 {
   NS_LOG_FUNCTION (this << rate);
   m_rateResponse = rate;
@@ -58,11 +57,10 @@ C3DsTunnel::SetRateResponse (const DataRate &rate)
       // all request can be satisfied
       NS_LOG_LOGIC (this << "all request satisfied");
       /// factor that multi by request Rate
-      double factor =
-          (double)m_rateResponse.Get ().GetBitRate ()/m_rateRequest.GetBitRate ();
-      for (auto it = flowMap.begin (); it != flowMap.end (); ++it)
+      double factor = (double)m_rateResponse / m_rateRequest;
+      for (auto it = m_flowMap.begin (); it != m_flowMap.end (); ++it)
         {
-          flow->SetRateResponse (factor * it->second->GetRateRequest ());
+          it->second->SetRateResponse (factor * it->second->GetRateRequest ());
         }
     }
   else
@@ -80,17 +78,17 @@ C3DsTunnel::Send (Ptr<Packet> p)
   FlowIdTag flowIdTag;
   NS_ASSERT (p->FindFirstMatchingByteTag (flowIdTag));
   uint32_t flowId = flowIdTag.GetFlowId ();
-  auto iter = flowMap.find (flowId);
-  if (iter == flowMap.end ())
+  auto iter = m_flowMap.find (flowId);
+  if (iter == m_flowMap.end ())
     {
       NS_LOG_LOGIC ("Alloc new flow: " << flowId);
       Ptr<C3DsFlow> newFlow = CreateObject<C3DsFlow> ();
-      flowMap[flowId] = newFlow;
-      flowVec.push_back (newFlow);
-      iter = flowMap.find (flowId);
+      m_flowMap[flowId] = newFlow;
+      m_flowVector.push_back (newFlow);
+      iter = m_flowMap.find (flowId);
     }
-  NS_ASSERT (iter != flowMap.end ());
-  (*iter->second)->Send (p->Copy ());
+  NS_ASSERT (iter != m_flowMap.end ());
+  iter->second->Send (p->Copy ());
 }
 
 void
@@ -101,12 +99,12 @@ C3DsTunnel::Schedule (void)
     {
       return a->GetRateRequest () < b->GetRateRequest ();
     };
-  std::sort (flowVec.begin (), flowVec.end (), cmp);
-  uint64_t remainRate = m_rateResponse.Get ().GetBitRate ();
-  for (auto it = flowVec.begin (); it != flowVec.end(); ++it)
+  std::sort (m_flowVector.begin (), m_flowVector.end (), cmp);
+  uint64_t remainRate = m_rateResponse;
+  for (auto it = m_flowVector.begin (); it != m_flowVector.end(); ++it)
     {
       uint64_t allocRate = std::min (remainRate, (*it)->GetRateRequest ());
-      (*it)->SetRateResponse (DataRate (allocRate));
+      (*it)->SetRateResponse (allocRate);
       remainRate -= allocRate;
     }
 }

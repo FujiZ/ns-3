@@ -1,8 +1,6 @@
-#include "ns3/log.h"
-
-#include "token-bucket-filter.h"
-
 #include "c3-flow.h"
+
+#include "ns3/log.h"
 
 namespace ns3 {
 

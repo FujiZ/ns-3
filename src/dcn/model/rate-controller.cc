@@ -1,10 +1,10 @@
-#include "ns3/log.h"
-
 #include "rate-controller.h"
+
+#include "ns3/log.h"
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("RateControlConnector");
+NS_LOG_COMPONENT_DEFINE ("RateController");
 
 namespace dcn {
 
@@ -18,12 +18,10 @@ RateController::GetTypeId (void)
       .SetGroupName ("DCN")
       .AddTraceSource ("RateRequest",
                        "Current rate request",
-                       MakeTraceSourceAccessor (&RateController::m_rateRequest),
-                       "ns3::DateRate::TracedValueCallback")
+                       MakeTraceSourceAccessor (&RateController::m_rateRequest))
       .AddTraceSource ("RateResponse",
                        "rate response from outer layer",
-                       MakeTraceSourceAccessor (&RateController::m_rateResponse),
-                       "ns3::DateRate::TracedValueCallback")
+                       MakeTraceSourceAccessor (&RateController::m_rateResponse))
   ;
   return tid;
 }
@@ -33,7 +31,7 @@ RateController::~RateController (void)
   NS_LOG_FUNCTION_NOARGS ();
 }
 
-DataRate
+uint64_t
 RateController::GetRateRequest (void) const
 {
   return m_rateRequest;

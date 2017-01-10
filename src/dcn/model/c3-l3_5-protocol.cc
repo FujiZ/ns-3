@@ -1,11 +1,7 @@
-#include "ns3/log.h"
-#include "ns3/packet.h"
-#include "ns3/ipv4-route.h"
-#include "ns3/ipv6-route.h"
-#include "ns3/ipv4-interface.h"
-#include "ns3/ipv6-interface.h"
-
 #include "c3-l3_5-protocol.h"
+
+#include "ns3/log.h"
+
 #include "c3-header.h"
 
 namespace ns3 {

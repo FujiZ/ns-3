@@ -5,15 +5,10 @@
 
 #include <stdint.h>
 
-#include "ns3/type-id.h"
-#include "ns3/ptr.h"
-
 #include "ip-l3_5-protocol.h"
 #include "token-bucket-filter.h"
 
 namespace ns3 {
-class Node;
-class Packet;
 namespace dcn {
 
 /**

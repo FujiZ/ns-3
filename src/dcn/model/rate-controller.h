@@ -1,16 +1,15 @@
 #ifndef RATE_CONTROL_CONNECTOR_H
 #define RATE_CONTROL_CONNECTOR_H
 
+#include <stdint.h>
+
 #include "ns3/data-rate.h"
 #include "ns3/traced-value.h"
 #include "ns3/object.h"
-#include "ns3/ptr.h"
+#include "ns3/packet.h"
 
 
 namespace ns3 {
-
-class Packet;
-
 namespace dcn {
 
 /**
@@ -33,43 +32,31 @@ public:
 public:
   /**
    * \brief updateRateRequest
-   * \return current rate request
+   * \return current rate request in bps
    * called by outer layer to update the current rate
    * request.
    */
-  virtual DataRate UpdateRateRequest (void) = 0;
+  virtual uint64_t UpdateRateRequest (void) = 0;
   /**
    * \brief getRateRequest
-   * \return current rate request
+   * \return current rate request in bps
    * called by outer layer to get the current rate
    * request.
    */
-  DataRate GetRateRequest (void) const;
+  uint64_t GetRateRequest (void) const;
   /**
    * \brief setRateResponse
    * \param rate the rate response
    * called by outer layer to set the rate allocated to this.
    */
-  virtual void SetRateResponse (const DataRate &rate) = 0;
+  virtual void SetRateResponse (uint64_t rate) = 0;
 
 protected:
-  TracedValue<DataRate> m_rateRequest;
-  TracedValue<DataRate> m_rateResponse;
+  TracedValue<uint64_t> m_rateRequest;
+  TracedValue<uint64_t> m_rateResponse;
 };
 
 } //namespace dcn
-
-namespace TracedValueCallback {
-  /**
-   * TracedValue callback signature for DataRate
-   *
-   * \param [in] oldValue Original value of the traced variable
-   * \param [in] newValue New value of the traced variable
-   */
-  typedef void (* DataRate)(DataRate oldValue, DataRate newValue);
-
-}  // namespace TracedValueCallback
-
 } //namespace ns3
 
 #endif // RATE_CONTROL_CONNECTOR_H
