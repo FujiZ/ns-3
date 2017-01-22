@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-#include "ns3/log.h"
 #include "ns3/flow-id-tag.h"
+#include "ns3/log.h"
 
 namespace ns3 {
 
@@ -83,6 +83,7 @@ C3DsTunnel::Send (Ptr<Packet> p)
     {
       NS_LOG_LOGIC ("Alloc new flow: " << flowId);
       Ptr<C3DsFlow> newFlow = CreateObject<C3DsFlow> ();
+      newFlow->SetForwardTarget (MakeCallback (&C3DsTunnel::Forward, this));
       m_flowMap[flowId] = newFlow;
       m_flowVector.push_back (newFlow);
       iter = m_flowMap.find (flowId);

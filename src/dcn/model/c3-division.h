@@ -12,6 +12,7 @@
 #include "ns3/ipv4-address.h"
 
 #include "rate-controller.h"
+#include "c3-ds-tunnel.h"
 
 namespace ns3 {
 namespace dcn {
@@ -35,6 +36,10 @@ public:
 
   virtual ~C3Division ();
 
+  //inherited from rate controller
+  virtual uint64_t UpdateRateRequest (void);
+  virtual void SetRateResponse (uint64_t rate);
+
   /**
    * \brief set the route of connection
    * \param route new route info
@@ -52,10 +57,18 @@ public:
   void SetForwardTarget (ForwardTargetCallback cb);
 
   /**
+   * @brief Send
+   * @param p the packet tobe send
+   * add a packet to queue
+   */
+  void Send (Ptr<Packet> p);
+
+  /**
    * \todo callback to send packets back to src
    * backwardTargetCallback
    */
 protected:
+
   virtual void DoDispose (void);
   /**
    * \brief forward a packet to dest
@@ -69,8 +82,9 @@ private:
   Ipv4Address m_destination;  //!< dst address of division
   Ptr<Ipv4Route> m_route; //!< route of connection
   ForwardTargetCallback m_forwardTarget;  //!< forward target
+  Ptr<C3DsTunnel> m_tunnel;     //!< \todo just one tunnel for test
 
-  //std::map<C3Tag, Ptr<C3Tunnel> > tunnelMap;
+  //std::map<C3Tag::Type, Ptr<C3Tunnel> > tunnelMap;
   //c3tag, c3dstag, c3cstag etc.
 };
 
