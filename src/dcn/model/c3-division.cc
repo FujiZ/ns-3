@@ -22,7 +22,7 @@ C3Division::GetTypeId (void)
   return tid;
 }
 
-C3Division::C3Division (Ipv4Address src, Ipv4Address dst)
+C3Division::C3Division (const Ipv4Address& src, const Ipv4Address& dst)
   : m_source (src),
     m_destination (dst)
 {

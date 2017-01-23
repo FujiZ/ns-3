@@ -3,13 +3,13 @@
 
 #include <map>
 
-#include "ns3/ptr.h"
 #include "ns3/callback.h"
-#include "ns3/packet.h"
-#include "ns3/ipv4-route.h"
-#include "ns3/ipv4-interface.h"
-#include "ns3/ipv4-header.h"
 #include "ns3/ipv4-address.h"
+#include "ns3/ipv4-header.h"
+#include "ns3/ipv4-interface.h"
+#include "ns3/ipv4-route.h"
+#include "ns3/packet.h"
+#include "ns3/ptr.h"
 
 #include "rate-controller.h"
 #include "c3-ds-tunnel.h"
@@ -32,7 +32,7 @@ public:
    */
   static TypeId GetTypeId (void);
 
-  C3Division (Ipv4Address src, Ipv4Address dst);
+  C3Division (const Ipv4Address& src, const Ipv4Address& dst);
 
   virtual ~C3Division ();
 

@@ -4,9 +4,10 @@
 #define C3_L3_5_PROTOCOL_H
 
 #include <stdint.h>
+#include <map>
 
+#include "c3-division.h"
 #include "ip-l3_5-protocol.h"
-#include "token-bucket-filter.h"
 
 namespace ns3 {
 namespace dcn {
@@ -48,17 +49,31 @@ public:
 
   // inherited from IpL4Protocol
   virtual int GetProtocolNumber (void) const;
-  virtual enum IpL4Protocol::RxStatus Receive (Ptr<Packet> p,
+  virtual enum IpL4Protocol::RxStatus Receive (Ptr<Packet> packet,
                                                Ipv4Header const &header,
                                                Ptr<Ipv4Interface> incomingInterface);
-  virtual enum IpL4Protocol::RxStatus Receive (Ptr<Packet> p,
+  virtual enum IpL4Protocol::RxStatus Receive (Ptr<Packet> packet,
                                                Ipv6Header const &header,
                                                Ptr<Ipv6Interface> incomingInterface);
 protected:
+
   virtual void DoInitialize (void);
   virtual void DoDispose (void);
+
 private:
-  Ptr<TokenBucketFilter> m_tbf;
+
+  /**
+   * @brief GetPacketSize
+   * @param packet
+   * @param protocol the protocol number of packet
+   * @return packet size in bytes
+   * Get the data field size of a packet
+   */
+  uint32_t GetPacketSize (Ptr<Packet> packet, uint8_t protocol);
+
+private:
+  std::map<Ipv4Address, Ptr<C3Division> > m_divisionMap;    //!< <dst, division>
+
 };
 
 } //namespace dcn
