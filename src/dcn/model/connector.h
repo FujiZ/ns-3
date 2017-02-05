@@ -30,11 +30,11 @@ public:
   /**
    * \brief callback to send packets
    */
-  typedef Callback<void,Ptr<Packet> > SendTargetCallback;
+  typedef Callback<void, Ptr<Packet> > SendTargetCallback;
   /**
    * \brief callback to drop packets
    */
-  typedef Callback<void,Ptr<Packet> > DropTargetCallback;
+  typedef Callback<void, Ptr<const Packet> > DropTargetCallback;
   /**
    * This method allows a caller to set the current send target callback
    *
@@ -52,7 +52,7 @@ public:
    *
    * \param cb current Callback for drop target
    */
-  void SetDropTarget (SendTargetCallback cb);
+  void SetDropTarget (DropTargetCallback cb);
   /**
    * This method allows a caller to get the current drop target callback
    *

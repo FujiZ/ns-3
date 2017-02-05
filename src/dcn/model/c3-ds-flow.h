@@ -27,18 +27,8 @@ public:
   virtual uint64_t UpdateRateRequest (void);
   virtual void SetRateResponse (uint64_t rate);
   //inherited from C3Flow
-  virtual void Send (Ptr<Packet> p);
+  virtual void Send (Ptr<Packet> packet);
 private:
-  /**
-   * \brief NotifyPacketSend
-   * \param p the packet to send
-   * called when tbf send a packet out
-   */
-  void NotifyPacketSend (Ptr<Packet> p);
-private:
-  int32_t m_flowSize;    //!< the total size of current flow
-  int32_t m_sendedSize;  //!< the sended size of current flow
-  int32_t m_bufferSize;  //!< the size of current buffer
   Time m_deadline;        //!< deadline of current flow
 };
 

@@ -55,6 +55,7 @@ C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source,
     {
       // set packet size before forward down
       c3Tag.SetPacketSize (GetPacketSize (packet, protocol));
+      packet->AddPacketTag (c3Tag);
       auto it = m_divisionMap.find (destination);
       if (it == m_divisionMap.end ())
         {

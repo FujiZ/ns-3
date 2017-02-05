@@ -26,7 +26,7 @@ public:
   virtual uint64_t UpdateRateRequest (void);
   virtual void SetRateResponse (uint64_t rate);
   //inherited from C3Tunnel
-  virtual void Send (Ptr<Packet> p);
+  virtual void Send (Ptr<Packet> packet);
 
 protected:
 

@@ -42,16 +42,31 @@ public:
    * make sure that the packet contain c3tag before pass in it
    * the packet size should be marked in c3l3.5p
    */
-  virtual void Send (Ptr<Packet> p) = 0;
+  virtual void Send (Ptr<Packet> packet);
 
 protected:
   virtual void DoDispose (void);
+  /**
+   * @brief Forward callback to forward packets
+   * @param packet the packet tobe sent out
+   * usually used as callback
+   */
+  virtual void Forward (Ptr<Packet> packet);
+  /**
+   * @brief Drop callback to drop packet
+   * @param packet the packet to drop
+   * used as callback
+   */
+  virtual void Drop (Ptr<const Packet> packet);
 
 protected:
   Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
-  //uint32_t m_remainSize;  //!< the remain size of current flow
-  //uint32_t m_bufferSize;//!< the size of current buffer
-  ///\todo add counter to count the send/receive byte
+  ForwardTargetCallback m_forwardTarget;    //!< callback to forward packet
+
+  int32_t m_flowSize;    //!< the total size of current flow
+  int32_t m_sendedSize;  //!< the sended size of current flow
+  int32_t m_bufferSize;  //!< the size of current buffer
+  ///\todo add counter to count the send byte
   /// in order to decide when to dispose the flow
   /// separate send and doSend ?
 };

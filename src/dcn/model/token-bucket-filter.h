@@ -45,7 +45,7 @@ private:
    * \param item droped item
    * this is mainly used for callback
    */
-  void DropItem (Ptr<QueueItem> item);
+  void Drop (Ptr<QueueItem> item);
   /**
    * \brief Update the tokens in TBF
    */
@@ -55,7 +55,7 @@ private:
    * \param p the packet to be send
    * \return the time delay
    */
-  Time GetSendDelay (Ptr<Packet> p) const;
+  Time GetSendDelay (Ptr<const Packet> p) const;
   /**
    * \brief Sending the first Packet in the queue to the sendTarget
    */

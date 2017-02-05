@@ -35,7 +35,7 @@ public:
    */
   void SetForwardTarget (ForwardTargetCallback cb);
 
-  virtual void Send (Ptr<Packet> p) = 0;
+  virtual void Send (Ptr<Packet> packet) = 0;
 
 protected:
   /**

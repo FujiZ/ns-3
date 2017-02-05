@@ -28,7 +28,7 @@ C3Division::C3Division (const Ipv4Address& src, const Ipv4Address& dst)
 {
   NS_LOG_FUNCTION (this);
   m_tunnel = CreateObject<C3DsTunnel> ();
-  m_tunnel->SetForwardTarget (MakeCallback(&C3Division::Forward, this));
+  m_tunnel->SetForwardTarget (MakeCallback (&C3Division::Forward, this));
 }
 
 C3Division::~C3Division ()
@@ -51,12 +51,12 @@ C3Division::SetForwardTarget (ForwardTargetCallback cb)
 }
 
 void
-C3Division::Send (Ptr<Packet> p)
+C3Division::Send (Ptr<Packet> packet)
 {
-  NS_LOG_FUNCTION (this << p);
+  NS_LOG_FUNCTION (this << packet);
   C3Tag c3Tag;
-  NS_ASSERT (p->FindFirstMatchingByteTag (c3Tag));
-  m_tunnel->Send (p);
+  NS_ASSERT (packet->PeekPacketTag (c3Tag));
+  m_tunnel->Send (packet);
 }
 
 uint64_t
@@ -87,10 +87,10 @@ C3Division::DoDispose (void)
 }
 
 void
-C3Division::Forward (Ptr<Packet> p)
+C3Division::Forward (Ptr<Packet> packet)
 {
-  NS_LOG_FUNCTION (this << p);
-  m_forwardTarget (p, m_source, m_destination, m_route);
+  NS_LOG_FUNCTION (this << packet);
+  m_forwardTarget (packet, m_source, m_destination, m_route);
 }
 
 } //namespace dcn

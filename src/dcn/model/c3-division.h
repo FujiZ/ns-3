@@ -11,8 +11,8 @@
 #include "ns3/packet.h"
 #include "ns3/ptr.h"
 
-#include "rate-controller.h"
 #include "c3-ds-tunnel.h"
+#include "rate-controller.h"
 
 namespace ns3 {
 namespace dcn {
@@ -61,7 +61,7 @@ public:
    * @param p the packet tobe send
    * add a packet to queue
    */
-  void Send (Ptr<Packet> p);
+  void Send (Ptr<Packet> packet);
 
   /**
    * \todo callback to send packets back to src
@@ -73,9 +73,9 @@ protected:
   /**
    * \brief forward a packet to dest
    * \param p packet to be forward
-   * usually used for callback
+   * usually used as callback
    */
-  void Forward (Ptr<Packet> p);
+  void Forward (Ptr<Packet> packet);
 
 private:
   Ipv4Address m_source;   //!< source address of division

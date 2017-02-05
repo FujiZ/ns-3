@@ -1,5 +1,5 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 def build(bld):
-    obj = bld.create_ns3_program('dcn-example', ['dcn'])
-    obj.source = 'dcn.cc'
+    obj = bld.create_ns3_program('c3-example', ['dcn', 'internet', 'point-to-point', 'applications'])
+    obj.source = 'c3-example.cc'

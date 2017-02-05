@@ -38,7 +38,7 @@ uint64_t
 C3DsTunnel::UpdateRateRequest (void)
 {
   NS_LOG_FUNCTION (this);
-  uint64_t totalBitRate;
+  uint64_t totalBitRate = 0;
   for (auto it = m_flowMap.begin (); it != m_flowMap.end (); ++it)
     {
       totalBitRate += it->second->UpdateRateRequest ();
@@ -76,7 +76,7 @@ C3DsTunnel::Send (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p);
   FlowIdTag flowIdTag;
-  NS_ASSERT (p->FindFirstMatchingByteTag (flowIdTag));
+  NS_ASSERT (p->PeekPacketTag (flowIdTag));
   uint32_t flowId = flowIdTag.GetFlowId ();
   auto iter = m_flowMap.find (flowId);
   if (iter == m_flowMap.end ())

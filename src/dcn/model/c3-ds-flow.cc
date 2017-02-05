@@ -6,8 +6,6 @@
 #include "ns3/packet.h"
 
 #include "c3-tag.h"
-#include "token-bucket-filter.h"
-
 
 namespace ns3 {
 
@@ -32,9 +30,6 @@ C3DsFlow::C3DsFlow ()
   : C3Flow ()
 {
   NS_LOG_FUNCTION (this);
-  //reg callback to trace packet send/drop
-  m_tbf->SetSendTarget (MakeCallback (&C3DsFlow::NotifyPacketSend, this));
-  m_tbf->SetDropTarget (MakeCallback (&C3DsFlow::NotifyPacketSend, this));
 }
 
 C3DsFlow::~C3DsFlow ()
@@ -51,7 +46,7 @@ C3DsFlow::UpdateRateRequest (void)
   ///\todo the calculation of remain size didnt consider retransmission(dont consider in the first version)
   int remainSize = std::max (m_flowSize - m_sendedSize, 0);
   double remainTime = (m_deadline - Simulator::Now ()).ToDouble (Time::S);
-  m_rateRequest = remainTime > 0 ? (remainSize <<3) / remainTime : 0;
+  m_rateRequest = remainTime > 0 ? (remainSize << 3) / remainTime : 0;
   return m_rateRequest;
 }
 
@@ -64,23 +59,12 @@ C3DsFlow::SetRateResponse (uint64_t rate)
 }
 
 void
-C3DsFlow::Send (Ptr<Packet> p)
+C3DsFlow::Send (Ptr<Packet> packet)
 {
   C3Tag c3Tag;
-  NS_ASSERT (p->FindFirstMatchingByteTag (c3Tag));
+  NS_ASSERT (packet->PeekPacketTag (c3Tag));
   m_deadline = c3Tag.GetDeadline ();
-  m_bufferSize += c3Tag.GetPacketSize ();
-  m_tbf->Send (p);
-}
-
-void
-C3DsFlow::NotifyPacketSend (Ptr<Packet> p)
-{
-  NS_LOG_FUNCTION (this << p);
-  C3Tag c3Tag;
-  NS_ASSERT (p->FindFirstMatchingByteTag (c3Tag));
-  m_sendedSize += c3Tag.GetPacketSize ();
-  m_bufferSize -= c3Tag.GetPacketSize ();
+  C3Flow::Send (packet);
 }
 
 } //namespace dcn

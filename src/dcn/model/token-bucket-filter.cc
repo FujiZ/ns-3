@@ -41,7 +41,7 @@ TokenBucketFilter::TokenBucketFilter ():
   NS_LOG_FUNCTION (this);
   m_tokens = m_bucket;
   m_lastUpdateTime = Simulator::Now ();
-  m_queue->SetDropCallback (MakeCallback (&TokenBucketFilter::DropItem, this));
+  m_queue->SetDropCallback (MakeCallback (&TokenBucketFilter::Drop, this));
   m_timer.SetFunction (&TokenBucketFilter::Transmit, this);
 }
 
@@ -97,7 +97,7 @@ TokenBucketFilter::Send (Ptr<Packet> p)
 }
 
 void
-TokenBucketFilter::DropItem (Ptr<QueueItem> item)
+TokenBucketFilter::Drop (Ptr<QueueItem> item)
 {
   NS_LOG_FUNCTION (this << item->GetPacket ());
   m_dropTarget (item->GetPacket ());
@@ -119,7 +119,7 @@ TokenBucketFilter::Transmit (void)
   NS_ASSERT (!m_queue->IsEmpty ());
   Ptr<Packet> p = m_queue->Dequeue ()->GetPacket ();
   UpdateTokens ();
-  uint64_t packetSize = (uint64_t)p->GetSize ()<<3; //packet size in bits
+  uint64_t packetSize = (uint64_t)p->GetSize () << 3; //packet size in bits
 
   //We simply send the packet here without checking if we have enough tokens
   //since the timer is supposed to fire at the right time
@@ -133,10 +133,10 @@ TokenBucketFilter::Transmit (void)
 }
 
 Time
-TokenBucketFilter::GetSendDelay (Ptr<Packet> p) const
+TokenBucketFilter::GetSendDelay (Ptr<const Packet> p) const
 {
-  uint64_t packetSize = (uint64_t)p->GetSize ()<<3;
-  return Time::FromDouble ((packetSize-m_tokens)/m_rate.GetBitRate (), Time::S);
+  uint64_t packetSize = (uint64_t)p->GetSize () << 3;
+  return Time::FromDouble ((packetSize-m_tokens) / m_rate.GetBitRate (), Time::S);
 }
 
 } //namespace dcn
