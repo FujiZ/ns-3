@@ -9,7 +9,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("C3Example");
 
-const uint32_t flowSize = 100000000;
+const uint32_t flowSize = 100000;
 const Time deadline = Seconds (5.0);
 const int port = 9;
 
@@ -22,6 +22,7 @@ SendTracer (Ptr<const Packet> packet)
   c3Tag.SetDeadline (deadline);
   packet->AddPacketTag (flowIdTag);
   packet->AddPacketTag (c3Tag);
+  packet->AddByteTag (c3Tag);
 }
 
 void
@@ -29,7 +30,7 @@ ReceiveTracer (Ptr<const Packet> packet,const Address &from)
 {
   static int totalReceive = 0;
   dcn::C3Tag c3Tag;
-  packet->PeekPacketTag (c3Tag);
+  NS_ASSERT(packet->FindFirstMatchingByteTag (c3Tag));
   if (c3Tag.GetDeadline () <= Simulator::Now ())
     {
       totalReceive += packet->GetSize ();
