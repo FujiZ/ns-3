@@ -87,12 +87,24 @@ TokenBucketFilter::Send (Ptr<Packet> p)
         }
       else
         {
-          bool result = m_queue->Enqueue (Create<QueueItem> (p));
-          if (result)
+          if (m_queue->Enqueue (Create<QueueItem> (p)) && m_rate.GetBitRate ())
             {
               m_timer.Schedule (GetSendDelay (p));
             }
         }
+    }
+}
+
+void
+TokenBucketFilter::SetRate (DataRate rate)
+{
+  NS_LOG_FUNCTION (this << rate);
+  m_rate = rate;
+  // 如果当前queue非空 && m_timer无调度任务 && rate非0
+  if (m_timer.IsExpired () && !m_queue->IsEmpty () && m_rate.GetBitRate ())
+    {
+      //schedule next event
+      m_timer.Schedule (GetSendDelay (m_queue->Peek ()->GetPacket ()));
     }
 }
 
@@ -125,7 +137,7 @@ TokenBucketFilter::Transmit (void)
   //since the timer is supposed to fire at the right time
   m_sendTarget (p);
   m_tokens -= packetSize;
-  if(!m_queue->IsEmpty ())
+  if(m_rate.GetBitRate () && !m_queue->IsEmpty ())
     {
       //schedule next event
       m_timer.Schedule (GetSendDelay (m_queue->Peek ()->GetPacket ()));

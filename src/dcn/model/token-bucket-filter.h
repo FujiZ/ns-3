@@ -36,6 +36,13 @@ public:
   //inherited from Connector
   virtual void Send (Ptr<Packet> p);
 
+  /**
+   * @brief SetRate
+   * @param rate the rate to set
+   * set the rate of tbf
+   */
+  void SetRate (DataRate rate);
+
 protected:
   virtual void DoDispose (void);
 

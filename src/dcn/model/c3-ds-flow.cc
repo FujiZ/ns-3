@@ -55,7 +55,7 @@ C3DsFlow::SetRateResponse (uint64_t rate)
 {
   NS_LOG_FUNCTION (this << rate);
   m_rateResponse = rate;
-  m_tbf->SetAttribute ("DataRate", DataRateValue (DataRate (rate)));
+  m_tbf->SetRate (DataRate (rate));
 }
 
 void

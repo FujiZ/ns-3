@@ -1063,7 +1063,7 @@ protected:
   
   // Parameters related to Explicit Congestion Notification
   bool                     m_ecn;             //!< Socket ECN capability
-  TracedValue<EcnStates_t> m_ecnState;        //!< Current ECN State, represented as combination of EcnState values
+  TracedValue<uint32_t> m_ecnState;        //!< Current ECN State, represented as combination of EcnState values
   TracedValue<SequenceNumber32> m_ecnEchoSeq; //!< Sequence number of the last received ECN Echo
   TracedValue<SequenceNumber32> m_ecnCESeq;   //!< Sequence number of the last received Congestion Experienced
   TracedValue<SequenceNumber32> m_ecnCWRSeq;  //!< Sequence number of the last sent CWR 
