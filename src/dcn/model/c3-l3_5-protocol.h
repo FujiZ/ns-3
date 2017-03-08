@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <map>
 
-#include "c3-division.h"
+//#include "c3-division.h"
 #include "ip-l3_5-protocol.h"
 
 namespace ns3 {
@@ -28,27 +28,16 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId (void);
-  static const uint8_t PROT_NUMBER; //!< protocol number (0xfd=253)
 
   C3L3_5Protocol ();
   virtual ~C3L3_5Protocol ();
 
-  /**
-   * \brief This function is called by higher layer protocol when sending packets
-   * inherited from IpL3_5Protocol
-   */
+  // inherited from IpL3_5Protocol
   virtual void Send (Ptr<Packet> packet, Ipv4Address source,
                      Ipv4Address destination, uint8_t protocol, Ptr<Ipv4Route> route);
-
-  /**
-   * \brief This function is called by higher layer protocol when sending packets
-   * inherited from IpL3_5Protocol
-   */
   virtual void Send6 (Ptr<Packet> packet, Ipv6Address source,
                      Ipv6Address destination, uint8_t protocol, Ptr<Ipv6Route> route);
 
-  // inherited from IpL4Protocol
-  virtual int GetProtocolNumber (void) const;
   virtual enum IpL4Protocol::RxStatus Receive (Ptr<Packet> packet,
                                                Ipv4Header const &header,
                                                Ptr<Ipv4Interface> incomingInterface);
@@ -72,7 +61,8 @@ private:
   uint32_t GetPacketSize (Ptr<Packet> packet, uint8_t protocol);
 
 private:
-  std::map<Ipv4Address, Ptr<C3Division> > m_divisionMap;    //!< <dst, division>
+  //std::map<Ipv4Address, Ptr<C3Division> > m_divisionMap;    //!< <dst, division>
+  //std::map<Ipv4Address, Ptr<C3EcnHandler> > m_ecnHandlerMap;    //!< <dst, handler>
 
 };
 

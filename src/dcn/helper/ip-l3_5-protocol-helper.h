@@ -1,13 +1,14 @@
 #ifndef IP_L3_5_PROTOCOL_HELPER_H
 #define IP_L3_5_PROTOCOL_HELPER_H
 
+#include <stdint.h>
 #include <vector>
 #include <string>
 
+#include "ns3/node-container.h"
+#include "ns3/object-factory.h"
 #include "ns3/ptr.h"
 #include "ns3/type-id.h"
-#include "ns3/object-factory.h"
-#include "ns3/node-container.h"
 
 namespace ns3 {
 namespace dcn {
@@ -41,7 +42,7 @@ public:
 
   /**
    * \brief This method creates an l3_5 protocol and install to the given nodes
-   * It should be called after the internet stack is installed.
+   * It MUST be called after the internet stack is installed.
    * the downtarget of l3_5 protocol will follow the last
    * l4 protocol added, so it's recommanded to have the same
    * downtarget among the l4 protocols before calling the function.
@@ -59,13 +60,12 @@ public:
    * Set these attribute on each ns3::IpL3_5Protocol created
    * by IpL3_5ProtocolHelper::Install
    */
-  void SetAttribute (std::string name, const AttributeValue &value);
+  void SetAttribute (const std::string &name, const AttributeValue &value);
 
-  void SetIpL3_5Protocol (TypeId tid);
-  void SetIpL3_5Protocol (std::string tid);
+  void SetIpL3_5Protocol (const std::string &tid);
 
-  void AddIpL4Protocol (TypeId tid);
-  void AddIpL4Protocol (std::string tid);
+  void AddIpL4Protocol (const std::string &tid);
+  void AddIpL4Protocol (const std::string &tid, uint32_t interface);
 
 private:
   /**
@@ -73,8 +73,19 @@ private:
    * assignment and prevent the compiler from happily inserting its own.
    */
   IpL3_5ProtocolHelper & operator = (const IpL3_5ProtocolHelper &o);
+
+  /**
+   * \brief Container of the IPv4 L4 pair: protocol typeid, interface index
+   */
+  typedef std::pair<TypeId, int32_t> L4ListValue_t;
+
+  /**
+   * \brief Container of the IPv4 L4 instances.
+   */
+  typedef std::vector<L4ListValue_t> L4List_t;
+
   ObjectFactory m_agentFactory;
-  std::vector<TypeId> m_ipL4Protocols;
+  L4List_t m_ipL4Protocols;
 };
 
 } //namespace dcn

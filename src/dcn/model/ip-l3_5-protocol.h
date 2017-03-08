@@ -4,6 +4,8 @@
 #define IP_L3_5_PROTOCOL_H
 
 #include <stdint.h>
+#include <map>
+#include <utility>
 
 #include "ns3/ip-l4-protocol.h"
 #include "ns3/type-id.h"
@@ -39,6 +41,7 @@ public:
    */
   static TypeId GetTypeId (void);
 
+  IpL3_5Protocol ();
   virtual ~IpL3_5Protocol ();
 
   /**
@@ -62,9 +65,31 @@ public:
   // From IpL4Protocol
   virtual void SetDownTarget (IpL4Protocol::DownTargetCallback cb);
   virtual void SetDownTarget6 (IpL4Protocol::DownTargetCallback6 cb);
+
   // From IpL4Protocol
   virtual IpL4Protocol::DownTargetCallback GetDownTarget (void) const;
   virtual IpL4Protocol::DownTargetCallback6 GetDownTarget6 (void) const;
+
+  // From IpL4Protocol
+  virtual int GetProtocolNumber (void) const;
+  /**
+   * @brief the setter of protocol number
+   * @param protocolNumber
+   * 为了能够在不需要额外header的前提下在传输层和网络层间插入代理，
+   * 需要在调用IpL3Protocol::Insert之前设置需要代理的protocol number。
+   */
+  void SetProtocolNumber (uint8_t protocolNumber);
+
+  // inspired by ipv4-l3-protocol
+  void Insert (Ptr<IpL4Protocol> protocol);
+  void Insert (Ptr<IpL4Protocol> protocol, int32_t interfaceIndex);
+
+  void Remove (Ptr<IpL4Protocol> protocol);
+  void Remove (Ptr<IpL4Protocol> protocol, int32_t interfaceIndex);
+
+  Ptr<IpL4Protocol> GetProtocol (int protocolNumber) const;
+  Ptr<IpL4Protocol> GetProtocol (int protocolNumber, int32_t interfaceIndex) const;
+
 
 protected:
   virtual void DoDispose (void);
@@ -75,7 +100,7 @@ protected:
   virtual void NotifyNewAggregate (void);
 
   /**
-   * \brief forward a packet to upper layers(without any change)
+   * \brief forward a packet to upper layers (without any change)
    * \param p packet to forward up
    * \param header IPv4 Header information
    * \param incomingInterface the Ipv4Interface on which the packet arrived
@@ -101,28 +126,46 @@ protected:
                                          uint8_t protocolNumber);
 
   /**
-   * \brief This function is called by subclass protocol when sending packets
+   * @brief This function is called by subclass protocol when sending packets
+   * @param p packet tobe send
+   * @param source src addr
+   * @param destination dst addr
+   * @param protocol l4 protocol number
+   * @param route route of the packet
    */
   void ForwardDown (Ptr<Packet> p,
                     Ipv4Address source, Ipv4Address destination,
-                    Ptr<Ipv4Route> route);
+                    uint8_t protocol, Ptr<Ipv4Route> route);
   /**
-   * \brief This function is called by subclass protocol when sending packets
+   * @brief This function is called by subclass protocol when sending packets
+   * @param p packet tobe send
+   * @param source src addr
+   * @param destination dst addr
+   * @param protocol l4 protocol number
+   * @param route route of the packet
    */
   void ForwardDown6 (Ptr<Packet> p,
                      Ipv6Address source, Ipv6Address destination,
-                     Ptr<Ipv6Route> route);
+                     uint8_t protocol, Ptr<Ipv6Route> route);
 
-  /**
-   * \brief static version of ForwardDown
-   */
-  static void ForwardDownStatic (IpL3_5Protocol *protocol, Ipv4Address destination,
-                                 Ptr<Ipv4Route> route, Ptr<Packet> p);
 
 private:
+  /**
+   * \brief Container of the IPv4 L4 keys: protocol number, interface index
+   */
+  typedef std::pair<int, int32_t> L4ListKey_t;
+
+  /**
+   * \brief Container of the IPv4 L4 instances.
+   */
+  typedef std::map<L4ListKey_t, Ptr<IpL4Protocol> > L4List_t;
+
+  uint8_t m_protocolNumber; //!< current protocol number.
+  L4List_t m_protocols;  //!< List of transport protocol.
   Ptr<Node> m_node;   //!< the node this stack is associated with
   IpL4Protocol::DownTargetCallback m_downTarget;   //!< Callback to send packets over IPv4
   IpL4Protocol::DownTargetCallback6 m_downTarget6; //!< Callback to send packets over IPv6
+
 };
 
 } //namespace dcn
