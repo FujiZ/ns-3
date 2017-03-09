@@ -20,16 +20,24 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId (void);
+
   C3DsFlow ();
+
   virtual ~C3DsFlow ();
 
-  //inherited from RateController
-  virtual uint64_t UpdateRateRequest (void);
-  virtual void SetRateResponse (uint64_t rate);
   //inherited from C3Flow
   virtual void Send (Ptr<Packet> packet);
+  virtual void UpdateInfo (void);
+
+  /**
+   * @brief GetRateRequest
+   * @return current rate request
+   */
+  DataRate GetRateRequest (void) const;
+
 private:
   Time m_deadline;        //!< deadline of current flow
+  DataRate m_rateRequest; //!< rate request
 };
 
 } //namespace dcn

@@ -21,8 +21,8 @@ C3Tunnel::GetTypeId (void)
 }
 
 C3Tunnel::C3Tunnel (const Ipv4Address &src, const Ipv4Address &dst)
-  : m_weightRequest (0.0),
-    m_weightResponse (0.0),
+  : m_weight (0.0),
+    m_weightRequest (0.0),
     m_src (src),
     m_dst (dst)
 {
@@ -58,7 +58,7 @@ void
 C3Tunnel::SetWeightResponse (double weight)
 {
   NS_LOG_FUNCTION (this << weight);
-  m_weightResponse = weight;
+  m_weight = weight;
 }
 
 void
@@ -67,6 +67,8 @@ C3Tunnel::DoDispose (void)
   NS_LOG_FUNCTION (this);
   m_forwardTarget.Nullify ();
   m_route = 0;
+  m_flowList.clear ();
+  Object::DoDispose ();
 }
 
 void

@@ -23,7 +23,8 @@ C3DsTunnel::GetTypeId (void)
   return tid;
 }
 
-C3DsTunnel::C3DsTunnel ()
+C3DsTunnel::C3DsTunnel (const Ipv4Address &src, const Ipv4Address &dst)
+  : C3Tunnel (src, dst)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -31,6 +32,20 @@ C3DsTunnel::C3DsTunnel ()
 C3DsTunnel::~C3DsTunnel ()
 {
   NS_LOG_FUNCTION (this);
+}
+
+void
+C3DsTunnel::Send (Ptr<Packet> packet, uint8_t protocol)
+{
+  NS_LOG_FUNCTION (this << packet << (uint32_t)protocol);
+  FlowIdTag flowIdTag;
+  NS_ASSERT (packet->PeekPacketTag (flowIdTag));
+  uint32_t flowId = flowIdTag.GetFlowId ();
+
+  Ptr<C3Flow> flow = GetFlow (flowId);
+  //flow->SetForwardTarget (&C3DsTunnel::Forward, this);
+  //flow->SetProtocol(protocol);
+  flow->Send (packet);
 }
 
 /*
@@ -72,19 +87,6 @@ C3DsTunnel::SetRateResponse (uint64_t rate)
 }
 */
 
-void
-C3DsTunnel::Send (Ptr<Packet> packet, uint8_t protocol)
-{
-  NS_LOG_FUNCTION (this << packet);
-  FlowIdTag flowIdTag;
-  NS_ASSERT (packet->PeekPacketTag (flowIdTag));
-  uint32_t flowId = flowIdTag.GetFlowId ();
-
-  Ptr<C3Flow> flow = GetFlow (flowId);
-  //flow->SetForwardTarget (&C3DsTunnel::Forward, this);
-  //flow->SetProtocol(protocol);
-  flow->Send (packet);
-}
 
 void
 C3DsTunnel::Schedule (void)

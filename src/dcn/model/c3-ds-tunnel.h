@@ -2,7 +2,6 @@
 #define C3_DS_TUNNEL_H
 
 #include <cstdint>
-#include <map>
 
 #include "c3-tunnel.h"
 #include "c3-ds-flow.h"
@@ -25,6 +24,9 @@ public:
 
   //inherited from C3Tunnel
   virtual void Send (Ptr<Packet> packet, uint8_t protocol);
+  virtual void UpdateInfo (void);
+  virtual void UpdateRate (void);
+  virtual void Schedule (void);
 
 protected:
 

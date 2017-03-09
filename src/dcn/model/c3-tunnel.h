@@ -73,13 +73,15 @@ public:
   void SetWeightResponse (double weight);
 
   /**
-   * @brief Update tunnel rate; scale flow rate inside the tunnel
+   * @brief Update tunnel rate;
+   * update tunnel rate according to ecn info
    */
   virtual void UpdateRate (void) = 0;
 
   /**
    * @brief in-tunnel schedule
    * alloc tunnel rate to flows inside the tunnel
+   * scale flow rate inside the tunnel
    */
   virtual void Schedule (void) = 0;
 
@@ -97,8 +99,8 @@ protected:
 
   typedef std::map<uint32_t, Ptr<C3Flow> > FlowList_t;
 
+  double m_weight;  //!< real tunnel weight
   double m_weightRequest;   //!< tunnel weight request
-  double m_weightResponse;  //!< real tunnel weight
   FlowList_t m_flowList;    //!< flow list
 
 private:
