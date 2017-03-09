@@ -60,8 +60,12 @@ public:
    * @param dst tunnel dst addr
    * @return required tunnel
    */
-  virtual Ptr<C3Tunnel> GetTunnel (const Ipv4Address &src, const Ipv4Address &dst) = 0;
+  virtual Ptr<C3Tunnel> GetTunnel (const Ipv4Address &src, const Ipv4Address &dst, Ptr<Ipv4Route> route) = 0;
 
+  /**
+   * @brief Update division info
+   * called by global timer (?)
+   */
   virtual void Update (void) = 0;
 
 protected:
@@ -72,7 +76,6 @@ protected:
   typedef std::map<TunnelListKey_t, Ptr<C3Tunnel> > TunnelList_t;
 
   double m_weight;
-  TunnelList_t m_tunnelList;
 
 private:
 
@@ -85,10 +88,9 @@ private:
 
   typedef std::pair<uint32_t, C3Type> DivisionListKey_t;
   typedef std::map<DivisionListKey_t, Ptr<C3Division> > DivisionList_t;
+  typedef std::map<C3Type, std::string> DivisionTypeList_t;
 
   static DivisionList_t m_divisionList;
-
-  typedef std::map<C3Type, std::string> DivisionTypeList_t;
   static DivisionTypeList_t m_divisionTypeList;
 
   /*

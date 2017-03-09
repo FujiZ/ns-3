@@ -31,7 +31,7 @@ C3Division::GetTypeId (void)
 
 C3Division::~C3Division ()
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION_NOARGS ();
 }
 
 Ptr<C3Division>
@@ -62,7 +62,6 @@ void
 C3Division::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
-  m_tunnelList.clear ();
   Object::DoDispose ();
 }
 

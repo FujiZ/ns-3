@@ -25,7 +25,9 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId (void);
+
   C3Flow ();
+
   virtual ~C3Flow ();
   /**
    * \brief callback to forward packets
