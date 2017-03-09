@@ -19,7 +19,6 @@ C3DsTunnel::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::dcn::C3DsTunnel")
       .SetParent<C3Tunnel> ()
       .SetGroupName ("DCN")
-      .AddConstructor<C3DsTunnel> ()
   ;
   return tid;
 }
@@ -34,6 +33,7 @@ C3DsTunnel::~C3DsTunnel ()
   NS_LOG_FUNCTION (this);
 }
 
+/*
 uint64_t
 C3DsTunnel::UpdateRateRequest (void)
 {
@@ -70,31 +70,26 @@ C3DsTunnel::SetRateResponse (uint64_t rate)
       Schedule ();
     }
 }
+*/
 
 void
-C3DsTunnel::Send (Ptr<Packet> p)
+C3DsTunnel::Send (Ptr<Packet> packet, uint8_t protocol)
 {
-  NS_LOG_FUNCTION (this << p);
+  NS_LOG_FUNCTION (this << packet);
   FlowIdTag flowIdTag;
-  NS_ASSERT (p->PeekPacketTag (flowIdTag));
+  NS_ASSERT (packet->PeekPacketTag (flowIdTag));
   uint32_t flowId = flowIdTag.GetFlowId ();
-  auto iter = m_flowMap.find (flowId);
-  if (iter == m_flowMap.end ())
-    {
-      NS_LOG_LOGIC ("Alloc new flow: " << flowId);
-      Ptr<C3DsFlow> newFlow = CreateObject<C3DsFlow> ();
-      newFlow->SetForwardTarget (MakeCallback (&C3DsTunnel::Forward, this));
-      m_flowMap[flowId] = newFlow;
-      m_flowVector.push_back (newFlow);
-      iter = m_flowMap.find (flowId);
-    }
-  NS_ASSERT (iter != m_flowMap.end ());
-  iter->second->Send (p->Copy ());
+
+  Ptr<C3Flow> flow = GetFlow (flowId);
+  //flow->SetForwardTarget (&C3DsTunnel::Forward, this);
+  //flow->SetProtocol(protocol);
+  flow->Send (packet);
 }
 
 void
 C3DsTunnel::Schedule (void)
 {
+  /*
   //sort by requestRate
   auto cmp = [] (const Ptr<C3DsFlow> &a, const Ptr<C3DsFlow> &b)
     {
@@ -108,6 +103,7 @@ C3DsTunnel::Schedule (void)
       (*it)->SetRateResponse (allocRate);
       remainRate -= allocRate;
     }
+    */
 }
 
 } //namespace dcn

@@ -6,6 +6,8 @@
 #include "ns3/tag.h"
 #include "ns3/nstime.h"
 
+#include "c3-type.h"
+
 namespace ns3 {
 namespace dcn {
 
@@ -18,6 +20,9 @@ public:
    */
   static TypeId GetTypeId (void);
 
+  C3Tag ();
+  ~C3Tag ();
+
   // inherited from Tag
   virtual TypeId GetInstanceTypeId (void) const;
   virtual uint32_t GetSerializedSize (void) const;
@@ -25,48 +30,25 @@ public:
   virtual void Deserialize (TagBuffer buf);
   virtual void Print (std::ostream &os) const;
 
-  C3Tag ();
 
-  /**
-   * Construct a C3Tag with given args
-   * \param flowSize Size of Flow
-   * \param packetSize Size of Data Field
-   */
-  C3Tag (uint32_t flowSize, uint32_t packetSize);
-  /**
-   * Sets the flow size for the tag
-   * \param flowSize size to assign to the tag
-   */
+  void SetType (C3Type type);
+  C3Type GetType (void) const;
+
+  void SetTenantId (uint32_t tenantId);
+  uint32_t GetTenantId (void) const;
+
   void SetFlowSize (uint32_t flowSize);
-  /**
-   * Gets the flow size for the tag
-   * \returns current flow size for this tag
-   */
   uint32_t GetFlowSize (void) const;
-  /**
-   * Sets the packet size for the tag
-   * \param packetSize size to assign to the tag
-   */
+
   void SetPacketSize (uint32_t packetSize);
-  /**
-   * Gets the packet size for the tag
-   * \returns current packet size for this tag
-   */
   uint32_t GetPacketSize (void) const;
-  /**
-   * Sets the deadline for the tag
-   * \param deadline deadline to assign to the tag
-   * used in DS flow
-   */
+
   void SetDeadline (Time deadline);
-  /**
-   * Gets the deadline for the tag
-   * \returns current deadline for this tag
-   * used in DS flow
-   */
   Time GetDeadline (void) const;
 
 private:
+  C3Type m_type;        //!< objective type of current flow
+  uint32_t m_tenantId;  //!< tenant id of current flow
   uint32_t m_flowSize;   //!< the size of current flow(in Byte)
   uint32_t m_packetSize; //!< the size of packet
   Time m_deadline;       //!< deadline of flow(used in DS flow)

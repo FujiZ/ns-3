@@ -29,9 +29,15 @@ C3Division::GetTypeId (void)
   return tid;
 }
 
+C3Division::C3Division ()
+  : m_weight (0)
+{
+  NS_LOG_FUNCTION (this);
+}
+
 C3Division::~C3Division ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
 }
 
 Ptr<C3Division>
@@ -59,15 +65,38 @@ C3Division::AddDivisionType (C3Type type, std::string tid)
 }
 
 void
+C3Division::Update (void)
+{
+  NS_LOG_FUNCTION (this);
+  double weight = 0.0;
+  for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
+    {
+      Ptr<C3Tunnel> tunnel = it->second;
+      tunnel->UpdateInfo ();
+      weight += tunnel->GetWeightRequest ();
+    }
+  double lambda = m_weight / weight;    // lambda: scale factor
+  for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
+    {
+      Ptr<C3Tunnel> tunnel = it->second;
+      tunnel->SetWeightResponse (lambda * tunnel->GetWeightRequest ());
+      tunnel->UpdateRate ();
+      tunnel->Schedule ();
+    }
+}
+
+void
 C3Division::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
+  m_tunnelList.clear ();
   Object::DoDispose ();
 }
 
 Ptr<C3Division>
 C3Division::CreateDivision (C3Type type)
 {
+  NS_LOG_FUNCTION (static_cast<uint8_t> (type));
   ObjectFactory factory;
   factory.SetTypeId (m_divisionTypeList[type]);
   return factory.Create<C3Division> ();

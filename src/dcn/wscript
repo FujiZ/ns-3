@@ -11,7 +11,9 @@ def build(bld):
     module.source = [
         'model/connector.cc',
         'model/c3-division.cc',
+        'model/c3-flow.cc',
         'model/c3-l3_5-protocol.cc',
+        'model/c3-tag.cc',
         'model/c3-tunnel.cc',
         'model/ip-l3_5-protocol.cc',
         'model/token-bucket-filter.cc',
@@ -27,7 +29,9 @@ def build(bld):
     headers.source = [
         'model/connector.h',
         'model/c3-division.h',
+        'model/c3-flow.h',
         'model/c3-l3_5-protocol.h',
+        'model/c3-tag.h',
         'model/c3-tunnel.h',
         'model/c3-type.h',
         'model/ip-l3_5-protocol.h',

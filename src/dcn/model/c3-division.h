@@ -35,6 +35,8 @@ public:
    */
   static TypeId GetTypeId (void);
 
+  C3Division ();
+
   virtual ~C3Division ();
 
   /**
@@ -55,18 +57,25 @@ public:
   static void AddDivisionType (C3Type type, std::string tid);
 
   /**
+   * @brief Global Update
+   * update all divisions in the network
+  static void GlobalUpdate (void);
+   */
+
+  /**
    * @brief GetTunnel
    * @param src tunnel src addr
    * @param dst tunnel dst addr
    * @return required tunnel
    */
-  virtual Ptr<C3Tunnel> GetTunnel (const Ipv4Address &src, const Ipv4Address &dst, Ptr<Ipv4Route> route) = 0;
+  virtual Ptr<C3Tunnel> GetTunnel (const Ipv4Address &src, const Ipv4Address &dst) = 0;
 
   /**
-   * @brief Update division info
+   * @brief Update division
+   * update tunnels in divisions
    * called by global timer (?)
    */
-  virtual void Update (void) = 0;
+  void Update (void);
 
 protected:
 
@@ -75,7 +84,8 @@ protected:
   typedef std::pair<Ipv4Address, Ipv4Address> TunnelListKey_t;
   typedef std::map<TunnelListKey_t, Ptr<C3Tunnel> > TunnelList_t;
 
-  double m_weight;
+  double m_weight;  //!< division weight
+  TunnelList_t m_tunnelList;    //!< tunnel list
 
 private:
 
@@ -94,11 +104,6 @@ private:
   static DivisionTypeList_t m_divisionTypeList;
 
   /*
-  Ipv4Address m_source;   //!< source address of division
-  Ipv4Address m_destination;  //!< dst address of division
-  Ptr<Ipv4Route> m_route; //!< route of connection
-  DownTargetCallback m_downTarget;  //!< down target
-  UpTargetCallback m_upTarget;  //!< up target
   /// should be placed elsewhere(C3EcnHandler?)
   //ecn stats
   uint32_t m_totalAck;

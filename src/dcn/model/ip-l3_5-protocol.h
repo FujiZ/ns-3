@@ -134,7 +134,7 @@ protected:
    * @param route route of the packet
    */
   void ForwardDown (Ptr<Packet> p,
-                    Ipv4Address source, Ipv4Address destination,
+                    Ipv4Address src, Ipv4Address dst,
                     uint8_t protocol, Ptr<Ipv4Route> route);
   /**
    * @brief This function is called by subclass protocol when sending packets
@@ -145,7 +145,7 @@ protected:
    * @param route route of the packet
    */
   void ForwardDown6 (Ptr<Packet> p,
-                     Ipv6Address source, Ipv6Address destination,
+                     Ipv6Address src, Ipv6Address dst,
                      uint8_t protocol, Ptr<Ipv6Route> route);
 
 

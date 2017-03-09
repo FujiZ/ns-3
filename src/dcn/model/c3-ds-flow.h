@@ -1,7 +1,7 @@
 #ifndef C3_DS_FLOW_H
 #define C3_DS_FLOW_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "c3-flow.h"
 

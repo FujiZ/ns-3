@@ -23,7 +23,8 @@ TokenBucketFilter::GetTypeId (void)
       .AddAttribute ("DataRate",
                      "The default data rate for TBF in bps",
                      DataRateValue (DataRate ("2048b/s")),
-                     MakeDataRateAccessor (&TokenBucketFilter::m_rate),
+                     MakeDataRateAccessor (&TokenBucketFilter::GetRate,
+                                           &TokenBucketFilter::SetRate),
                      MakeDataRateChecker ())
       .AddAttribute ("Bucket",
                      "The default bucket for TBF",
@@ -93,6 +94,12 @@ TokenBucketFilter::Send (Ptr<Packet> p)
             }
         }
     }
+}
+
+DataRate
+TokenBucketFilter::GetRate (void) const
+{
+  return m_rate;
 }
 
 void

@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 
+#include "ns3/object.h"
 #include "ns3/packet.h"
 
-#include "rate-controller.h"
 #include "token-bucket-filter.h"
 
 namespace ns3 {
@@ -17,7 +17,7 @@ namespace dcn {
  * \brief c3 flow
  * the base class for various type of flow (eg: LS, DS)
  */
-class C3Flow : public RateController
+class C3Flow : public Object
 {
 public:
   /**
@@ -32,12 +32,17 @@ public:
   /**
    * \brief callback to forward packets
    */
-  typedef TokenBucketFilter::SendTargetCallback ForwardTargetCallback;
+  typedef Callback<void, Ptr<Packet>, uint8_t> ForwardTargetCallback;
   /**
    * \brief set forward target
    * \param cb forward target
    */
   void SetForwardTarget (ForwardTargetCallback cb);
+  /**
+   * @brief Set Protocol number
+   * @param protocol l4 protocol number
+   */
+  void SetProtocol (uint8_t protocol);
   /**
    * \brief This function is called by sender end when sending packets
    * \param p the packet for controller to receive
@@ -45,6 +50,25 @@ public:
    * the packet size should be marked in c3l3.5p
    */
   virtual void Send (Ptr<Packet> packet);
+
+  /**
+   * @brief Update tunnel info (weight)
+   * called by upper division
+   * @todo maybe the update of weight and rate should seperate
+   */
+  virtual void UpdateInfo (void) = 0;
+
+  /**
+   * @brief GetWeight
+   * @return flow weight
+   */
+  double GetWeight (void) const;
+
+  /**
+   * @brief SetRate
+   * @param rate
+   */
+  void SetRate (DataRate rate);
 
 protected:
   virtual void DoDispose (void);
@@ -62,15 +86,15 @@ protected:
   virtual void Drop (Ptr<const Packet> packet);
 
 protected:
-  Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
-  ForwardTargetCallback m_forwardTarget;    //!< callback to forward packet
-
   int32_t m_flowSize;    //!< the total size of current flow
   int32_t m_sendedSize;  //!< the sended size of current flow
-  int32_t m_bufferSize;  //!< the size of current buffer
-  ///\todo add counter to count the send byte
-  /// in order to decide when to dispose the flow
-  /// separate send and doSend ?
+  int32_t m_bufferedSize;  //!< the size of current buffer
+  double m_weight;  //!< weight
+
+private:
+  uint8_t m_protocol;    //!< the protocol number of current flow
+  Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
+  ForwardTargetCallback m_forwardTarget;    //!< callback to forward packet
 };
 
 } //namespace dcn

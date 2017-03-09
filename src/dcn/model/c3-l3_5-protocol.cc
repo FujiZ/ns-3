@@ -4,6 +4,7 @@
 #include "ns3/tcp-header.h"
 #include "ns3/udp-header.h"
 
+#include "c3-division.h"
 #include "c3-tag.h"
 
 namespace ns3 {
@@ -36,13 +37,33 @@ C3L3_5Protocol::~C3L3_5Protocol ()
 }
 
 void
-C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source, Ipv4Address destination,
+C3L3_5Protocol::Send (Ptr<Packet> packet,
+                      Ipv4Address src, Ipv4Address dst,
                       uint8_t protocol, Ptr<Ipv4Route> route)
 {
-  NS_LOG_FUNCTION (this << packet << source << destination << (uint32_t)protocol);
-  /*
-  NS_ASSERT (source == route->GetSource ());
+  NS_LOG_FUNCTION (this << packet << src << dst << (uint32_t)protocol);
+  NS_ASSERT (src == route->GetSource ());
+  NS_LOG_DEBUG ("in c3p before forward down");
 
+  C3Tag c3Tag;
+  // check tag before send
+  if (packet->RemovePacketTag (c3Tag))
+    {
+      // set packet size before forward down
+      c3Tag.SetPacketSize (GetPacketSize (packet, protocol));
+      packet->AddPacketTag (c3Tag);
+      Ptr<C3Tunnel> tunnel = C3Division::GetDivision (c3Tag.GetTenantId (), c3Tag.GetType ())->GetTunnel (src, dst);
+      tunnel->SetForwardTarget (MakeCallback (&C3L3_5Protocol::ForwardDown, this));
+      tunnel->SetRoute (route);
+      tunnel->Send (packet, protocol);
+    }
+  else
+    {
+      // not a data packet: ACK or others
+      ForwardDown (packet, src, dst, protocol, route);
+    }
+
+  /*
   C3Header c3Header;
   c3Header.SetNextHeader (protocol);
   /// \todo GetEcnHandler (dest).Send (packet, c3Header, protocol);
@@ -57,7 +78,6 @@ C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source, Ipv4Address destin
     {
       // set packet size before forward down
       c3Tag.SetPacketSize (packetSize);
-      packet->AddPacketTag (c3Tag);
       auto it = m_divisionMap.find (destination);
       if (it == m_divisionMap.end ())
         {
@@ -74,18 +94,17 @@ C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source, Ipv4Address destin
       // packet not contain data. eg: ACK packet
     }
   */
-  NS_LOG_DEBUG ("in c3p before forward down");
-  ForwardDown (packet, source, destination, protocol, route);
 }
 
 void
-C3L3_5Protocol::Send6 (Ptr<Packet> packet, Ipv6Address source, Ipv6Address destination,
+C3L3_5Protocol::Send6 (Ptr<Packet> packet,
+                       Ipv6Address src, Ipv6Address dst,
                        uint8_t protocol, Ptr<Ipv6Route> route)
 {
-  NS_LOG_FUNCTION (this << packet << source << destination << (uint32_t)protocol << route);
+  NS_LOG_FUNCTION (this << packet << src << dst << (uint32_t)protocol << route);
 
   Ptr<Packet> copy = packet->Copy ();
-  ForwardDown6 (copy, source, destination, protocol, route);
+  ForwardDown6 (copy, src, dst, protocol, route);
 }
 
 enum IpL4Protocol::RxStatus

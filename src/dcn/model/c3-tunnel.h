@@ -1,8 +1,8 @@
 #ifndef C3_TUNNEL_H
 #define C3_TUNNEL_H
 
+#include <cstdint>
 #include <map>
-#include <stdint.h>
 
 #include "ns3/callback.h"
 #include "ns3/ipv4-address.h"
@@ -50,19 +50,38 @@ public:
   void SetForwardTarget (ForwardTargetCallback cb);
 
   /**
-   * @brief GetFlow
-   * @param fid flow id
-   * @param protocol protocol number
-   * @return flow in the tunnel
+   * @brief Send a packet
+   * @param packet packet tobe sent
+   * @param protocol protocol number of transport layer
    */
-  virtual Ptr<C3Flow> GetFlow (uint32_t fid, uint8_t protocol) = 0;
+  virtual void Send (Ptr<Packet> packet, uint8_t protocol) = 0;
 
   /**
-   * @brief Update tunnel info (weight, rate etc.)
+   * @brief Update tunnel info (weight)
    * called by upper division
    * @todo maybe the update of weight and rate should seperate
    */
-  virtual void Update (void) = 0;
+  virtual void UpdateInfo (void) = 0;
+
+  double GetWeightRequest (void) const;
+
+  /**
+   * @brief SetWeightResponse
+   * @param weight
+   * called by division, set tunnel weight response
+   */
+  void SetWeightResponse (double weight);
+
+  /**
+   * @brief Update tunnel rate; scale flow rate inside the tunnel
+   */
+  virtual void UpdateRate (void) = 0;
+
+  /**
+   * @brief in-tunnel schedule
+   * alloc tunnel rate to flows inside the tunnel
+   */
+  virtual void Schedule (void) = 0;
 
 protected:
 
@@ -76,8 +95,14 @@ protected:
    */
   void Forward (Ptr<Packet> packet, uint8_t protocol);
 
+  typedef std::map<uint32_t, Ptr<C3Flow> > FlowList_t;
+
+  double m_weightRequest;   //!< tunnel weight request
+  double m_weightResponse;  //!< real tunnel weight
+  FlowList_t m_flowList;    //!< flow list
+
 private:
-  Ipv4Address m_src;   //!< source address of tunnel
+  Ipv4Address m_src;   //!< src address of tunnel
   Ipv4Address m_dst;  //!< dst address of tunnel
   Ptr<Ipv4Route> m_route; //!< route of connection
   ForwardTargetCallback m_forwardTarget;  //!< forward target

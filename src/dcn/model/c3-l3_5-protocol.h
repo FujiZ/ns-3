@@ -3,10 +3,9 @@
 #ifndef C3_L3_5_PROTOCOL_H
 #define C3_L3_5_PROTOCOL_H
 
-#include <stdint.h>
 #include <map>
+#include <stdint.h>
 
-//#include "c3-division.h"
 #include "ip-l3_5-protocol.h"
 
 namespace ns3 {
@@ -33,9 +32,11 @@ public:
   virtual ~C3L3_5Protocol ();
 
   // inherited from IpL3_5Protocol
-  virtual void Send (Ptr<Packet> packet, Ipv4Address source, Ipv4Address destination,
+  virtual void Send (Ptr<Packet> packet,
+                     Ipv4Address src, Ipv4Address dst,
                      uint8_t protocol, Ptr<Ipv4Route> route);
-  virtual void Send6 (Ptr<Packet> packet, Ipv6Address source, Ipv6Address destination,
+  virtual void Send6 (Ptr<Packet> packet,
+                      Ipv6Address src, Ipv6Address dst,
                       uint8_t protocol, Ptr<Ipv6Route> route);
 
   virtual enum IpL4Protocol::RxStatus Receive (Ptr<Packet> packet,

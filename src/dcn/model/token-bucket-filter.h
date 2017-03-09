@@ -37,6 +37,11 @@ public:
   virtual void Send (Ptr<Packet> p);
 
   /**
+   * @brief GetRate
+   * @return
+   */
+  DataRate GetRate (void) const;
+  /**
    * @brief SetRate
    * @param rate the rate to set
    * set the rate of tbf
@@ -47,6 +52,7 @@ protected:
   virtual void DoDispose (void);
 
 private:
+
   /**
    * \brief called when packet drop
    * \param item droped item
