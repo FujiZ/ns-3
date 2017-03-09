@@ -36,8 +36,8 @@ C3L3_5Protocol::~C3L3_5Protocol ()
 }
 
 void
-C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source,
-                      Ipv4Address destination, uint8_t protocol, Ptr<Ipv4Route> route)
+C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source, Ipv4Address destination,
+                      uint8_t protocol, Ptr<Ipv4Route> route)
 {
   NS_LOG_FUNCTION (this << packet << source << destination << (uint32_t)protocol);
   /*
@@ -79,8 +79,8 @@ C3L3_5Protocol::Send (Ptr<Packet> packet, Ipv4Address source,
 }
 
 void
-C3L3_5Protocol::Send6 (Ptr<Packet> packet, Ipv6Address source,
-                      Ipv6Address destination, uint8_t protocol, Ptr<Ipv6Route> route)
+C3L3_5Protocol::Send6 (Ptr<Packet> packet, Ipv6Address source, Ipv6Address destination,
+                       uint8_t protocol, Ptr<Ipv6Route> route)
 {
   NS_LOG_FUNCTION (this << packet << source << destination << (uint32_t)protocol << route);
 

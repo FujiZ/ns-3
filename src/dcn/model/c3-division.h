@@ -2,6 +2,8 @@
 #define C3_DIVISION_H
 
 #include <map>
+#include <string>
+#include <utility>
 
 #include "ns3/callback.h"
 #include "ns3/ip-l4-protocol.h"
@@ -12,8 +14,8 @@
 #include "ns3/packet.h"
 #include "ns3/ptr.h"
 
-#include "c3-ds-tunnel.h"
-#include "rate-controller.h"
+#include "c3-tunnel.h"
+#include "c3-type.h"
 
 namespace ns3 {
 namespace dcn {
@@ -24,7 +26,7 @@ namespace dcn {
  * \brief c3 division implementation
  *
  */
-class C3Division : public RateController
+class C3Division : public Object
 {
 public:
   /**
@@ -33,66 +35,63 @@ public:
    */
   static TypeId GetTypeId (void);
 
-  C3Division (const Ipv4Address& src, const Ipv4Address& dst);
-
   virtual ~C3Division ();
 
-  //inherited from rate controller
-  virtual uint64_t UpdateRateRequest (void);
-  virtual void SetRateResponse (uint64_t rate);
+  /**
+   * @brief GetDivision
+   * @param tenantId tenant id (set in c3tag)
+   * @param type objective type (set in c3tag)
+   * @return division
+   * Get division; new one if not exist
+   */
+  static Ptr<C3Division> GetDivision (uint32_t tenantId, C3Type type);
 
   /**
-   * \brief set the route of connection
-   * \param route new route info
+   * @brief AddDivisionType
+   * @param type objective type
+   * @param tid TypeId of division
+   * the division MUST have a default constructor
    */
-  void SetRoute (Ptr<Ipv4Route> route);
+  static void AddDivisionType (C3Type type, std::string tid);
 
   /**
-   * \brief callback to forward packets down to dest
+   * @brief GetTunnel
+   * @param src tunnel src addr
+   * @param dst tunnel dst addr
+   * @return required tunnel
    */
-  typedef Callback<void, Ptr<Packet>, Ipv4Address, Ipv4Address, Ptr<Ipv4Route> > DownTargetCallback;
+  virtual Ptr<C3Tunnel> GetTunnel (const Ipv4Address &src, const Ipv4Address &dst) = 0;
 
-  /**
-   * \brief set down target
-   */
-  void SetDownTarget (DownTargetCallback cb);
+  virtual void Update (void) = 0;
 
-  /**
-   * @brief Send
-   * @param p the packet tobe send
-   * add a packet to queue
-   */
-  void Send (Ptr<Packet> packet);
-
-  /**
-   * \brief callback to forward packets to upper layer
-   */
-  typedef Callback<enum IpL4Protocol::RxStatus, Ptr<Packet>, Ipv4Header const &, Ptr<Ipv4Interface> > UpTargetCallback;
-
-  /**
-   * \brief set up target
-   */
-  void SetUpTarget (UpTargetCallback cb);
-
-
-  enum IpL4Protocol::RxStatus Receive (Ptr<Packet> packet,
-                                       Ipv4Header const &header,
-                                       Ptr<Ipv4Interface> incomingInterface);
-  /**
-   * \todo callback to send packets back to src
-   * backwardTargetCallback
-   */
 protected:
 
   virtual void DoDispose (void);
-  /**
-   * \brief forward a packet down to dest
-   * \param packet packet to be forward
-   * usually used as callback
-   */
-  void ForwardDown (Ptr<Packet> packet);
+
+  typedef std::pair<Ipv4Address, Ipv4Address> TunnelListKey_t;
+  typedef std::map<TunnelListKey_t, Ptr<C3Tunnel> > TunnelList_t;
+
+  double m_weight;
+  TunnelList_t m_tunnelList;
 
 private:
+
+  /**
+   * @brief CreateDivision according to its type
+   * @param type objective type
+   * @return newly created division
+   */
+  static Ptr<C3Division> CreateDivision (C3Type type);
+
+  typedef std::pair<uint32_t, C3Type> DivisionListKey_t;
+  typedef std::map<DivisionListKey_t, Ptr<C3Division> > DivisionList_t;
+
+  static DivisionList_t m_divisionList;
+
+  typedef std::map<C3Type, std::string> DivisionTypeList_t;
+  static DivisionTypeList_t m_divisionTypeList;
+
+  /*
   Ipv4Address m_source;   //!< source address of division
   Ipv4Address m_destination;  //!< dst address of division
   Ptr<Ipv4Route> m_route; //!< route of connection
@@ -111,10 +110,11 @@ private:
   ///uint32_t m_incomingG;
 
   ///\todo tunnel map|set
-  Ptr<C3DsTunnel> m_tunnel;     //!< \todo just one tunnel for test
+  //Ptr<C3DsTunnel> m_tunnel;     //!< \todo just one tunnel for test
 
   //std::map<C3Tag::Type, Ptr<C3Tunnel> > tunnelMap;
   //c3tag, c3dstag, c3cstag etc.
+  */
 };
 
 } //namespace dcn

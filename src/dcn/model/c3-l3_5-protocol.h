@@ -33,10 +33,10 @@ public:
   virtual ~C3L3_5Protocol ();
 
   // inherited from IpL3_5Protocol
-  virtual void Send (Ptr<Packet> packet, Ipv4Address source,
-                     Ipv4Address destination, uint8_t protocol, Ptr<Ipv4Route> route);
-  virtual void Send6 (Ptr<Packet> packet, Ipv6Address source,
-                     Ipv6Address destination, uint8_t protocol, Ptr<Ipv6Route> route);
+  virtual void Send (Ptr<Packet> packet, Ipv4Address source, Ipv4Address destination,
+                     uint8_t protocol, Ptr<Ipv4Route> route);
+  virtual void Send6 (Ptr<Packet> packet, Ipv6Address source, Ipv6Address destination,
+                      uint8_t protocol, Ptr<Ipv6Route> route);
 
   virtual enum IpL4Protocol::RxStatus Receive (Ptr<Packet> packet,
                                                Ipv4Header const &header,

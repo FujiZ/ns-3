@@ -1,9 +1,7 @@
 #include "c3-division.h"
 
 #include "ns3/log.h"
-
-#include "c3-tag.h"
-#include "c3-header.h"
+#include "ns3/object-factory.h"
 
 namespace ns3 {
 
@@ -13,23 +11,22 @@ namespace dcn {
 
 NS_OBJECT_ENSURE_REGISTERED (C3Division);
 
+C3Division::DivisionList_t C3Division::m_divisionList;
+C3Division::DivisionTypeList_t C3Division::m_divisionTypeList;
+
 TypeId
 C3Division::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::dcn::C3Division")
-      .SetParent<RateController> ()
+      .SetParent<Object> ()
       .SetGroupName ("DCN")
+      .AddAttribute ("Weight",
+                     "The weight for Division",
+                     DoubleValue (1.0),
+                     MakeDoubleAccessor (&C3Division::m_weight),
+                     MakeDoubleChecker<double> (0.0))
   ;
   return tid;
-}
-
-C3Division::C3Division (const Ipv4Address& src, const Ipv4Address& dst)
-  : m_source (src),
-    m_destination (dst)
-{
-  NS_LOG_FUNCTION (this);
-  m_tunnel = CreateObject<C3DsTunnel> ();
-  m_tunnel->SetForwardTarget (MakeCallback (&C3Division::ForwardDown, this));
 }
 
 C3Division::~C3Division ()
@@ -37,88 +34,44 @@ C3Division::~C3Division ()
   NS_LOG_FUNCTION (this);
 }
 
-void
-C3Division::SetRoute (Ptr<Ipv4Route> route)
+Ptr<C3Division>
+C3Division::GetDivision (uint32_t tenantId, C3Type type)
 {
-  NS_LOG_FUNCTION (this);
-  this->m_route = route;
-}
-
-void
-C3Division::SetDownTarget (DownTargetCallback cb)
-{
-  NS_LOG_FUNCTION (this);
-  this->m_downTarget = cb;
-}
-
-void
-C3Division::Send (Ptr<Packet> packet)
-{
-  NS_LOG_FUNCTION (this << packet);
-  C3Tag c3Tag;
-  NS_ASSERT (packet->PeekPacketTag (c3Tag));
-  m_tunnel->Send (packet);
-}
-
-void
-C3Division::SetUpTarget (UpTargetCallback cb)
-{
-  NS_LOG_FUNCTION (this);
-  this->m_upTarget = cb;
-}
-
-enum IpL4Protocol::RxStatus
-C3Division::Receive (Ptr<Packet> packet,
-                     Ipv4Header const &header,
-                     Ptr<Ipv4Interface> incomingInterface)
-{
-  NS_LOG_FUNCTION (this << packet << header);
-  C3Header c3Header;
-  packet->PeekHeader (c3Header);
-  if (c3Header.GetFlags () & C3Header::ACK)
+  NS_LOG_FUNCTION (tenantId);
+  DivisionList_t::iterator iter = m_divisionList.find (std::make_pair (tenantId, type));
+  if (iter != m_divisionList.end ())
     {
-      ++m_totalAck;
-      if (c3Header.GetFlags () & C3Header::ECE)
-        {
-          ++m_markedAck;
-        }
+      return iter->second;
     }
-  return m_upTarget (packet, header, incomingInterface);
-}
-
-uint64_t
-C3Division::UpdateRateRequest (void)
-{
-  NS_LOG_FUNCTION (this);
-  m_rateRequest = m_tunnel->UpdateRateRequest ();
-  return m_rateRequest;
+  else
+    {
+      Ptr<C3Division> division = CreateDivision (type);
+      m_divisionList[std::make_pair(tenantId, type)] = division;
+      return division;
+    }
 }
 
 void
-C3Division::SetRateResponse (uint64_t rate)
+C3Division::AddDivisionType (C3Type type, std::string tid)
 {
-  NS_LOG_FUNCTION (this << rate);
-  m_rateResponse = rate;
-  m_tunnel->SetRateResponse (rate);
+  NS_LOG_FUNCTION (tid);
+  m_divisionTypeList[type] = tid;
 }
 
 void
 C3Division::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
-  ///\todo dispose all tunnels inside class
-  m_tunnel = 0;
-  m_upTarget.Nullify ();
-  m_downTarget.Nullify ();
-  m_route = 0;
-  RateController::DoDispose ();
+  m_tunnelList.clear ();
+  Object::DoDispose ();
 }
 
-void
-C3Division::ForwardDown (Ptr<Packet> packet)
+Ptr<C3Division>
+C3Division::CreateDivision (C3Type type)
 {
-  NS_LOG_FUNCTION (this << packet);
-  m_downTarget (packet, m_source, m_destination, m_route);
+  ObjectFactory factory;
+  factory.SetTypeId (m_divisionTypeList[type]);
+  return factory.Create<C3Division> ();
 }
 
 } //namespace dcn

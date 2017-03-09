@@ -6,6 +6,8 @@
 
 #include "ns3/ptr.h"
 #include "ns3/callback.h"
+#include "ns3/ipv4-address.h"
+#include "ns3/ipv4-route.h"
 
 #include "rate-controller.h"
 
@@ -24,14 +26,24 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId (void);
+
+  C3Tunnel (const Ipv4Address &src, const Ipv4Address &dst);
+
   virtual ~C3Tunnel ();
+
   /**
-   * \brief callback to forward packets
+   * \brief set the route of connection
+   * \param route new route info
    */
-  typedef Callback<void, Ptr<Packet> > ForwardTargetCallback;
+  void SetRoute (Ptr<Ipv4Route> route);
+
+  /**
+   * \brief callback to forward packets to dest
+   */
+  typedef Callback<void, Ptr<Packet>, Ipv4Address, Ipv4Address, Ptr<Ipv4Route> > ForwardTargetCallback;
+
   /**
    * \brief set forward target
-   * \param cb forward target
    */
   void SetForwardTarget (ForwardTargetCallback cb);
 
@@ -41,13 +53,15 @@ protected:
   /**
    * \brief forward a packet to dest
    * \param p packet to be forward
-   * usually used for callback
+   * usually used as callback
    */
   void Forward (Ptr<Packet> p);
 
 private:
+  Ipv4Address m_source;   //!< source address of tunnel
+  Ipv4Address m_destination;  //!< dst address of tunnel
+  Ptr<Ipv4Route> m_route; //!< route of connection
   ForwardTargetCallback m_forwardTarget;  //!< forward target
-  //std::map<uint32_t, C3Flow> m_flowMap; //!< fid -> c3Flow
 };
 
 } //namespace dcn
