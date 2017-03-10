@@ -5,6 +5,7 @@
 #include "ns3/udp-header.h"
 
 #include "c3-division.h"
+#include "c3-ecn-recorder.h"
 #include "c3-tag.h"
 
 namespace ns3 {
@@ -59,41 +60,9 @@ C3L3_5Protocol::Send (Ptr<Packet> packet,
     }
   else
     {
-      // not a data packet: ACK or others
+      // not a data packet: ACK or sth else
       ForwardDown (packet, src, dst, protocol, route);
     }
-
-  /*
-  C3Header c3Header;
-  c3Header.SetNextHeader (protocol);
-  /// \todo GetEcnHandler (dest).Send (packet, c3Header, protocol);
-  packet->AddHeader (c3Header);
-  /// \todo ecn handler should be placed here
-  /// 根据不同的L4协议，来判断是否要在Header中标记ACK和ECE
-  /// incoming congestion detection : 根据ip包中的ECN标记更新对应incoming链路的拥塞信息
-  C3Tag c3Tag;
-  uint32_t packetSize = GetPacketSize (packet, protocol);
-  // check tag before send
-  if (packet->RemovePacketTag (c3Tag))
-    {
-      // set packet size before forward down
-      c3Tag.SetPacketSize (packetSize);
-      auto it = m_divisionMap.find (destination);
-      if (it == m_divisionMap.end ())
-        {
-          Ptr<C3Division> division = CreateObject<C3Division> (source, destination);
-          division->SetRoute (route);
-          division->SetDownTarget (MakeCallback (&C3L3_5Protocol::ForwardDown, this));
-          m_divisionMap[destination] = division;
-          it = m_divisionMap.find (destination);
-        }
-      it->second->Send (packet);
-    }
-  else
-    {
-      // packet not contain data. eg: ACK packet
-    }
-  */
 }
 
 void
@@ -114,7 +83,12 @@ C3L3_5Protocol::Receive (Ptr<Packet> packet,
 {
   NS_LOG_FUNCTION (this << packet << header);
 
-  /// \todo implementation of c3p
+  C3Tag c3Tag;
+  if (packet->PeekPacketTag (c3Tag))
+    {
+      C3EcnRecorder::GetEcnRecorder (c3Tag.GetTenantId (), c3Tag.GetType (),
+                                     header.GetSource (), header.GetDestination ())->NotifyReceived (header);
+    }
   return ForwardUp (packet, header, incomingInterface, header.GetProtocol ());
 }
 
@@ -124,20 +98,13 @@ C3L3_5Protocol::Receive (Ptr<Packet> packet,
                          Ptr<Ipv6Interface> incomingInterface)
 {
   NS_LOG_FUNCTION (this << packet << header.GetSourceAddress () << header.GetDestinationAddress ());
-  ///\todo implementation of c3p
   return ForwardUp6 (packet, header, incomingInterface, header.GetNextHeader ());
-}
-
-void
-C3L3_5Protocol::DoInitialize ()
-{
-  IpL3_5Protocol::DoInitialize ();
 }
 
 void
 C3L3_5Protocol::DoDispose ()
 {
-  ///\todo dispose
+  NS_LOG_FUNCTION (this);
   IpL3_5Protocol::DoDispose ();
 }
 

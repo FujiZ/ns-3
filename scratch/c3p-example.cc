@@ -16,7 +16,7 @@ SendTracer (Ptr<const Packet> packet)
 }
 
 void
-ReceiveTracer (Ptr<const Packet> packet,const Address &from)
+ReceiveTracer (Ptr<const Packet> packet, const Address &from)
 {
   NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server received " << packet->GetSize () << " bytes");
 }

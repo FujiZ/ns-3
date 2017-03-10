@@ -35,6 +35,7 @@ public:
   virtual void Send (Ptr<Packet> packet,
                      Ipv4Address src, Ipv4Address dst,
                      uint8_t protocol, Ptr<Ipv4Route> route);
+
   virtual void Send6 (Ptr<Packet> packet,
                       Ipv6Address src, Ipv6Address dst,
                       uint8_t protocol, Ptr<Ipv6Route> route);
@@ -47,7 +48,6 @@ public:
                                                Ptr<Ipv6Interface> incomingInterface);
 protected:
 
-  virtual void DoInitialize (void);
   virtual void DoDispose (void);
 
 private:
@@ -60,10 +60,6 @@ private:
    * Get the data field size of a packet
    */
   uint32_t GetPacketSize (Ptr<Packet> packet, uint8_t protocol);
-
-private:
-  //std::map<Ipv4Address, Ptr<C3Division> > m_divisionMap;    //!< <dst, division>
-  //std::map<Ipv4Address, Ptr<C3EcnHandler> > m_ecnHandlerMap;    //!< <dst, handler>
 
 };
 
