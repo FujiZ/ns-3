@@ -18,29 +18,22 @@ public:
    */
   static TypeId GetTypeId (void);
 
-  C3DsTunnel (const Ipv4Address &src, const Ipv4Address &dst);
+  C3DsTunnel (uint32_t tenantId, const Ipv4Address &src, const Ipv4Address &dst);
 
   virtual ~C3DsTunnel ();
 
   //inherited from C3Tunnel
   virtual void Send (Ptr<Packet> packet, uint8_t protocol);
-  virtual void UpdateInfo (void);
-  virtual void UpdateRate (void);
   virtual void Schedule (void);
-
-protected:
-
-  virtual void DoDispose (void);
 
 private:
   /**
    * @brief GetFlow
    * @param fid
+   * @param protocol
    * @return get a flow; create one if not exist
    */
-  Ptr<C3Flow> GetFlow (uint32_t fid);
-
-  void Schedule (void);
+  Ptr<C3Flow> GetFlow (uint32_t fid, uint8_t protocol);
 
 };
 

@@ -12,6 +12,8 @@ def build(bld):
         'model/connector.cc',
         'model/c3-division.cc',
         'model/c3-ds-flow.cc',
+        'model/c3-ds-tunnel.cc',
+        'model/c3-ecn-recorder.cc',
         'model/c3-flow.cc',
         'model/c3-l3_5-protocol.cc',
         'model/c3-tag.cc',
@@ -29,8 +31,10 @@ def build(bld):
     headers.module = 'dcn'
     headers.source = [
         'model/connector.h',
+        'model/c3-ecn-recorder.h',
         'model/c3-division.h',
         'model/c3-ds-flow.h',
+        'model/c3-ds-tunnel.h',
         'model/c3-flow.h',
         'model/c3-l3_5-protocol.h',
         'model/c3-tag.h',

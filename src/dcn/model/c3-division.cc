@@ -20,6 +20,11 @@ C3Division::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::dcn::C3Division")
       .SetParent<Object> ()
       .SetGroupName ("DCN")
+      .AddAttribute ("TenantId",
+                     "The tenantId of division",
+                     UintegerValue (0),
+                     MakeUintegerAccessor (&C3Division::m_tenantId),
+                     MakeUintegerChecker<uint32_t> ())
       .AddAttribute ("Weight",
                      "The weight for Division",
                      DoubleValue (1.0),
@@ -29,8 +34,10 @@ C3Division::GetTypeId (void)
   return tid;
 }
 
-C3Division::C3Division ()
-  : m_weight (0)
+C3Division::C3Division (C3Type type)
+  : m_tenantId (0),
+    m_type (type),
+    m_weight (0.0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -43,15 +50,34 @@ C3Division::~C3Division ()
 Ptr<C3Division>
 C3Division::GetDivision (uint32_t tenantId, C3Type type)
 {
-  NS_LOG_FUNCTION (tenantId);
-  DivisionList_t::iterator iter = m_divisionList.find (std::make_pair (tenantId, type));
+  NS_LOG_FUNCTION (tenantId << static_cast<uint8_t> (type));
+
+  auto iter = m_divisionList.find (std::make_pair (tenantId, type));
   if (iter != m_divisionList.end ())
     {
       return iter->second;
     }
   else
     {
-      Ptr<C3Division> division = CreateDivision (type);
+      return 0;
+    }
+}
+
+Ptr<C3Division>
+C3Division::CreateDivision (uint32_t tenantId, C3Type type)
+{
+  NS_LOG_FUNCTION (tenantId << static_cast<uint8_t> (type));
+  auto iter = m_divisionList.find (std::make_pair (tenantId, type));
+  if (iter != m_divisionList.end ())
+    {
+      return iter->second;
+    }
+  else
+    {
+      ObjectFactory factory;
+      factory.SetTypeId (m_divisionTypeList[type]);
+      factory.Set ("TenantId", UintegerValue (tenantId));
+      Ptr<C3Division> division = factory.Create<C3Division> ();
       m_divisionList[std::make_pair(tenantId, type)] = division;
       return division;
     }
@@ -79,7 +105,7 @@ C3Division::Update (void)
   for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
     {
       Ptr<C3Tunnel> tunnel = it->second;
-      tunnel->SetWeightResponse (lambda * tunnel->GetWeightRequest ());
+      tunnel->SetWeight (lambda * tunnel->GetWeightRequest ());
       tunnel->UpdateRate ();
       tunnel->Schedule ();
     }
@@ -91,15 +117,6 @@ C3Division::DoDispose (void)
   NS_LOG_FUNCTION (this);
   m_tunnelList.clear ();
   Object::DoDispose ();
-}
-
-Ptr<C3Division>
-C3Division::CreateDivision (C3Type type)
-{
-  NS_LOG_FUNCTION (static_cast<uint8_t> (type));
-  ObjectFactory factory;
-  factory.SetTypeId (m_divisionTypeList[type]);
-  return factory.Create<C3Division> ();
 }
 
 } //namespace dcn

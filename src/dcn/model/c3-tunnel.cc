@@ -20,13 +20,17 @@ C3Tunnel::GetTypeId (void)
   return tid;
 }
 
-C3Tunnel::C3Tunnel (const Ipv4Address &src, const Ipv4Address &dst)
+C3Tunnel::C3Tunnel (uint32_t tenantId, C3Type type,
+                    const Ipv4Address &src, const Ipv4Address &dst)
   : m_weight (0.0),
     m_weightRequest (0.0),
     m_src (src),
-    m_dst (dst)
+    m_dst (dst),
+    m_alpha (0.0),
+    m_g (0.625)
 {
   NS_LOG_FUNCTION (this);
+  m_ecnRecorder = C3EcnRecorder::CreateEcnRecorder (tenantId, type, src, dst);
 }
 
 C3Tunnel::~C3Tunnel ()
@@ -48,6 +52,22 @@ C3Tunnel::SetForwardTarget (ForwardTargetCallback cb)
   m_forwardTarget = cb;
 }
 
+void
+C3Tunnel::UpdateInfo (void)
+{
+  NS_LOG_FUNCTION (this);
+
+  UpdateAlpha ();
+  double weightRequest = 0;
+  for (auto it = m_flowList.begin (); it != m_flowList.end (); ++it)
+    {
+      Ptr<C3Flow> flow = it->second;
+      flow->UpdateInfo ();
+      weightRequest += flow->GetWeight ();
+    }
+  m_weightRequest = weightRequest;
+}
+
 double
 C3Tunnel::GetWeightRequest (void) const
 {
@@ -55,10 +75,27 @@ C3Tunnel::GetWeightRequest (void) const
 }
 
 void
-C3Tunnel::SetWeightResponse (double weight)
+C3Tunnel::SetWeight (double weight)
 {
   NS_LOG_FUNCTION (this << weight);
   m_weight = weight;
+}
+
+void
+C3Tunnel::UpdateRate (void)
+{
+  NS_LOG_FUNCTION (this);
+  if (m_ecnRecorder->GetMarkedCount ())
+    {
+      NS_LOG_DEBUG ("Congestion detected");
+      m_rate = DataRate ((1 - m_alpha * m_weight) * m_rate.GetBitRate ());
+    }
+  else
+    {
+      NS_LOG_DEBUG ("No congestion");
+      m_rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
+    }
+  m_ecnRecorder->Reset ();
 }
 
 void
@@ -74,8 +111,21 @@ C3Tunnel::DoDispose (void)
 void
 C3Tunnel::Forward (Ptr<Packet> packet,  uint8_t protocol)
 {
-  NS_LOG_FUNCTION (this << packet << (uint32_t) protocol);
+  NS_LOG_FUNCTION (this << packet << (uint32_t)protocol);
   m_forwardTarget (packet, m_src, m_dst, protocol, m_route);
+}
+
+DataRate
+C3Tunnel::GetRate (void) const
+{
+  return m_rate;
+}
+
+void
+C3Tunnel::UpdateAlpha (void)
+{
+  NS_LOG_FUNCTION (this);
+  m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
 }
 
 } //namespace dcn

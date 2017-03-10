@@ -11,6 +11,7 @@
 #include "ns3/packet.h"
 #include "ns3/ptr.h"
 
+#include "c3-ecn-recorder.h"
 #include "c3-flow.h"
 
 namespace ns3 {
@@ -29,7 +30,8 @@ public:
    */
   static TypeId GetTypeId (void);
 
-  C3Tunnel (const Ipv4Address &src, const Ipv4Address &dst);
+  C3Tunnel (uint32_t tenantId, C3Type type,
+            const Ipv4Address &src, const Ipv4Address &dst);
 
   virtual ~C3Tunnel ();
 
@@ -57,12 +59,16 @@ public:
   virtual void Send (Ptr<Packet> packet, uint8_t protocol) = 0;
 
   /**
-   * @brief Update tunnel info (weight)
+   * @brief Update tunnel info (weight, congestion status)
    * called by upper division
    * @todo maybe the update of weight and rate should seperate
    */
-  virtual void UpdateInfo (void) = 0;
+  virtual void UpdateInfo (void);
 
+  /**
+   * @brief GetWeightRequest
+   * @return weight request
+   */
   double GetWeightRequest (void) const;
 
   /**
@@ -70,13 +76,13 @@ public:
    * @param weight
    * called by division, set tunnel weight response
    */
-  void SetWeightResponse (double weight);
+  void SetWeight (double weight);
 
   /**
    * @brief Update tunnel rate;
    * update tunnel rate according to ecn info
    */
-  virtual void UpdateRate (void) = 0;
+  void UpdateRate (void);
 
   /**
    * @brief in-tunnel schedule
@@ -97,21 +103,37 @@ protected:
    */
   void Forward (Ptr<Packet> packet, uint8_t protocol);
 
+  /**
+   * @brief GetRate
+   * @return tunnel data rate
+   */
+  DataRate GetRate (void) const;
+
   typedef std::map<uint32_t, Ptr<C3Flow> > FlowList_t;
 
+  // tunnel weight parameter
   double m_weight;  //!< real tunnel weight
   double m_weightRequest;   //!< tunnel weight request
   FlowList_t m_flowList;    //!< flow list
 
 private:
+  /**
+   * @brief UpdateAlpha
+   * update alpha value
+   */
+  void UpdateAlpha (void);
+
   Ipv4Address m_src;   //!< src address of tunnel
   Ipv4Address m_dst;  //!< dst address of tunnel
   Ptr<Ipv4Route> m_route; //!< route of connection
   ForwardTargetCallback m_forwardTarget;  //!< forward target
-  /* rate
-   * weight
-   * flow list
-   */
+
+  DataRate m_rate;  //!< current tunnel rate
+  // parameter about ecn control
+  // congestion status
+  double m_alpha;   //!< tunnel congestion status
+  double m_g;       //!< parameter g used in alpha updates
+  Ptr<C3EcnRecorder> m_ecnRecorder; //!< ecn recorder
 };
 
 } //namespace dcn
