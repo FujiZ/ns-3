@@ -61,7 +61,6 @@ public:
   /**
    * @brief Update tunnel info (weight, congestion status)
    * called by upper division
-   * @todo maybe the update of weight and rate should seperate
    */
   virtual void UpdateInfo (void);
 
@@ -111,9 +110,6 @@ protected:
 
   typedef std::map<uint32_t, Ptr<C3Flow> > FlowList_t;
 
-  // tunnel weight parameter
-  double m_weight;  //!< real tunnel weight
-  double m_weightRequest;   //!< tunnel weight request
   FlowList_t m_flowList;    //!< flow list
 
 private:
@@ -127,6 +123,10 @@ private:
   Ipv4Address m_dst;  //!< dst address of tunnel
   Ptr<Ipv4Route> m_route; //!< route of connection
   ForwardTargetCallback m_forwardTarget;  //!< forward target
+
+  // tunnel weight parameter
+  double m_weight;  //!< real tunnel weight
+  double m_weightRequest;   //!< tunnel weight request
 
   DataRate m_rate;  //!< current tunnel rate
   // parameter about ecn control

@@ -22,10 +22,10 @@ C3Tunnel::GetTypeId (void)
 
 C3Tunnel::C3Tunnel (uint32_t tenantId, C3Type type,
                     const Ipv4Address &src, const Ipv4Address &dst)
-  : m_weight (0.0),
-    m_weightRequest (0.0),
-    m_src (src),
+  : m_src (src),
     m_dst (dst),
+    m_weight (0.0),
+    m_weightRequest (0.0),
     m_alpha (0.0),
     m_g (0.625)
 {
@@ -102,6 +102,8 @@ void
 C3Tunnel::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
+  ///\todo dispose ecn recorder
+  m_ecnRecorder = 0;
   m_forwardTarget.Nullify ();
   m_route = 0;
   m_flowList.clear ();

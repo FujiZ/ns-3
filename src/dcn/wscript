@@ -11,6 +11,7 @@ def build(bld):
     module.source = [
         'model/connector.cc',
         'model/c3-division.cc',
+        'model/c3-ds-division.cc',
         'model/c3-ds-flow.cc',
         'model/c3-ds-tunnel.cc',
         'model/c3-ecn-recorder.cc',
@@ -33,6 +34,7 @@ def build(bld):
         'model/connector.h',
         'model/c3-ecn-recorder.h',
         'model/c3-division.h',
+        'model/c3-ds-division.h',
         'model/c3-ds-flow.h',
         'model/c3-ds-tunnel.h',
         'model/c3-flow.h',

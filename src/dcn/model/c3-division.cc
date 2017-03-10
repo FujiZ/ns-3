@@ -119,5 +119,11 @@ C3Division::DoDispose (void)
   Object::DoDispose ();
 }
 
+uint32_t
+C3Division::GetTenantId (void)
+{
+  return m_tenantId;
+}
+
 } //namespace dcn
 } //namespace ns3

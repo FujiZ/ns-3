@@ -24,8 +24,7 @@ namespace dcn {
 /**
  * \ingroup dcn
  *
- * \brief c3 division implementation
- *
+ * \brief c3 division base class
  */
 class C3Division : public Object
 {
@@ -89,6 +88,12 @@ protected:
 
   virtual void DoDispose (void);
 
+  /**
+   * @brief GetTenantId
+   * @return tenant id of current division
+   */
+  uint32_t GetTenantId (void);
+
   typedef std::pair<Ipv4Address, Ipv4Address> TunnelListKey_t;
   typedef std::map<TunnelListKey_t, Ptr<C3Tunnel> > TunnelList_t;
 
@@ -99,7 +104,6 @@ private:
   uint32_t m_tenantId;  //!< tenant id of divison
   C3Type m_type;    //!< objective type
   double m_weight;  //!< division weight
-
 
   typedef std::pair<uint32_t, C3Type> DivisionListKey_t;
   typedef std::map<DivisionListKey_t, Ptr<C3Division> > DivisionList_t;
