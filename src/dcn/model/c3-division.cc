@@ -67,6 +67,7 @@ Ptr<C3Division>
 C3Division::CreateDivision (uint32_t tenantId, C3Type type)
 {
   NS_LOG_FUNCTION (tenantId << static_cast<uint8_t> (type));
+
   auto iter = m_divisionList.find (std::make_pair (tenantId, type));
   if (iter != m_divisionList.end ())
     {

@@ -10,6 +10,7 @@
 #include "ns3/object.h"
 #include "ns3/packet.h"
 #include "ns3/ptr.h"
+#include "ns3/traced-value.h"
 
 #include "c3-ecn-recorder.h"
 #include "c3-flow.h"
@@ -124,16 +125,15 @@ private:
   Ptr<Ipv4Route> m_route; //!< route of connection
   ForwardTargetCallback m_forwardTarget;  //!< forward target
 
-  // tunnel weight parameter
-  double m_weight;  //!< real tunnel weight
-  double m_weightRequest;   //!< tunnel weight request
-
-  DataRate m_rate;  //!< current tunnel rate
   // parameter about ecn control
   // congestion status
-  double m_alpha;   //!< tunnel congestion status
+  TracedValue<double> m_alpha;   //!< tunnel congestion status
   double m_g;       //!< parameter g used in alpha updates
   Ptr<C3EcnRecorder> m_ecnRecorder; //!< ecn recorder
+  // tunnel weight parameter
+  TracedValue<double> m_weight;  //!< real tunnel weight
+  TracedValue<double> m_weightRequest;   //!< tunnel weight request
+  DataRate m_rate;  //!< current tunnel rate
 };
 
 } //namespace dcn

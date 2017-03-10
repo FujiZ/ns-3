@@ -16,6 +16,15 @@ C3Tunnel::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::dcn::C3Tunnel")
       .SetParent<Object> ()
       .SetGroupName ("DCN")
+      .AddAttribute ("g",
+                     "0 < g < 1 is the weight given to new samples"
+                     "against the past in the estimation of alpha.",
+                     DoubleValue (0.625),
+                     MakeDoubleAccessor (&C3Tunnel::m_g),
+                     MakeDoubleChecker<double> (0.0, 1.0))
+      .AddTraceSource ("alpha",
+                       "an estimate of the fraction of packets that are marked",
+                       MakeTraceSourceAccessor (&C3Tunnel::m_alpha))
   ;
   return tid;
 }
@@ -24,10 +33,10 @@ C3Tunnel::C3Tunnel (uint32_t tenantId, C3Type type,
                     const Ipv4Address &src, const Ipv4Address &dst)
   : m_src (src),
     m_dst (dst),
-    m_weight (0.0),
-    m_weightRequest (0.0),
     m_alpha (0.0),
-    m_g (0.625)
+    m_g (0.625),
+    m_weight (0.0),
+    m_weightRequest (0.0)
 {
   NS_LOG_FUNCTION (this);
   m_ecnRecorder = C3EcnRecorder::CreateEcnRecorder (tenantId, type, src, dst);
