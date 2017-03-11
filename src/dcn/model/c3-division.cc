@@ -16,7 +16,7 @@ C3Division::DivisionTypeList_t C3Division::m_divisionTypeList;
 Time C3Division::m_startTime;
 Time C3Division::m_stopTime;
 Time C3Division::m_interval;
-Timer C3Division::m_timer;
+Timer C3Division::m_timer (Timer::CANCEL_ON_DESTROY);
 
 TypeId
 C3Division::GetTypeId (void)
@@ -104,6 +104,7 @@ C3Division::Start (Time start)
     {
       NS_LOG_DEBUG ("change start time");
       m_timer.SetFunction (&C3Division::UpdateAll);
+      // reschedule start event
       m_timer.Cancel ();
       m_timer.Schedule (m_startTime);
     }
