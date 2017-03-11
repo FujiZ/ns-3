@@ -13,6 +13,10 @@ NS_OBJECT_ENSURE_REGISTERED (C3Division);
 
 C3Division::DivisionList_t C3Division::m_divisionList;
 C3Division::DivisionTypeList_t C3Division::m_divisionTypeList;
+Time C3Division::m_startTime;
+Time C3Division::m_stopTime;
+Time C3Division::m_interval;
+Timer C3Division::m_timer;
 
 TypeId
 C3Division::GetTypeId (void)
@@ -89,6 +93,50 @@ C3Division::AddDivisionType (C3Type type, std::string tid)
 {
   NS_LOG_FUNCTION (tid);
   m_divisionTypeList[type] = tid;
+}
+
+void
+C3Division::Start (Time start)
+{
+  NS_LOG_FUNCTION (start);
+  m_startTime = start;
+  if (!m_timer.IsRunning ())
+    {
+      NS_LOG_DEBUG ("change start time");
+      m_timer.SetFunction (&C3Division::UpdateAll);
+      m_timer.Cancel ();
+      m_timer.Schedule (m_startTime);
+    }
+}
+
+void
+C3Division::Stop (Time stop)
+{
+  NS_LOG_FUNCTION (stop);
+  m_stopTime = stop;
+}
+
+void
+C3Division::SetInterval (Time interval)
+{
+  NS_LOG_FUNCTION (interval);
+  m_interval = interval;
+}
+
+void
+C3Division::UpdateAll (void)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  for (auto it = m_divisionList.begin (); it != m_divisionList.end (); ++it)
+    {
+      Ptr<C3Division> division = it->second;
+      division->Update ();
+    }
+  if (Simulator::Now () + m_interval <= m_stopTime)
+    {
+      m_timer.Schedule (m_interval);
+    }
 }
 
 void

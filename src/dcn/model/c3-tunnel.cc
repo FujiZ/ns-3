@@ -16,15 +16,24 @@ C3Tunnel::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::dcn::C3Tunnel")
       .SetParent<Object> ()
       .SetGroupName ("DCN")
-      .AddAttribute ("g",
-                     "0 < g < 1 is the weight given to new samples"
+      .AddAttribute ("G",
+                     "0 < G < 1 is the weight given to new samples"
                      "against the past in the estimation of alpha.",
                      DoubleValue (0.625),
                      MakeDoubleAccessor (&C3Tunnel::m_g),
                      MakeDoubleChecker<double> (0.0, 1.0))
-      .AddTraceSource ("alpha",
+      .AddTraceSource ("Alpha",
                        "an estimate of the fraction of packets that are marked",
-                       MakeTraceSourceAccessor (&C3Tunnel::m_alpha))
+                       MakeTraceSourceAccessor (&C3Tunnel::m_alpha),
+                       "ns3::TracedValueCallback::Double")
+      .AddTraceSource ("Weight",
+                       "Weight alloced to the tunnel.",
+                       MakeTraceSourceAccessor (&C3Tunnel::m_weight),
+                       "ns3::TracedValueCallback::Double")
+      .AddTraceSource ("WeightRequest",
+                       "Weight required by the tunnel.",
+                       MakeTraceSourceAccessor (&C3Tunnel::m_weightRequest),
+                       "ns3::TracedValueCallback::Double")
   ;
   return tid;
 }

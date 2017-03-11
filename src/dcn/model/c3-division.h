@@ -12,8 +12,10 @@
 #include "ns3/ipv4-header.h"
 #include "ns3/ipv4-interface.h"
 #include "ns3/ipv4-route.h"
+#include "ns3/nstime.h"
 #include "ns3/packet.h"
 #include "ns3/ptr.h"
+#include "ns3/timer.h"
 
 #include "c3-tunnel.h"
 #include "c3-type.h"
@@ -72,10 +74,28 @@ public:
   static void AddDivisionType (C3Type type, std::string tid);
 
   /**
+   * @brief Set start time
+   * @param start time to start global division update
+   */
+  static void Start (Time start);
+
+  /**
+   * @brief Set stop time
+   * @param stop time to stop global division update
+   */
+  static void Stop (Time stop);
+
+  /**
+   * @brief Set timer Interval
+   * @param interval
+   */
+  static void SetInterval (Time interval);
+
+  /**
    * @brief Global Update
    * update all divisions in the network
-  static void GlobalUpdate (void);
    */
+  static void UpdateAll (void);
 
   /**
    * @brief Update division
@@ -111,7 +131,10 @@ private:
 
   static DivisionList_t m_divisionList;
   static DivisionTypeList_t m_divisionTypeList;
-
+  static Time m_startTime;  //!< start time of division
+  static Time m_stopTime;   //!< stop time of division
+  static Time m_interval;   //!< interval to call GlobalUpdate ()
+  static Timer m_timer;     //!< timer to call GlobalUpdate ()
 };
 
 } //namespace dcn
