@@ -1,5 +1,5 @@
-#ifndef C3_DS_TUNNEL_H
-#define C3_DS_TUNNEL_H
+#ifndef C3_CS_TUNNEL_H
+#define C3_CS_TUNNEL_H
 
 #include <cstdint>
 
@@ -8,7 +8,7 @@
 namespace ns3 {
 namespace dcn {
 
-class C3DsTunnel : public C3Tunnel
+class C3CsTunnel : public C3Tunnel
 {
 public:
   /**
@@ -17,9 +17,9 @@ public:
    */
   static TypeId GetTypeId (void);
 
-  C3DsTunnel (uint32_t tenantId, const Ipv4Address &src, const Ipv4Address &dst);
+  C3CsTunnel (uint32_t tenantId, const Ipv4Address &src, const Ipv4Address &dst);
 
-  virtual ~C3DsTunnel ();
+  virtual ~C3CsTunnel ();
 
   //inherited from C3Tunnel
   virtual void Send (Ptr<Packet> packet, uint8_t protocol);
@@ -38,5 +38,4 @@ private:
 
 } //namespace dcn
 } //namespace ns3
-
-#endif // C3_DS_TUNNEL_H
+#endif // C3CSTUNNEL_H

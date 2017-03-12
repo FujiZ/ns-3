@@ -19,7 +19,7 @@ C3DsDivision::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::dcn::C3DsDivision")
       .SetParent<Object> ()
       .SetGroupName ("DCN")
-      .AddConstructor<C3DsFlow> ();
+      .AddConstructor<C3DsDivision> ();
   ;
   return tid;
 }
