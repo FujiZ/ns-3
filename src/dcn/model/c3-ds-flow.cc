@@ -40,6 +40,7 @@ C3DsFlow::~C3DsFlow ()
 void
 C3DsFlow::Send (Ptr<Packet> packet)
 {
+  NS_LOG_FUNCTION (this << packet);
   C3Tag c3Tag;
   NS_ASSERT (packet->PeekPacketTag (c3Tag));
   m_deadline = c3Tag.GetDeadline ();
@@ -50,7 +51,7 @@ void
 C3DsFlow::UpdateInfo (void)
 {
   NS_LOG_FUNCTION (this);
-  int remainSize = std::max (m_flowSize - m_sendedSize, m_bufferedSize);
+  int32_t remainSize = std::max (m_flowSize - m_sendedSize, m_bufferedSize);
   double remainTime = (m_deadline - Simulator::Now ()).ToDouble (Time::S);
   m_rateRequest = DataRate (remainTime > 0 ? (remainSize << 3) / remainTime : 0);
   m_weight = m_rateRequest.GetBitRate ();
