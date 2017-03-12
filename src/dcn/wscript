@@ -10,6 +10,7 @@ def build(bld):
     module = bld.create_ns3_module('dcn', ['network','internet'])
     module.source = [
         'model/connector.cc',
+        'model/c3-cs-division.cc',
         'model/c3-cs-flow.cc',
         'model/c3-cs-tunnel.cc',
         'model/c3-division.cc',
@@ -34,6 +35,7 @@ def build(bld):
     headers.module = 'dcn'
     headers.source = [
         'model/connector.h',
+        'model/c3-cs-division.h',
         'model/c3-cs-flow.h',
         'model/c3-cs-tunnel.h',
         'model/c3-division.h',
