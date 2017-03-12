@@ -1,5 +1,7 @@
 #include "c3-division.h"
 
+#include "cmath"
+
 #include "ns3/log.h"
 #include "ns3/object-factory.h"
 
@@ -105,7 +107,7 @@ C3Division::Start (Time start)
       NS_LOG_DEBUG ("change start time");
       m_timer.SetFunction (&C3Division::UpdateAll);
       // reschedule start event
-      m_timer.Cancel ();
+      m_timer.Remove ();
       m_timer.Schedule (m_startTime);
     }
 }
@@ -151,7 +153,8 @@ C3Division::Update (void)
       tunnel->UpdateInfo ();
       weight += tunnel->GetWeightRequest ();
     }
-  double lambda = m_weight / weight;    // lambda: scale factor
+  // here to check if weight == 0.0
+  double lambda = std::fabs (weight) > 10e-7 ? m_weight / weight : 0.0;    // lambda: scale factor
   for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
     {
       Ptr<C3Tunnel> tunnel = it->second;
