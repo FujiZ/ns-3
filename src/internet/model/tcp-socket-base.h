@@ -964,6 +964,11 @@ protected:
   void AddOptionTimestamp (TcpHeader& header);
 
   /**
+   * @brief Send Ack packet; add ecn mark if needed
+   */
+  void SendAckPacket (void);
+
+  /**
    * \brief Performs a safe subtraction between a and b (a-b)
    *
    * Safe is used to indicate that, if b>a, the results returned is 0.
@@ -1063,7 +1068,8 @@ protected:
   
   // Parameters related to Explicit Congestion Notification
   bool                     m_ecn;             //!< Socket ECN capability
-  TracedValue<uint32_t> m_ecnState;        //!< Current ECN State, represented as combination of EcnState values
+  TracedValue<EcnStates_t> m_ecnSenderState;  //!< Current ECN State, represented as combination of EcnState values
+  TracedValue<EcnStates_t> m_ecnReceiverState;//!< Current ECN State, represented as combination of EcnState values
   TracedValue<SequenceNumber32> m_ecnEchoSeq; //!< Sequence number of the last received ECN Echo
   TracedValue<SequenceNumber32> m_ecnCESeq;   //!< Sequence number of the last received Congestion Experienced
   TracedValue<SequenceNumber32> m_ecnCWRSeq;  //!< Sequence number of the last sent CWR 

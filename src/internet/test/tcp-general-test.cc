@@ -882,6 +882,24 @@ TcpGeneralTest::SetInitialCwnd (SocketWho who, uint32_t initialCwnd)
     }
 }
 
+
+void 
+TcpGeneralTest::SetECN (SocketWho who)
+{
+  if (who == SENDER)
+    {
+      m_senderSocket->SetAttribute ("UseEcn", BooleanValue (true));
+    }
+   else if (who == RECEIVER)
+    {
+      m_receiverSocket->SetAttribute ("UseEcn", BooleanValue (true));
+    }
+  else
+    {
+      NS_FATAL_ERROR ("Not defined");
+    }
+}
+
 void
 TcpGeneralTest::SetInitialSsThresh (SocketWho who, uint32_t initialSsThresh)
 {

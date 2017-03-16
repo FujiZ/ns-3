@@ -89,7 +89,7 @@ public:
   } TcpStates_t;
 
   typedef enum {
-    NO_ECN = 0,       /**< ECN disabled traffic                                                                          */ 
+    ECN_DISABLED = 0, /**< ECN disabled traffic                                                                          */
     ECN_IDLE,         /**< ECN is enabled  but currently there is no action pertaining to ECE or CWR to be taken         */ 
     ECN_CE_RCVD,      /**< This state indicates that the receiver has received a packet with CE bit set in IP header     */
     ECN_ECE_SENT,     /**< This state indicates that the receiver has sent an ACK with ECE bit set in TCP header         */
