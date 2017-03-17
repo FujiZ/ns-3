@@ -297,7 +297,8 @@ private:
   Ipv4EndPointDemux *m_endPoints;  //!< A list of IPv4 end points.
   Ipv6EndPointDemux *m_endPoints6; //!< A list of IPv6 end points.
   TypeId m_rttTypeId;              //!< The RTT Estimator TypeId
-  TypeId m_congestionTypeId;       //!< The socket TypeId
+  TypeId m_congestionTypeId;       //!< The congestion TypeId
+  TypeId m_socketBaseTypeId;           //!< The socketBase TypeId
   std::vector<Ptr<TcpSocketBase> > m_sockets;      //!< list of sockets
   IpL4Protocol::DownTargetCallback m_downTarget;   //!< Callback to send packets over IPv4
   IpL4Protocol::DownTargetCallback6 m_downTarget6; //!< Callback to send packets over IPv6

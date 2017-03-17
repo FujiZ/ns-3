@@ -616,7 +616,7 @@ protected:
    * \param withAck forces an ACK to be sent
    * \returns the number of bytes sent
    */
-  uint32_t SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck);
+  virtual uint32_t SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck);
 
   /**
    * \brief Send a empty packet that carries a flag, e.g. ACK
@@ -966,7 +966,7 @@ protected:
   /**
    * @brief Send Ack packet; add ecn mark if needed
    */
-  void SendAckPacket (void);
+  virtual void SendAckPacket (void);
 
   /**
    * \brief Performs a safe subtraction between a and b (a-b)

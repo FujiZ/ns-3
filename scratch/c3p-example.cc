@@ -44,6 +44,7 @@ main (int argc, char *argv[])
   devices = pointToPoint.Install (nodes);
 
   InternetStackHelper stack;
+  stack.SetTcp ("ns3::TcpL4Protocol", "SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::DctcpSocket")));
   stack.Install (nodes);
 
   dcn::IpL3_5ProtocolHelper l3_5Helper ("ns3::dcn::C3L3_5Protocol");

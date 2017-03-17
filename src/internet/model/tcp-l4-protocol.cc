@@ -80,6 +80,11 @@ TcpL4Protocol::GetTypeId (void)
                    TypeIdValue (TcpNewReno::GetTypeId ()),
                    MakeTypeIdAccessor (&TcpL4Protocol::m_congestionTypeId),
                    MakeTypeIdChecker ())
+    .AddAttribute ("SocketBaseType",
+                   "SocketBase type of TCP objects.",
+                   TypeIdValue (TcpSocketBase::GetTypeId ()),
+                   MakeTypeIdAccessor (&TcpL4Protocol::m_socketBaseTypeId),
+                   MakeTypeIdChecker ())
     .AddAttribute ("SocketList", "The list of sockets associated to this protocol.",
                    ObjectVectorValue (),
                    MakeObjectVectorAccessor (&TcpL4Protocol::m_sockets),
@@ -180,11 +185,13 @@ TcpL4Protocol::CreateSocket (TypeId congestionTypeId)
   NS_LOG_FUNCTION (this << congestionTypeId.GetName ());
   ObjectFactory rttFactory;
   ObjectFactory congestionAlgorithmFactory;
+  ObjectFactory socketFactory;
   rttFactory.SetTypeId (m_rttTypeId);
   congestionAlgorithmFactory.SetTypeId (congestionTypeId);
+  socketFactory.SetTypeId (m_socketBaseTypeId);
 
   Ptr<RttEstimator> rtt = rttFactory.Create<RttEstimator> ();
-  Ptr<TcpSocketBase> socket = CreateObject<TcpSocketBase> ();
+  Ptr<TcpSocketBase> socket = socketFactory.Create<TcpSocketBase> ();
   Ptr<TcpCongestionOps> algo = congestionAlgorithmFactory.Create<TcpCongestionOps> ();
 
   socket->SetNode (m_node);
