@@ -88,6 +88,7 @@ Ipv4QueueDiscItem::Mark (void)
       m_header.SetEcn (Ipv4Header::ECN_CE);
       return true;
     }
+  // TODO: What if the header has already been added into the packet body?
   return false;
 }
 
