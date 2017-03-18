@@ -104,11 +104,8 @@ void
 DctcpSocket::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                bool isRetransmission)
 {
-  // set dctcp max seq to highest
-  if (!isRetransmission)
-    {
-      m_dctcpMaxSeq = std::max (seq + sz, m_dctcpMaxSeq);
-    }
+  // set dctcp max seq to highTxMark
+  m_dctcpMaxSeq =std::max (m_tcb->m_highTxMark.Get (), std::max (seq + sz, m_dctcpMaxSeq));
   TcpSocketBase::UpdateRttHistory (seq, sz, isRetransmission);
 }
 
