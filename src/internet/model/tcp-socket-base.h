@@ -969,6 +969,20 @@ protected:
   virtual void SendAckPacket (void);
 
   /**
+   * @brief ProcessEcnState
+   * @param TcpHeader the tcp header of current received packet.
+   * called in ForwardUp before calling DoForwardUp;
+   * to change ECN states according to current received packet.
+   */
+  virtual void ProcessEcnState (const TcpHeader &tcpHeader);
+
+  /**
+   * @brief HalveCwnd when receive ECE ACK before send another data packet;
+   * called in sendDataPacket;
+   */
+  virtual void HalveCwnd (void);
+
+  /**
    * \brief Performs a safe subtraction between a and b (a-b)
    *
    * Safe is used to indicate that, if b>a, the results returned is 0.

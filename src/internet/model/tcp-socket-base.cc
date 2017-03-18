@@ -1269,16 +1269,9 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
       return; // Discard invalid packet
     }
 
-  if (m_state == ESTABLISHED && !(tcpHeader.GetFlags () & TcpHeader::RST))
+  if (m_state == ESTABLISHED && m_ecnReceiverState != ECN_DISABLED)
     {
-      // Check if the sender has responded to ECN echo by reducing the Congestion Window
-      // Check if a packet with CE bit set is received. If there is no CE bit set, then change the state to ECN_IDLE to
-      // stop sending ECN Echo messages. If there is CE bit set, the packet should continue sending ECN Echo messages
-      if ((tcpHeader.GetFlags () & TcpHeader::CWR) && m_ecnReceiverState != ECN_CE_RCVD)
-        {
-          NS_LOG_DEBUG (EcnStateName[m_ecnReceiverState] << " -> ECN_IDLE");
-          m_ecnReceiverState = ECN_IDLE;
-        }
+      ProcessEcnState (tcpHeader);
     }
 
   if (packet->GetSize () > 0 && OutOfRange (seq, seq + packet->GetSize ()))
@@ -2635,8 +2628,7 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
   if (m_ecnSenderState ==  ECN_ECE_RCVD && m_ecnEchoSeq.Get() > m_ecnCWRSeq.Get())
     {
       NS_LOG_INFO ("Backoff mechanism by reducing CWND  by half because we've received ECN Echo");
-      m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());  
-      m_tcb->m_cWnd = std::max ((uint32_t)m_tcb->m_cWnd/2, m_tcb->m_segmentSize);
+      HalveCwnd ();
       flags |= TcpHeader::CWR; 
       m_ecnCWRSeq = seq;
       NS_LOG_DEBUG (EcnStateName[m_ecnSenderState] << " -> ECN_CWR_SENT");
@@ -3773,6 +3765,28 @@ TcpSocketBase::SendAckPacket (void)
     {
       SendEmptyPacket (TcpHeader::ACK);
     }
+}
+
+void
+TcpSocketBase::ProcessEcnState (const TcpHeader &tcpHeader)
+{
+  NS_LOG_FUNCTION (this << tcpHeader);
+  // Check if the sender has responded to ECN echo by reducing the Congestion Window
+  // Check if a packet with CE bit set is received. If there is no CE bit set, then change the state to ECN_IDLE to
+  // stop sending ECN Echo messages. If there is CE bit set, the packet should continue sending ECN Echo messages
+  if ((tcpHeader.GetFlags () & TcpHeader::CWR) && m_ecnReceiverState != ECN_CE_RCVD)
+    {
+      NS_LOG_DEBUG (EcnStateName[m_ecnReceiverState] << " -> ECN_IDLE");
+      m_ecnReceiverState = ECN_IDLE;
+    }
+}
+
+void
+TcpSocketBase::HalveCwnd (void)
+{
+  NS_LOG_FUNCTION (this);
+  m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
+  m_tcb->m_cWnd = std::max ((uint32_t)m_tcb->m_cWnd/2, m_tcb->m_segmentSize);
 }
 
 uint32_t

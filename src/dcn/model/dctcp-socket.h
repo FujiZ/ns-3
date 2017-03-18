@@ -1,9 +1,10 @@
 #ifndef DCTCP_SOCKET_H
 #define DCTCP_SOCKET_H
 
-#include "tcp-socket-base.h"
+#include "ns3/tcp-socket-base.h"
 
 namespace ns3 {
+namespace dcn {
 
 class DctcpSocket : public TcpSocketBase
 {
@@ -36,21 +37,14 @@ public:
 protected:
 
   // inherited from TcpSocketBase
-  virtual void DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
-                            const Address &toAddress);
-
-  virtual uint32_t SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck);
-
   virtual void SendAckPacket (void);
-
   virtual void EstimateRtt (const TcpHeader& tcpHeader);
-
   virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                  bool isRetransmission);
-
   virtual void Retransmit (void);
-
   virtual Ptr<TcpSocketBase> Fork (void);
+  virtual void ProcessEcnState (const TcpHeader &tcpHeader);
+  virtual void HalveCwnd (void);
 
   void UpdateAlpha (const TcpHeader &tcpHeader);
 
@@ -62,9 +56,9 @@ protected:
   SequenceNumber32 m_alphaUpdateSeq;
   SequenceNumber32 m_dctcpMaxSeq;
   bool m_ceTransition; //!< ce state machine to support delayed ACK
-  bool m_ecnTransition; //!< flag for determing if we should send ECE packet
 };
 
+} // namespace dcn
 } // namespace ns3
 
 #endif // DCTCP_SOCKET_H

@@ -33,6 +33,8 @@ main (int argc, char *argv[])
   LogComponentEnable ("C3pExample", LOG_LEVEL_INFO);
   //LogComponentEnable ("C3L3_5Protocol", LOG_LEVEL_INFO);
 
+  Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
+
   NodeContainer nodes;
   nodes.Create (2);
 
@@ -44,7 +46,8 @@ main (int argc, char *argv[])
   devices = pointToPoint.Install (nodes);
 
   InternetStackHelper stack;
-  stack.SetTcp ("ns3::TcpL4Protocol", "SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::DctcpSocket")));
+  stack.SetTcp ("ns3::TcpL4Protocol", "SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::dcn::DctcpSocket")));
+  // stack.SetTcp ("ns3::TcpL4Protocol", "UseEcn", BooleanValue (true));
   stack.Install (nodes);
 
   dcn::IpL3_5ProtocolHelper l3_5Helper ("ns3::dcn::C3L3_5Protocol");
