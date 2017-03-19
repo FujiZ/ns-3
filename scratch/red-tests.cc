@@ -331,6 +331,7 @@ main (int argc, char *argv[])
   if (redTest == 2) // test like 1, but with ecn
     {
       Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
+      Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
     }
   else if (redTest == 3) // test like 1, but with bad params
     {
