@@ -31,9 +31,10 @@ main (int argc, char *argv[])
   LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
   LogComponentEnable ("C3pExample", LOG_LEVEL_INFO);
+  LogComponentEnable ("DctcpSocket", LOG_LEVEL_INFO);
   //LogComponentEnable ("C3L3_5Protocol", LOG_LEVEL_INFO);
 
-  Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
+  //Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
 
   NodeContainer nodes;
   nodes.Create (2);
@@ -84,7 +85,7 @@ main (int argc, char *argv[])
   receiverApps.Stop (Seconds (50.0));
 
   BulkSendHelper sender ("ns3::TcpSocketFactory", receiverAddress);
-  sender.SetAttribute ("MaxBytes", UintegerValue (3000));
+  //sender.SetAttribute ("MaxBytes", UintegerValue (3000));
   ApplicationContainer senderApps = sender.Install (nodes.Get (0));
   senderApps.Get (0)->TraceConnectWithoutContext ("Tx", MakeCallback (&SendTracer));
   senderApps.Start (Seconds (2.0));
