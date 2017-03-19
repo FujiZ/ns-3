@@ -2625,6 +2625,7 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
     }
 
   // Sender should reduce the Congestion Window as a response to receiver's ECN Echo notification only once per window 
+  // Seems that m_ecnEchoSeq > m_ecnCWRSeq ensures reduce CWND per RTT
   if (m_ecnSenderState ==  ECN_ECE_RCVD && m_ecnEchoSeq.Get() > m_ecnCWRSeq.Get())
     {
       NS_LOG_INFO ("Backoff mechanism by reducing CWND  by half because we've received ECN Echo");

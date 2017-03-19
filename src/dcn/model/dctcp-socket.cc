@@ -47,6 +47,7 @@ DctcpSocket::DctcpSocket (void)
     m_dctcpMaxSeq (0),
     m_ceTransition (false)
 {
+    m_ecn = true;
 }
 
 DctcpSocket::DctcpSocket (const DctcpSocket &sock)
@@ -59,6 +60,7 @@ DctcpSocket::DctcpSocket (const DctcpSocket &sock)
     m_dctcpMaxSeq (sock.m_dctcpMaxSeq),
     m_ceTransition (sock.m_ceTransition)
 {
+    m_ecn = true;
 }
 
 void
