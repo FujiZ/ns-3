@@ -969,12 +969,12 @@ protected:
   virtual void SendAckPacket (void);
 
   /**
-   * @brief ProcessEcnState
-   * @param TcpHeader the tcp header of current received packet.
-   * called in ForwardUp before calling DoForwardUp;
-   * to change ECN states according to current received packet.
+   * @brief UpdateEcnState
+   * @param tcpHeader the tcp header of current received packet.
+   * called in DoForwardUp before other actions.
+   * update ECN states according to current received packet.
    */
-  virtual void ProcessEcnState (const TcpHeader &tcpHeader);
+  virtual void UpdateEcnState (const TcpHeader &tcpHeader);
 
   /**
    * @brief HalveCwnd when receive ECE ACK before send another data packet;
@@ -1081,12 +1081,14 @@ protected:
                  Ptr<const TcpSocketBase> > m_rxTrace; //!< Trace of received packets
   
   // Parameters related to Explicit Congestion Notification
-  bool                     m_ecn;             //!< Socket ECN capability
-  TracedValue<EcnStates_t> m_ecnSenderState;  //!< Current ECN State, represented as combination of EcnState values
-  TracedValue<EcnStates_t> m_ecnReceiverState;//!< Current ECN State, represented as combination of EcnState values
-  TracedValue<SequenceNumber32> m_ecnEchoSeq; //!< Sequence number of the last received ECN Echo
-  TracedValue<SequenceNumber32> m_ecnCESeq;   //!< Sequence number of the last received Congestion Experienced
-  TracedValue<SequenceNumber32> m_ecnCWRSeq;  //!< Sequence number of the last sent CWR 
+  bool                          m_ecn;             //!< Socket ECN capability
+  TracedValue<uint8_t>          m_ecnState;        //!< Current ECN State, represented as combination of EcnState values
+  TracedValue<SequenceNumber32> m_ecnEchoSeq;      //!< Sequence number of the last received ECN Echo
+  bool                          m_ceReceived;      //!< Flag indicating a received CE packet
+  //TracedValue<EcnStates_t> m_ecnSenderState;
+  //TracedValue<EcnStates_t> m_ecnReceiverState;//!< Current ECN State, represented as combination of EcnState values
+  //TracedValue<SequenceNumber32> m_ecnCESeq;   //!< Sequence number of the last received Congestion Experienced
+  //TracedValue<SequenceNumber32> m_ecnCWRSeq;  //!< Sequence number of the last sent CWR
 };
 
 /**

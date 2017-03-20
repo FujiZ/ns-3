@@ -88,26 +88,20 @@ public:
     LAST_STATE    /**< Last state, used only in debug messages                */
   } TcpStates_t;
 
+  // ECN state related attributes
   typedef enum {
-    ECN_DISABLED = 0, /**< ECN disabled traffic                                                                          */
-    ECN_IDLE,         /**< ECN is enabled  but currently there is no action pertaining to ECE or CWR to be taken         */ 
-    ECN_CE_RCVD,      /**< This state indicates that the receiver has received a packet with CE bit set in IP header     */
-    ECN_ECE_SENT,     /**< This state indicates that the receiver has sent an ACK with ECE bit set in TCP header         */
-    ECN_ECE_RCVD,     /**< This state indicates that the sender has received an ACK with ECE bit set in TCP header       */
-    ECN_CWR_SENT      /**< This state indicates that the sender has reduced the congestion window, and sent a packet     
-                        * with CWR bit set in TCP header                                                                 */
+    ECN_DISABLED  = 0x0,     //!< ECN disabled traffic
+    ECN_CONN      = 0x1,     //!< ECN Connection is established
+    ECN_TX_ECHO   = 0x2,     //!< We're sending ECN Echo to transmitter
+    ECN_RX_ECHO   = 0x4,     //!< We've received ECN Echo
+    ECN_SEND_CWR  = 0x8,     //!< We're going to send CWR flag
+    ECN_STATE_MAX = 0x16
   } EcnStates_t;
 
   /**
    * \brief Literal names of TCP states for use in log messages
    */
   static const char* const TcpStateName[TcpSocket::LAST_STATE];
-  
-  /**
-   * \brief Literal names of ECN states for use in log messages
-   */
-  static const char* const EcnStateName[TcpSocket::ECN_CWR_SENT+1];
-  
 
 private:
   // Indirect the attribute setting and getting through private virtual methods

@@ -31,10 +31,10 @@ main (int argc, char *argv[])
   LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
   LogComponentEnable ("C3pExample", LOG_LEVEL_INFO);
-  LogComponentEnable ("DctcpSocket", LOG_LEVEL_INFO);
+  //LogComponentEnable ("DctcpSocket", LOG_LEVEL_INFO);
   //LogComponentEnable ("C3L3_5Protocol", LOG_LEVEL_INFO);
 
-  //Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
+  Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
 
   NodeContainer nodes;
   nodes.Create (2);
@@ -47,8 +47,7 @@ main (int argc, char *argv[])
   devices = pointToPoint.Install (nodes);
 
   InternetStackHelper stack;
-  stack.SetTcp ("ns3::TcpL4Protocol", "SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::dcn::DctcpSocket")));
-  // stack.SetTcp ("ns3::TcpL4Protocol", "UseEcn", BooleanValue (true));
+  //stack.SetTcp ("ns3::TcpL4Protocol", "SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::dcn::DctcpSocket")));
   stack.Install (nodes);
 
   dcn::IpL3_5ProtocolHelper l3_5Helper ("ns3::dcn::C3L3_5Protocol");
@@ -82,14 +81,14 @@ main (int argc, char *argv[])
   ApplicationContainer receiverApps = receiver.Install (nodes.Get (1));
   receiverApps.Get (0)->TraceConnectWithoutContext ("Rx", MakeCallback (&ReceiveTracer));
   receiverApps.Start (Seconds (1.0));
-  receiverApps.Stop (Seconds (50.0));
+  receiverApps.Stop (Seconds (15.0));
 
   BulkSendHelper sender ("ns3::TcpSocketFactory", receiverAddress);
-  //sender.SetAttribute ("MaxBytes", UintegerValue (3000));
+  sender.SetAttribute ("MaxBytes", UintegerValue (3000));
   ApplicationContainer senderApps = sender.Install (nodes.Get (0));
   senderApps.Get (0)->TraceConnectWithoutContext ("Tx", MakeCallback (&SendTracer));
   senderApps.Start (Seconds (2.0));
-  senderApps.Stop (Seconds (50.0));
+  senderApps.Stop (Seconds (10.0));
 
   Simulator::Run ();
   Simulator::Destroy ();

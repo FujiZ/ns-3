@@ -256,8 +256,8 @@ BuildAppsTest (uint32_t test)
 int
 main (int argc, char *argv[])
 {
-  // LogComponentEnable ("RedQueueDisc", LOG_LEVEL_INFO);
-  LogComponentEnable ("DctcpSocket", LOG_LEVEL_INFO);
+  LogComponentEnable ("RedQueueDisc", LOG_LEVEL_INFO);
+  //LogComponentEnable ("DctcpSocket", LOG_LEVEL_INFO);
   //LogComponentEnable ("TcpSocketBase", LOG_LEVEL_DEBUG);
 
   uint32_t redTest;
@@ -310,7 +310,7 @@ main (int argc, char *argv[])
   n3n4 = NodeContainer (c.Get (3), c.Get (4));
   n3n5 = NodeContainer (c.Get (3), c.Get (5));
 
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
+  //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
   // 42 = headers size
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1000 - 42));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
@@ -350,7 +350,7 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO ("Install internet stack on all nodes.");
   InternetStackHelper internet;
-  internet.SetTcp ("ns3::TcpL4Protocol", "SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::dcn::DctcpSocket")));
+  //internet.SetTcp ("ns3::TcpL4Protocol", "SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::dcn::DctcpSocket")));
   internet.Install (c);
 
   TrafficControlHelper tchPfifo;
