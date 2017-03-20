@@ -72,6 +72,7 @@ DctcpSocket::SendAckPacket (void)
     {
       if (m_ceTransition)
         {
+          NS_LOG_DEBUG ("Send ECE packet back");
           SendEmptyPacket (TcpHeader::ACK | TcpHeader::ECE);
           if (m_ecnReceiverState != ECN_CE_RCVD)
             {
@@ -237,7 +238,9 @@ DctcpSocket::HalveCwnd (void)
   NS_LOG_FUNCTION (this);
   m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
   // cut down cwnd according to DCTCP algo
+  NS_LOG_DEBUG ("Before Cutdown cwnd: " << m_tcb->m_cWnd);
   m_tcb->m_cWnd = std::max ((uint32_t)(m_tcb->m_cWnd * (1 - m_alpha / 2.0)), m_tcb->m_segmentSize);
+  NS_LOG_DEBUG ("After Cutdown cwnd: " << m_tcb->m_cWnd);
 }
 
 } // namespace dcn

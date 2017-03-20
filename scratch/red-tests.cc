@@ -256,8 +256,9 @@ BuildAppsTest (uint32_t test)
 int
 main (int argc, char *argv[])
 {
-  LogComponentEnable ("RedQueueDisc", LOG_LEVEL_INFO);
+  // LogComponentEnable ("RedQueueDisc", LOG_LEVEL_INFO);
   LogComponentEnable ("DctcpSocket", LOG_LEVEL_INFO);
+  //LogComponentEnable ("TcpSocketBase", LOG_LEVEL_DEBUG);
 
   uint32_t redTest;
   std::string redLinkDataRate = "1.5Mbps";
