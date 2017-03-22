@@ -1085,10 +1085,7 @@ protected:
   TracedValue<uint8_t>          m_ecnState;        //!< Current ECN State, represented as combination of EcnState values
   TracedValue<SequenceNumber32> m_ecnEchoSeq;      //!< Sequence number of the last received ECN Echo
   bool                          m_ceReceived;      //!< Flag indicating a received CE packet
-  //TracedValue<EcnStates_t> m_ecnSenderState;
-  //TracedValue<EcnStates_t> m_ecnReceiverState;//!< Current ECN State, represented as combination of EcnState values
-  //TracedValue<SequenceNumber32> m_ecnCESeq;   //!< Sequence number of the last received Congestion Experienced
-  //TracedValue<SequenceNumber32> m_ecnCWRSeq;  //!< Sequence number of the last sent CWR
+
 };
 
 /**

@@ -256,8 +256,8 @@ BuildAppsTest (uint32_t test)
 int
 main (int argc, char *argv[])
 {
-  LogComponentEnable ("RedQueueDisc", LOG_LEVEL_INFO);
-  //LogComponentEnable ("DctcpSocket", LOG_LEVEL_INFO);
+  // LogComponentEnable ("RedQueueDisc", LOG_LEVEL_INFO);
+  // LogComponentEnable ("DctcpSocket", LOG_LEVEL_INFO);
   //LogComponentEnable ("TcpSocketBase", LOG_LEVEL_DEBUG);
 
   uint32_t redTest;
@@ -279,7 +279,7 @@ main (int argc, char *argv[])
   client_stop_time = global_stop_time - 2.0;
 
   // Configuration and command line parameter parsing
-  redTest = 2;
+  redTest = 1;
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory
   CommandLine cmd;
@@ -328,6 +328,9 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (5));
   Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (15));
   Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (1000));
+
+  // Dctcp params
+  // Config::SetDefault ("ns3::dcn::DctcpSocket::DctcpWeight", DoubleValue (1.0/32));
 
   if (redTest == 2) // test like 1, but with ecn
     {

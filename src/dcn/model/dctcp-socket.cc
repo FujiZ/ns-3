@@ -19,12 +19,12 @@ DctcpSocket::GetTypeId (void)
       .SetParent<TcpSocketBase> ()
       .SetGroupName ("DCN")
       .AddConstructor<DctcpSocket> ()
-      .AddAttribute ("DCTCPWeight",
+      .AddAttribute ("DctcpWeight",
                      "Weigt for calculating DCTCP's alpha parameter",
                      DoubleValue (1.0 / 16.0),
                      MakeDoubleAccessor (&DctcpSocket::m_g),
                      MakeDoubleChecker<double> (0.0, 1.0))
-      .AddTraceSource ("DCTCPAlpha",
+      .AddTraceSource ("DctcpAlpha",
                        "Alpha parameter stands for the congestion status",
                        MakeTraceSourceAccessor (&DctcpSocket::m_alpha),
                        "ns3::TracedValueCallback::Double");
@@ -45,9 +45,8 @@ DctcpSocket::DctcpSocket (void)
     m_ackedBytesTotal (0),
     m_alphaUpdateSeq (0),
     m_dctcpMaxSeq (0),
-    m_ceTransition (false)
+    m_ecnTransition (false)
 {
-    m_ecn = true;
 }
 
 DctcpSocket::DctcpSocket (const DctcpSocket &sock)
@@ -58,9 +57,8 @@ DctcpSocket::DctcpSocket (const DctcpSocket &sock)
     m_ackedBytesTotal (sock.m_ackedBytesTotal),
     m_alphaUpdateSeq (sock.m_alphaUpdateSeq),
     m_dctcpMaxSeq (sock.m_dctcpMaxSeq),
-    m_ceTransition (sock.m_ceTransition)
+    m_ecnTransition (sock.m_ecnTransition)
 {
-    m_ecn = true;
 }
 
 void
@@ -68,32 +66,26 @@ DctcpSocket::SendAckPacket (void)
 {
   NS_LOG_FUNCTION (this);
 
-  if (m_ecnReceiverState != ECN_DISABLED)
+  uint8_t flag = TcpHeader::ACK;
+
+  if (m_ecnState & ECN_CONN)
     {
-      if (m_ceTransition)
+      if (m_ecnTransition)
         {
-          NS_LOG_DEBUG ("Send ECE packet back");
-          SendEmptyPacket (TcpHeader::ACK | TcpHeader::ECE);
-          if (m_ecnReceiverState != ECN_CE_RCVD)
+          if (!(m_ecnState & ECN_TX_ECHO))
             {
-              m_ceTransition = false;
+              NS_LOG_DEBUG ("Sending ECN Echo.");
+              flag |= TcpHeader::ECE;
             }
-          m_ecnReceiverState = ECN_ECE_SENT;
+          m_ecnTransition = false;
         }
-      else
+      else if (m_ecnState & ECN_TX_ECHO)
         {
-          SendEmptyPacket (TcpHeader::ACK);
-          if (m_ecnReceiverState == ECN_CE_RCVD)
-            {
-              m_ceTransition = true;
-            }
-          m_ecnReceiverState = ECN_IDLE;
+          NS_LOG_DEBUG ("Sending ECN Echo.");
+          flag |= TcpHeader::ECE;
         }
     }
-  else
-    {
-      SendEmptyPacket (TcpHeader::ACK);
-    }
+  SendEmptyPacket (flag);
 }
 
 void
@@ -108,7 +100,8 @@ DctcpSocket::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                bool isRetransmission)
 {
   // set dctcp max seq to highTxMark
-  m_dctcpMaxSeq =std::max (m_tcb->m_highTxMark.Get (), std::max (seq + sz, m_dctcpMaxSeq));
+  // m_dctcpMaxSeq =std::max (m_tcb->m_highTxMark.Get (), std::max (seq + sz, m_dctcpMaxSeq));
+  m_dctcpMaxSeq =std::max (std::max (seq + sz, m_tcb->m_highTxMark.Get ()), m_dctcpMaxSeq);
   TcpSocketBase::UpdateRttHistory (seq, sz, isRetransmission);
 }
 
@@ -132,7 +125,9 @@ DctcpSocket::UpdateAlpha (const TcpHeader &tcpHeader)
   if (tcpHeader.GetAckNumber () > m_alphaUpdateSeq)
     {
       m_alphaUpdateSeq = m_dctcpMaxSeq;
+      // NS_LOG_DEBUG ("Before alpha update: " << m_alpha.Get ());
       m_alpha = (1 - m_g) * m_alpha + m_g * ((double)m_ackedBytesEcn / (m_ackedBytesTotal ? m_ackedBytesTotal : 1));
+      // NS_LOG_DEBUG ("After alpha update: " << m_alpha.Get ());
       m_ackedBytesEcn = m_ackedBytesTotal = 0;
     }
 }
@@ -193,7 +188,7 @@ DctcpSocket::Retransmit (void)
   m_tcb->m_nextTxSequence = m_txBuffer->HeadSequence (); // Restart from highest Ack
   m_dupAckCount = 0;
 
-  // reset dctcp seq value if retransmit (why?)
+  // set dctcp seq value if retransmit (why?)
   m_alphaUpdateSeq = m_dctcpMaxSeq = m_tcb->m_nextTxSequence;
 
   NS_LOG_DEBUG ("RTO. Reset cwnd to " <<  m_tcb->m_cWnd << ", ssthresh to " <<
@@ -208,27 +203,22 @@ DctcpSocket::Fork (void)
 }
 
 void
-DctcpSocket::ProcessEcnState (const TcpHeader &tcpHeader)
+DctcpSocket::UpdateEcnState (const TcpHeader &tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
-  if (m_ecnReceiverState == ECN_CE_RCVD)
+  if (m_ceReceived && !(m_ecnState & ECN_TX_ECHO))
     {
-      // 0->1
-      if (!m_ceTransition)
-        {
-          // send immediate ACK with ECN = 0
-          m_delAckCount = m_delAckMaxCount;
-        }
+      NS_LOG_INFO ("Congestion was experienced. Start sending ECN Echo.");
+      m_ecnState |= ECN_TX_ECHO;
+      m_ecnTransition = true;
+      m_delAckCount = m_delAckMaxCount;
     }
-  else
+  else if (!m_ceReceived && (m_ecnState & ECN_TX_ECHO))
     {
-      // 1->0
-      if (m_ceTransition)
-        {
-          // send immediate ACK with ECN = 1
-          m_delAckCount = m_delAckMaxCount;
-        }
+      m_ecnState &= ~ECN_TX_ECHO;
+      m_ecnTransition = true;
+      m_delAckCount = m_delAckMaxCount;
     }
 }
 
@@ -236,11 +226,11 @@ void
 DctcpSocket::HalveCwnd (void)
 {
   NS_LOG_FUNCTION (this);
-  m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
-  // cut down cwnd according to DCTCP algo
-  NS_LOG_DEBUG ("Before Cutdown cwnd: " << m_tcb->m_cWnd);
-  m_tcb->m_cWnd = std::max ((uint32_t)(m_tcb->m_cWnd * (1 - m_alpha / 2.0)), m_tcb->m_segmentSize);
-  NS_LOG_DEBUG ("After Cutdown cwnd: " << m_tcb->m_cWnd);
+  NS_LOG_DEBUG (this << "Halve cwnd");
+  //m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
+  m_tcb->m_ssThresh = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), 2 * m_tcb->m_segmentSize);
+  // halve cwnd according to DCTCP algo
+  m_tcb->m_cWnd = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), m_tcb->m_segmentSize);
 }
 
 } // namespace dcn

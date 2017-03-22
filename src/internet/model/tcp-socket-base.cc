@@ -345,7 +345,8 @@ TcpSocketBase::TcpSocketBase (void)
     m_isFirstPartialAck (true),
     m_ecn (false),
     m_ecnState (ECN_DISABLED),
-    m_ecnEchoSeq (0)
+    m_ecnEchoSeq (0),
+    m_ceReceived (false)
 {
   NS_LOG_FUNCTION (this);
   m_rxBuffer = CreateObject<TcpRxBuffer> ();
@@ -425,7 +426,8 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
     m_rxTrace (sock.m_rxTrace),
     m_ecn (sock.m_ecn),
     m_ecnState (sock.m_ecnState),
-    m_ecnEchoSeq (sock.m_ecnEchoSeq)
+    m_ecnEchoSeq (sock.m_ecnEchoSeq),
+    m_ceReceived (sock.m_ceReceived)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_LOGIC ("Invoked the copy constructor");
@@ -2635,6 +2637,11 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
     {
       NS_LOG_INFO ("Sending CWR. We're reseting ECN Echo Received flag.");
       flags |= TcpHeader::CWR;
+      /**
+       * sendDataPacket is called by sendPendingData;
+       * ECN_SEND_CWR is set in sendPendingData indicating an call to halveCwnd;
+       * so we unset these flags perparing for next ACK
+       */
       m_ecnState &= ~(ECN_SEND_CWR | ECN_RX_ECHO);
       m_ecnEchoSeq = seq;
     }
@@ -2843,11 +2850,13 @@ TcpSocketBase::SendPendingData (bool withAck)
           NS_LOG_INFO ("Halving CWND duo to receiving ECN Echo.");
           m_ecnState |= ECN_SEND_CWR;
           HalveCwnd ();
+          /*
           if (m_tcb->m_congState == TcpSocketState::CA_OPEN)
             {
               m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_CWR);
               m_tcb->m_congState = TcpSocketState::CA_CWR;
             }
+            */
         }
       uint32_t w = AvailableWindow (); // Get available window size
       // Stop sending if we need to wait for a larger Tx window (prevent silly window syndrome)

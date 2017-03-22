@@ -43,7 +43,7 @@ protected:
                                  bool isRetransmission);
   virtual void Retransmit (void);
   virtual Ptr<TcpSocketBase> Fork (void);
-  virtual void ProcessEcnState (const TcpHeader &tcpHeader);
+  virtual void UpdateEcnState (const TcpHeader &tcpHeader);
   virtual void HalveCwnd (void);
 
   void UpdateAlpha (const TcpHeader &tcpHeader);
@@ -55,7 +55,8 @@ protected:
   uint32_t m_ackedBytesTotal;   //!< acked bytes total
   SequenceNumber32 m_alphaUpdateSeq;
   SequenceNumber32 m_dctcpMaxSeq;
-  bool m_ceTransition; //!< ce state machine to support delayed ACK
+  bool m_ecnTransition; //!< ce state machine to support delayed ACK
+
 };
 
 } // namespace dcn

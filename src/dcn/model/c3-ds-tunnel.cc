@@ -57,7 +57,7 @@ C3DsTunnel::Schedule (void)
   uint64_t rateRequest = 0;
   for (auto it = m_flowList.begin (); it != m_flowList.end (); ++it)
     {
-      Ptr<C3DsFlow> flow = DynamicCast<C3DsFlow> (it->second);
+      Ptr<C3DsFlow> flow = StaticCast<C3DsFlow> (it->second);
       rateRequest += flow->GetRateRequest ().GetBitRate ();
       flowList.push_back (flow);
     }
