@@ -42,8 +42,9 @@ ADDCNSlice::GetTypeId (void)
 
 ADDCNSlice::ADDCNSlice (C3Type type)
   : m_tenantId (0),
-    m_type (type),
-    m_weight (0.0)
+    //m_type (type),
+    m_weight (0.0),
+    m_scale (1.0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -88,6 +89,26 @@ ADDCNSlice::CreateSlice (uint32_t tenantId, C3Type type)
       m_sliceList[std::make_pair(tenantId, type)] = slice;
       return slice;
     }
+}
+
+Ptr<ADDCNFlow>
+ADDCNSlice::GetFlow(const ADDCNFlow::FiveTuple &tup)
+{
+  NS_LOG_FUNCTION (tup.sourceAddress << tup.destinationAddress << tup.sourcePort << tup.destinationPort << tup.protocol);
+
+  auto it = m_flowList.find (tup);
+  if (it != m_flowList.end ())
+  {
+    return it->second;
+  }
+  else
+  {
+    Ptr<ADDCNFlow> flow = CreateObject<ADDCNFlow> ();
+    flow->SetFiveTuple(tup);
+    flow->UpdateScale(m_scale);
+    m_flowList[tup] = flow;
+    return flow;
+  }
 }
 
 void
@@ -150,6 +171,15 @@ ADDCNSlice::Update (void)
   // TODO Change to update flow weight in that slice
   for(auto it = m_flowList.begin(); it != m_flowList.end(); it++)
   {
+     Ptr<ADDCNFlow> flow = it->second;
+     weight += flow->GetWeight();
+  }
+  m_scale = std::fabs(weight) > 10e-7 ? m_weight / weight : 0.0;
+
+  for(auto it = m_flowList.begin(); it != m_flowList.end(); it++)
+  {
+     Ptr<ADDCNFlow> flow = it->second;
+     flow->UpdateScale(m_scale);
   }
   /*
   for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)

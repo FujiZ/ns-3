@@ -12,6 +12,67 @@ namespace dcn {
 
 NS_OBJECT_ENSURE_REGISTERED (ADDCNFlow);
 
+bool operator < (const ADDCNFlow::FiveTuple &t1,
+                 const ADDCNFlow::FiveTuple &t2)
+{
+  if (t1.sourceAddress < t2.sourceAddress)
+    {
+      return true;
+    }
+  if (t1.sourceAddress != t2.sourceAddress)
+    {
+      return false;
+    }
+
+  if (t1.destinationAddress < t2.destinationAddress)
+    {
+      return true;
+    }
+  if (t1.destinationAddress != t2.destinationAddress)
+    {
+      return false;
+    }
+
+  if (t1.protocol < t2.protocol)
+    {
+      return true;
+    }
+  if (t1.protocol != t2.protocol)
+    {
+      return false;
+    }
+
+  if (t1.sourcePort < t2.sourcePort)
+    {
+     return true;
+    }
+  if (t1.sourcePort != t2.sourcePort)
+    {
+      return false;
+    }
+
+  if (t1.destinationPort < t2.destinationPort)
+    {
+      return true;
+    }
+  if (t1.destinationPort != t2.destinationPort)
+    {
+      return false;
+    }
+
+  return false;
+}
+
+bool operator == (const ADDCNFlow::FiveTuple &t1,
+                  const ADDCNFlow::FiveTuple &t2)
+{
+  return (t1.sourceAddress      == t2.sourceAddress &&
+          t1.destinationAddress == t2.destinationAddress &&
+          t1.protocol           == t2.protocol &&
+          t1.sourcePort         == t2.sourcePort &&
+          t1.destinationPort    == t2.destinationPort);
+}
+
 TypeId
 ADDCNFlow::GetTypeId (void)
 {
@@ -24,15 +85,14 @@ ADDCNFlow::GetTypeId (void)
 
 ADDCNFlow::ADDCNFlow ()
   : m_flowSize (0),
-    m_sendedSize (0),
-    m_bufferedSize (0),
-    m_weight (0),
-    m_protocol (0),
-    m_tbf (CreateObject<TokenBucketFilter> ())
+    m_sentSize (0),
+    m_alpha (0.0),
+    m_scale (1.0),
+    m_weight (0.0)
 {
   NS_LOG_FUNCTION (this);
-  m_tbf->SetSendTarget (MakeCallback (&ADDCNFlow::Forward, this));
-  m_tbf->SetDropTarget (MakeCallback (&ADDCNFlow::Drop, this));
+  //m_tbf->SetSendTarget (MakeCallback (&ADDCNFlow::Forward, this));
+  //m_tbf->SetDropTarget (MakeCallback (&ADDCNFlow::Drop, this));
 }
 
 ADDCNFlow::~ADDCNFlow ()
@@ -47,22 +107,24 @@ ADDCNFlow::SetForwardTarget (ForwardTargetCallback cb)
   m_forwardTarget = cb;
 }
 
-void
-ADDCNFlow::SetProtocol (uint8_t protocol)
+void 
+ADDCNFlow::SetFiveTuple (ADDCNFlow::FiveTuple tuple)
 {
-  NS_LOG_FUNCTION (this << (uint32_t)protocol);
-  m_protocol = protocol;
+  NS_LOG_FUNCTION (this);
+  m_tuple = tuple;
 }
 
 void
-ADDCNFlow::Send (Ptr<Packet> packet)
+ADDCNFlow::Send (Ptr<Packet> packet, Ptr<Ipv4Route> route)
 {
   NS_LOG_FUNCTION (this << packet);
+  NS_LOG_INFO ("Packet sent: " << packet);
+
   C3Tag c3Tag;
   NS_ASSERT (packet->PeekPacketTag (c3Tag));
   m_flowSize = c3Tag.GetFlowSize ();
-  m_bufferedSize += c3Tag.GetPacketSize ();
-  m_tbf->Send (packet);
+  m_sentSize += c3Tag.GetPacketSize ();
+  m_forwardTarget (packet, m_tuple.sourceAddress, m_tuple.destinationAddress, m_tuple.protocol, route);
 }
 
 double
@@ -72,10 +134,21 @@ ADDCNFlow::GetWeight (void) const
 }
 
 void
-ADDCNFlow::SetRate (DataRate rate)
+ADDCNFlow::UpdateScale(const double s)
 {
-  NS_LOG_FUNCTION (this << rate);
-  m_tbf->SetRate (rate);
+  NS_LOG_FUNCTION (this << s);
+  if(s > 10e-7)
+  {
+    m_scale = s;
+    m_weightScaled = m_weight / m_scale;
+  }
+}
+
+void
+ADDCNFlow::UpdateAlpha()
+{
+  NS_LOG_FUNCTION (this);
+  m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
 }
 
 void
@@ -83,30 +156,7 @@ ADDCNFlow::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
   m_forwardTarget.Nullify ();
-  m_tbf = 0;
   Object::DoDispose ();
-}
-
-void
-ADDCNFlow::Forward (Ptr<Packet> packet)
-{
-  NS_LOG_FUNCTION (this << packet);
-  NS_LOG_INFO ("Packet sent: " << packet);
-  C3Tag c3Tag;
-  NS_ASSERT (packet->PeekPacketTag (c3Tag));
-  m_sendedSize += c3Tag.GetPacketSize ();
-  m_bufferedSize -= c3Tag.GetPacketSize ();
-  m_forwardTarget (packet, m_protocol);
-}
-
-void
-ADDCNFlow::Drop (Ptr<const Packet> packet)
-{
-  NS_LOG_FUNCTION (this <<packet);
-  NS_LOG_INFO ("Packet drop: " << packet);
-  C3Tag c3Tag;
-  NS_ASSERT (packet->PeekPacketTag (c3Tag));
-  m_bufferedSize -= c3Tag.GetPacketSize ();
 }
 
 } //namespace dcn

@@ -16,9 +16,8 @@
 #include "ns3/packet.h"
 #include "ns3/ptr.h"
 #include "ns3/timer.h"
-#include "ns3/ipv4-flow-classifier.h"
 
-#include "addcn_flow.h"
+#include "addcn-flow.h"
 #include "c3-type.h"
 
 namespace ns3 {
@@ -62,7 +61,7 @@ public:
    * @param tup <srcIP, srcPort, dstIP, dstPort, protocol> tuple
    * @return required flow
    */
-  static Ptr<ADDCNFlow> GetFlow (const Ipv4FlowClassifier::FiveTuple &tup)
+  Ptr<ADDCNFlow> GetFlow (const ADDCNFlow::FiveTuple &tup);
 
    // static Ptr<ADDCNFlow> GetFlow(const Ipv4Address &src, const Ipv4Address &dst, uint32_t srcPort, uint32_t dstPort, uint8_t protocol);
 
@@ -116,15 +115,16 @@ protected:
    */
   uint32_t GetTenantId (void);
 
-  typedef std::map<Ipv4FlowClassifier::FiveTuple, Ptr<ADDCNFlow>> FlowList_t
+  typedef std::map<ADDCNFlow::FiveTuple, Ptr<ADDCNFlow>> FlowList_t;
 
   FlowList_t m_flowList;
 
 private:
 
   uint32_t m_tenantId;  //!< tenant id of slice
-  C3Type m_type;    //!< objective type
+  //C3Type m_type;    //!< objective type
   double m_weight;  //!< slice weight
+  double m_scale;   //!< current scale factor for flows
 
   typedef std::pair<uint32_t, C3Type> SliceListKey_t;
   typedef std::map<SliceListKey_t, Ptr<ADDCNSlice> > SliceList_t;

@@ -5,9 +5,10 @@
 
 #include "ns3/object.h"
 #include "ns3/packet.h"
-#include "ns3/ipv4-flow-classifier.h"
+#include "ns3/ipv4-route.h"
 
 #include "token-bucket-filter.h"
+#include "c3-ecn-recorder.h"
 
 namespace ns3 {
 namespace dcn {
@@ -21,6 +22,15 @@ namespace dcn {
 class ADDCNFlow : public Object
 {
 public:
+/// Structure to classify a packet
+  struct FiveTuple
+  {
+    Ipv4Address sourceAddress;      //!< Source address
+    Ipv4Address destinationAddress; //!< Destination address
+    uint8_t protocol;               //!< Protocol
+    uint16_t sourcePort;            //!< Source port
+    uint16_t destinationPort;       //!< Destination port
+  };
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -30,34 +40,38 @@ public:
   ADDCNFlow ();
 
   virtual ~ADDCNFlow ();
+
   /**
    * \brief callback to forward packets
    */
-  typedef Callback<void, Ptr<Packet>, uint8_t> ForwardTargetCallback;
+  typedef Callback<void, Ptr<Packet>, Ipv4Address, Ipv4Address, uint8_t, Ptr<Ipv4Route> > ForwardTargetCallback;
+
   /**
    * \brief set forward target
    * \param cb forward target
    */
   void SetForwardTarget (ForwardTargetCallback cb);
+
   /**
-   * @brief Set Protocol number
-   * @param protocol l4 protocol number
+   * \brief set Ipv4 FiveTuple <srcIP, dstIP, srcPort, dstPort, protocol>
+   * \param tuple target tuple
    */
-  void SetProtocol (uint8_t protocol);
+  void SetFiveTuple (ADDCNFlow::FiveTuple tuple);
+
   /**
    * \brief This function is called by sender end when sending packets
    * \param p the packet for controller to receive
    * make sure that the packet contain c3tag before pass in it
    * the packet size should be marked in c3l3.5p
    */
-  virtual void Send (Ptr<Packet> packet);
+  void Send (Ptr<Packet> packet, Ptr<Ipv4Route> route);
 
   /**
    * @brief Update tunnel info (weight)
    * called by upper division
    * @todo maybe the update of weight and rate should seperate
    */
-  virtual void UpdateInfo (void) = 0;
+  //virtual void UpdateInfo (void) = 0;
 
   /**
    * @brief GetWeight
@@ -66,30 +80,10 @@ public:
   double GetWeight (void) const;
 
   /**
-   * @brief SetRate
-   * @param rate
+   * @brief Update scale factor, called by corresponding slice
+   * @param s
    */
-  void SetRate (DataRate rate);
-
-protected:
-  virtual void DoDispose (void);
-  /**
-   * @brief Forward callback to forward packets
-   * @param packet the packet tobe sent out
-   * usually used as callback
-   */
-  virtual void Forward (Ptr<Packet> packet);
-  /**
-   * @brief Drop callback to drop packet
-   * @param packet the packet to drop
-   * used as callback
-   */
-  virtual void Drop (Ptr<const Packet> packet);
-
-protected:
-  int32_t m_flowSize;    //!< the total size of current flow
-  int32_t m_sendedSize;  //!< the sended size of current flow
-  int32_t m_bufferedSize;  //!< the size of current buffer
+  void UpdateScale(const double s);
 
   /**
    * @brief UpdateAlpha
@@ -97,25 +91,53 @@ protected:
    */
   void UpdateAlpha (void);
 
-  Ipv4FlowClassifier::FiveTuple m_tuple; //!< <srcIP, srcPort, dstIP, dstPort, protocol> tuple of current flow
+protected:
+  virtual void DoDispose (void);
 
-  Ptr<Ipv4Route> m_route; //!< route of connection
+protected:
+  int32_t m_rwnd;          //!< current receive window
+  int32_t m_flowSize;      //!< the total size of current flow
+  int32_t m_sentSize;      //!< the sent size of current flow
+  //int32_t m_bufferedSize;  //!< the size of current buffer
+
+  FiveTuple m_tuple; //!< <srcIP, srcPort, dstIP, dstPort, protocol> tuple of current flow
+
 
   // parameter about ecn control
   // congestion status
-  TracedValue<double> m_alpha;   //!< alpha extracted from ECN feedback, indicating flow congestion status
-  double m_g;       //!< parameter g used in alpha updates
-  Ptr<C3EcnRecorder> m_ecnRecorder; //!< ecn recorder
+  double m_g;                         //!< parameter g used in alpha updates
+  TracedValue<double> m_alpha;        //!< alpha extracted from ECN feedback, indicating flow congestion status
+  Ptr<C3EcnRecorder> m_ecnRecorder;   //!< ecn recorder
+
   // flow weight parameter
+  TracedValue<double> m_scale;   //!< scale updated by corresponding slice
   TracedValue<double> m_weight;  //!< real flow weight
-  TracedValue<double> m_weightRequest;   //!< flow weight request
-  DataRate m_rate;  //!< current flow rate
+  //DataRate m_rate;  //!< current flow rate
 
 private:
-  uint8_t m_protocol;    //!< the protocol number of current flow
+  TracedValue<double> m_weightScaled;   //!< flow scaled weight
+
   //Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
   ForwardTargetCallback m_forwardTarget;    //!< callback to forward packet
 };
+
+/**
+ * \brief Less than operator.
+ *
+ * \param t1 the first operand
+ * \param t2 the first operand
+ * \returns true if the operands are equal
+ */
+bool operator < (const ADDCNFlow::FiveTuple &t1, const ADDCNFlow::FiveTuple &t2);
+
+/**
+ * \brief Equal to operator.
+ *
+ * \param t1 the first operand
+ * \param t2 the first operand
+ * \returns true if the operands are equal
+ */
+bool operator == (const ADDCNFlow::FiveTuple &t1, const ADDCNFlow::FiveTuple &t2);
 
 } //namespace dcn
 } //namespace ns3

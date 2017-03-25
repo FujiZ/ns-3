@@ -41,7 +41,7 @@ protected:
 private:
   uint32_t m_senderSent;
   uint32_t m_receiverSent;
-  uint32_t m_senderReceived;
+  //uint32_t m_senderReceived;
   uint32_t m_receiverReceived;
   uint32_t m_testcase;
 };
@@ -50,7 +50,7 @@ TcpECNTest::TcpECNTest (uint32_t testcase, const std::string &desc)
   : TcpGeneralTest (desc),
     m_senderSent (0),
     m_receiverSent (0),
-    m_senderReceived (0),
+    //m_senderReceived (0),
     m_receiverReceived (0),
     m_testcase (testcase)
 {

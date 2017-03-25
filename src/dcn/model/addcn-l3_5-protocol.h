@@ -1,7 +1,7 @@
-// DCN - ADCN Protocol class
+// DCN - ADDCN Protocol class
 // Fuji Z, Winter 2016
-#ifndef ADCN_L3_5_PROTOCOL_H
-#define ADCN_L3_5_PROTOCOL_H
+#ifndef ADDCN_L3_5_PROTOCOL_H
+#define ADDCN_L3_5_PROTOCOL_H
 
 #include <map>
 #include <stdint.h>
@@ -20,7 +20,7 @@ namespace dcn {
  * enables taking control over upper layer congestion
  * control transparently.
  */
-class ADCNL3_5Protocol : public IpL3_5Protocol
+class ADDCNL3_5Protocol : public IpL3_5Protocol
 {
 public:
   /**
@@ -29,8 +29,8 @@ public:
    */
   static TypeId GetTypeId (void);
 
-  ADCNL3_5Protocol ();
-  virtual ~ADCNL3_5Protocol ();
+  ADDCNL3_5Protocol ();
+  virtual ~ADDCNL3_5Protocol ();
 
   // inherited from IpL3_5Protocol
   virtual void Send (Ptr<Packet> packet,
@@ -67,4 +67,4 @@ private:
 } //namespace dcn
 } //namespace ns3
 
-#endif // ADCN_L3_5_PROTOCOL_H
+#endif // ADDCN_L3_5_PROTOCOL_H
