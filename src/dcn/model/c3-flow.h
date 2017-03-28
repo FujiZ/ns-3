@@ -87,7 +87,7 @@ protected:
 
 protected:
   int32_t m_flowSize;    //!< the total size of current flow
-  int32_t m_sendedSize;  //!< the sended size of current flow
+  int32_t m_sentSize;    //!< the sent size of current flow
   int32_t m_bufferedSize;  //!< the size of current buffer
   double m_weight;  //!< weight
 

@@ -2,6 +2,8 @@
 #define DCTCP_SOCKET_H
 
 #include "ns3/tcp-socket-base.h"
+#include "ns3/tcp-congestion-ops.h"
+#include "ns3/tcp-l4-protocol.h"
 
 namespace ns3 {
 namespace dcn {
@@ -25,7 +27,7 @@ public:
   /**
    * Create an unbound TCP socket
    */
-  DctcpSocket(void);
+  DctcpSocket (void);
 
   /**
    * Clone a TCP socket, for use upon receiving a connection request in LISTEN state

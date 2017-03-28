@@ -24,7 +24,7 @@ C3Flow::GetTypeId (void)
 
 C3Flow::C3Flow ()
   : m_flowSize (0),
-    m_sendedSize (0),
+    m_sentSize (0),
     m_bufferedSize (0),
     m_weight (0),
     m_protocol (0),
@@ -94,7 +94,7 @@ C3Flow::Forward (Ptr<Packet> packet)
   NS_LOG_INFO ("Packet sent: " << packet);
   C3Tag c3Tag;
   NS_ASSERT (packet->PeekPacketTag (c3Tag));
-  m_sendedSize += c3Tag.GetPacketSize ();
+  m_sentSize += c3Tag.GetPacketSize ();
   m_bufferedSize -= c3Tag.GetPacketSize ();
   m_forwardTarget (packet, m_protocol);
 }

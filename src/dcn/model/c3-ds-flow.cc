@@ -51,7 +51,7 @@ void
 C3DsFlow::UpdateInfo (void)
 {
   NS_LOG_FUNCTION (this);
-  int32_t remainSize = std::max (m_flowSize - m_sendedSize, m_bufferedSize);
+  int32_t remainSize = std::max (m_flowSize - m_sentSize, m_bufferedSize);
   double remainTime = (m_deadline - Simulator::Now ()).ToDouble (Time::S);
   m_rateRequest = DataRate (remainTime > 0 ? (remainSize << 3) / remainTime : 0);
   m_weight = m_rateRequest.GetBitRate ();

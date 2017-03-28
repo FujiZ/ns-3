@@ -1,8 +1,6 @@
 #include "dctcp-socket.h"
 
 #include "ns3/log.h"
-#include "ns3/tcp-congestion-ops.h"
-#include "ns3/tcp-l4-protocol.h"
 
 namespace ns3 {
 
@@ -100,7 +98,6 @@ DctcpSocket::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                bool isRetransmission)
 {
   // set dctcp max seq to highTxMark
-  // m_dctcpMaxSeq =std::max (m_tcb->m_highTxMark.Get (), std::max (seq + sz, m_dctcpMaxSeq));
   m_dctcpMaxSeq =std::max (std::max (seq + sz, m_tcb->m_highTxMark.Get ()), m_dctcpMaxSeq);
   TcpSocketBase::UpdateRttHistory (seq, sz, isRetransmission);
 }
@@ -226,13 +223,10 @@ void
 DctcpSocket::HalveCwnd (void)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG (this << "Halve cwnd");
-  //m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
-  m_tcb->m_ssThresh = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), 2 * m_tcb->m_segmentSize);
   // halve cwnd according to DCTCP algo
-  m_tcb->m_cWnd = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), m_tcb->m_segmentSize);
+  m_tcb->m_ssThresh = std::max ((uint32_t)((1 - m_alpha / 2.0) * m_tcb->m_cWnd), 2 * m_tcb->m_segmentSize);
+  m_tcb->m_cWnd = std::max ((uint32_t)((1 - m_alpha / 2.0) * m_tcb->m_cWnd), m_tcb->m_segmentSize);
 }
 
 } // namespace dcn
 } // namespace ns3
-

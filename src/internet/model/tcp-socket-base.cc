@@ -193,22 +193,10 @@ TcpSocketBase::GetTypeId (void)
                      "Current ECN State of TCP Socket",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_ecnState),
                      "ns3::TracedValueCallback::Uint8")
-    //.AddTraceSource ("ECNReceiverState",
-    //                 "Current ECN Receiver State of TCP Socket",
-    //                 MakeTraceSourceAccessor (&TcpSocketBase::m_ecnReceiverState),
-    //                 "ns3::EcnStatesTracedValueCallback")
     .AddTraceSource ("ECNEchoSeq",
                      "Sequence of last received ECN Echo",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_ecnEchoSeq),
                      "ns3::SequenceNumber32TracedValueCallback")
-    //.AddTraceSource ("ECNCESeq",
-    //                 "Sequence of last received CE ",
-    //                 MakeTraceSourceAccessor (&TcpSocketBase::m_ecnCESeq),
-    //                 "ns3::SequenceNumber32TracedValueCallback")
-    //.AddTraceSource ("ECNCWRSeq",
-    //                 "Sequence of last received CWR",
-    //                 MakeTraceSourceAccessor (&TcpSocketBase::m_ecnCWRSeq),
-    //                 "ns3::SequenceNumber32TracedValueCallback")
   ;
   return tid;
 }
