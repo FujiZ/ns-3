@@ -108,7 +108,7 @@ ADDCNFlow::Initialize ()
   m_flowSize = 0;
   m_sentSize = 0;
   m_alpha = 0;
-  m_scale = 1.0;
+  //m_scale = 1.0;
   m_weight = 0.0;
   m_segSize = 0;
   m_weightScaled = 0.0;
@@ -118,6 +118,12 @@ void
 ADDCNFlow::SetSegmentSize(int32_t size)
 {
   m_segSize = size;
+}
+
+void
+ADDCNFlow::NotifyReceived(const Ipv4Header &header)
+{
+  m_ecnRecorder->NotifyReceived(header);
 }
 
 void

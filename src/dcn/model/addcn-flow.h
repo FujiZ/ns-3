@@ -63,6 +63,8 @@ public:
    */
   void SetReceiveWindow(Ptr<Packet> &packet);
 
+  void NotifyReceived(const Ipv4Header &header);
+
   /**
    * \brief callback to forward packets
    */

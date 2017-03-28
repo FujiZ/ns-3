@@ -80,7 +80,7 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
       tuple.sourcePort = srcPort;
       tuple.destinationPort = dstPort;
 
-      //TODO handle FIN TCPHeader
+      //TODO handle FIN TcpHeader
       Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
       if((tcpHeader.GetFlags() & (TcpHeader::SYN | TcpHeader::ACK)) == TcpHeader::SYN)
       {
@@ -121,34 +121,57 @@ ADDCNL3_5Protocol::Send6 (Ptr<Packet> packet,
 
 enum IpL4Protocol::RxStatus
 ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
-                         Ipv4Header const &header,
+                         Ipv4Header const &ipHeader,
                          Ptr<Ipv4Interface> incomingInterface)
 {
-  NS_LOG_FUNCTION (this << packet << header);
+  NS_LOG_FUNCTION (this << packet << ipHeader);
 
   C3Tag c3Tag;
   if (packet->PeekPacketTag (c3Tag))
   {
-  // TODO Extract FiveTuple tuple from ipHeader & tcpHeader
-  // Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
-  // if(tcpHeader.GetFlags() & TCPHeader::SYN)
+    TcpHeader tcpHeader;
+    packet->PeekHeader (tcpHeader);
+    ADDCNFlow::FiveTuple tuple;
+    tuple.sourceAddress = ipHeader.GetSource ();
+    tuple.destinationAddress = ipHeader.GetDestination ();
+    tuple.protocol = ipHeader.GetProtocol ();
+    tuple.sourcePort = tcpHeader.GetSourcePort ();
+    tuple.destinationPort = tcpHeader.GetDestinationPort ();
+
+    Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
+    flow->NotifyReceived(ipHeader);
+    // TODO check logic
+    // TODO frequency of updating window?
+    if((tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN)) == TcpHeader::ACK)
+    {
+      ADDCNFlow::FiveTuple rtuple;
+      rtuple.sourceAddress = ipHeader.GetDestination ();
+      rtuple.destinationAddress = ipHeader.GetSource ();
+      rtuple.protocol = ipHeader.GetProtocol ();
+      rtuple.sourcePort = tcpHeader.GetDestinationPort ();
+      rtuple.destinationPort = tcpHeader.GetSourcePort ();
+
+      Ptr<ADDCNFlow> rflow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(rtuple);
+      rflow->UpdateReceiveWindow();
+      rflow->SetReceiveWindow(packet);
+    }
+  // if(tcpHeader.GetFlags() & TcpHeader::SYN)
   // {
   //    flow->Initialize();
   //    flow->SetSegSize();
   // }   
   // else
   // {
-  //    flow->ecn_recorder->NotifyReceived(header);
-        C3EcnRecorder::GetEcnRecorder (c3Tag.GetTenantId (), c3Tag.GetType (),
-                                     header.GetSource (), header.GetDestination ())->NotifyReceived (header);
-  //    if(tcpHeader.GetFlags() & (TCPHeader::ACK | TCPHeader::SYN) == TCPHeader::ACK)
+        //C3EcnRecorder::GetEcnRecorder (c3Tag.GetTenantId (), c3Tag.GetType (),
+        //                             header.GetSource (), header.GetDestination ())->NotifyReceived (header);
+  //    if(tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN) == TcpHeader::ACK)
   //    {
   //      flow->UpdateReceiveWindow();
   //    }
   // }
   // flow->SetReceiveWindow(packet);
   }
-  return ForwardUp (packet, header, incomingInterface, header.GetProtocol ());
+  return ForwardUp (packet, ipHeader, incomingInterface, ipHeader.GetProtocol ());
 }
 
 enum IpL4Protocol::RxStatus
