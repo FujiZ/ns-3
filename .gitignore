@@ -39,3 +39,4 @@ massif.*
 /qtcreator-*
 *.txt
 *.tr
+*.DS_Store
