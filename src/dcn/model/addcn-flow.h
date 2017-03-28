@@ -42,6 +42,28 @@ public:
   virtual ~ADDCNFlow ();
 
   /**
+   * \brief Initialize parameters
+   */
+  void Initialize();
+
+  /**
+   * \brief Set m_segsize param
+   * \param size target segment size
+   */
+  void SetSegmentSize(int32_t size);
+
+  /**
+   * \brief Re-calculate receive window; called on every ACK
+   */
+  void UpdateReceiveWindow();
+
+  /**
+   * \brief Set receive window part of target packet
+   * \param packet Target packet
+   */
+  void SetReceiveWindow(Ptr<Packet> &packet);
+
+  /**
    * \brief callback to forward packets
    */
   typedef Callback<void, Ptr<Packet>, Ipv4Address, Ipv4Address, uint8_t, Ptr<Ipv4Route> > ForwardTargetCallback;
@@ -99,6 +121,7 @@ protected:
   int32_t m_flowSize;      //!< the total size of current flow
   int32_t m_sentSize;      //!< the sent size of current flow
   //int32_t m_bufferedSize;  //!< the size of current buffer
+  int32_t m_segSize;       //!< Setmeng size
 
   FiveTuple m_tuple; //!< <srcIP, srcPort, dstIP, dstPort, protocol> tuple of current flow
 

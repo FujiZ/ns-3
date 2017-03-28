@@ -1,6 +1,7 @@
 #include "addcn-flow.h"
 
 #include "ns3/log.h"
+#include "ns3/tcp-header.h"
 
 #include "c3-tag.h"
 
@@ -88,7 +89,8 @@ ADDCNFlow::ADDCNFlow ()
     m_sentSize (0),
     m_alpha (0.0),
     m_scale (1.0),
-    m_weight (0.0)
+    m_weight (0.0),
+    m_weightScaled(0.0)
 {
   NS_LOG_FUNCTION (this);
   //m_tbf->SetSendTarget (MakeCallback (&ADDCNFlow::Forward, this));
@@ -98,6 +100,50 @@ ADDCNFlow::ADDCNFlow ()
 ADDCNFlow::~ADDCNFlow ()
 {
   NS_LOG_FUNCTION (this);
+}
+
+void
+ADDCNFlow::Initialize ()
+{
+  m_flowSize = 0;
+  m_sentSize = 0;
+  m_alpha = 0;
+  m_scale = 1.0;
+  m_weight = 0.0;
+  m_segSize = 0;
+  m_weightScaled = 0.0;
+}
+
+void
+ADDCNFlow::SetSegmentSize(int32_t size)
+{
+  m_segSize = size;
+}
+
+void
+ADDCNFlow::UpdateReceiveWindow()
+{
+  if(m_alpha > 10e-7)
+    m_rwnd = m_rwnd * (1 - m_alpha/2);
+  else
+    m_rwnd += m_weightScaled * m_segSize;
+}
+
+void
+ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
+{
+  // TODO
+  TcpHeader tcpHeader;
+  uint32_t bytesRemoved = packet->RemoveHeader(tcpHeader);
+  if(bytesRemoved == 0)
+  {
+    NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
+    return;
+  }
+  // TODO check whether valid
+  tcpHeader.SetWindowSize(m_rwnd);
+  packet->AddHeader(tcpHeader);
+  return;
 }
 
 void

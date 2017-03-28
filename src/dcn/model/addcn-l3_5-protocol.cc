@@ -46,53 +46,66 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
   NS_ASSERT (src == route->GetSource ());
   NS_LOG_DEBUG ("in c3p before forward down");
 
-  C3Tag c3Tag;
-  // check tag before send
-  if(packet->RemovePacketTag (c3Tag))
+  if(protocol == 6) // TCP
   {
-    ADDCNFlow::FiveTuple tuple;
-    tuple.sourceAddress = src;
-    tuple.destinationAddress = dst;
-    tuple.protocol = protocol;
+    TcpHeader tcpHeader;
+    packet->PeekHeader (tcpHeader);
+    C3Tag c3Tag;
 
-    // we rely on the fact that for both TCP and UDP the ports are
-    // carried in the first 4 octects.
-    // This allows to read the ports even on fragmented packets
-    // not carrying a full TCP or UDP header.
+    if(packet->RemovePacketTag (c3Tag))
+    {
+      ADDCNFlow::FiveTuple tuple;
+      tuple.sourceAddress = src;
+      tuple.destinationAddress = dst;
+      tuple.protocol = protocol;
 
-    uint8_t data[4];
-    packet->CopyData (data, 4);
+      // we rely on the fact that for both TCP and UDP the ports are
+      // carried in the first 4 octects.
+      // This allows to read the ports even on fragmented packets
+      // not carrying a full TCP or UDP header.
 
-    uint16_t srcPort = 0;
-    srcPort |= data[0];
-    srcPort <<= 8;
-    srcPort |= data[1];
+      uint8_t data[4];
+      packet->CopyData (data, 4);
+
+      uint16_t srcPort = 0;
+      srcPort |= data[0];
+      srcPort <<= 8;
+      srcPort |= data[1];
  
-    uint16_t dstPort = 0;
-    dstPort |= data[2];
-    dstPort <<= 8;
-    dstPort |= data[3];
+      uint16_t dstPort = 0;
+      dstPort |= data[2];
+      dstPort <<= 8;
+      dstPort |= data[3];
  
-    tuple.sourcePort = srcPort;
-    tuple.destinationPort = dstPort;
+      tuple.sourcePort = srcPort;
+      tuple.destinationPort = dstPort;
 
-    Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
-    flow->SetForwardTarget(MakeCallback(&ADDCNL3_5Protocol::ForwardDown, this));
-    //flow->SetRoute(route);
+      //TODO handle FIN TCPHeader
+      Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
+      if((tcpHeader.GetFlags() & (TcpHeader::SYN | TcpHeader::ACK)) == TcpHeader::SYN)
+      {
+        flow->Initialize(); // New connection
+        // TODO SetSegSize(segsize);
+      }
+      flow->SetForwardTarget(MakeCallback(&ADDCNL3_5Protocol::ForwardDown, this));
+      //flow->SetRoute(route);
 
-    // set packet size before forward down
-    c3Tag.SetPacketSize (GetPacketSize (packet, protocol));
-    packet->AddPacketTag (c3Tag);
-    flow->Send(packet, route);
-    /*
-    Ptr<ADDCNTunnel> tunnel = ADDCNDivision::GetDivision (c3Tag.GetTenantId (), c3Tag.GetType ())->GetTunnel (src, dst);
-    tunnel->SetForwardTarget (MakeCallback (&ADDCNL3_5Protocol::ForwardDown, this));
-    tunnel->SetRoute (route);
-    tunnel->Send (packet, protocol);
-    */
+      // set packet size before forward down
+      c3Tag.SetPacketSize (GetPacketSize (packet, protocol));
+      packet->AddPacketTag (c3Tag);
+      flow->Send(packet, route);
+      /*
+      Ptr<ADDCNTunnel> tunnel = ADDCNDivision::GetDivision (c3Tag.GetTenantId (), c3Tag.GetType ())->GetTunnel (src, dst);
+      tunnel->SetForwardTarget (MakeCallback (&ADDCNL3_5Protocol::ForwardDown, this));
+      tunnel->SetRoute (route);
+      tunnel->Send (packet, protocol);
+      */
+    }
+    // not a data packet: ACK or sth else
+    // TODO
+    ForwardDown (packet, src, dst, protocol, route);
   }
-  // not a data packet: ACK or sth else
-  ForwardDown (packet, src, dst, protocol, route);
+  // check tag before send
 }
 
 void
@@ -115,10 +128,26 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
 
   C3Tag c3Tag;
   if (packet->PeekPacketTag (c3Tag))
-    {
-      C3EcnRecorder::GetEcnRecorder (c3Tag.GetTenantId (), c3Tag.GetType (),
+  {
+  // TODO Extract FiveTuple tuple from ipHeader & tcpHeader
+  // Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
+  // if(tcpHeader.GetFlags() & TCPHeader::SYN)
+  // {
+  //    flow->Initialize();
+  //    flow->SetSegSize();
+  // }   
+  // else
+  // {
+  //    flow->ecn_recorder->NotifyReceived(header);
+        C3EcnRecorder::GetEcnRecorder (c3Tag.GetTenantId (), c3Tag.GetType (),
                                      header.GetSource (), header.GetDestination ())->NotifyReceived (header);
-    }
+  //    if(tcpHeader.GetFlags() & (TCPHeader::ACK | TCPHeader::SYN) == TCPHeader::ACK)
+  //    {
+  //      flow->UpdateReceiveWindow();
+  //    }
+  // }
+  // flow->SetReceiveWindow(packet);
+  }
   return ForwardUp (packet, header, incomingInterface, header.GetProtocol ());
 }
 
