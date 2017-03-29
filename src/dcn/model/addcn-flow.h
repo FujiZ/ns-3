@@ -7,6 +7,8 @@
 #include "ns3/packet.h"
 #include "ns3/ipv4-route.h"
 #include "ns3/tcp-header.h"
+#include "ns3/tcp-option.h"
+#include "ns3/tcp-option-winscale.h"
 
 #include "token-bucket-filter.h"
 #include "c3-ecn-recorder.h"
@@ -64,8 +66,16 @@ public:
    */
   void SetReceiveWindow(Ptr<Packet> &packet);
 
+  /**
+   * \brief At the receiver side, update ecn statistics
+   * \param header Ipv4Header where CE mark holds
+   */
   void UpdateEcnStatistics(const Ipv4Header &header);
 
+  /**
+   * \brief Called every time an ACK was received by the sender
+   * \param tcpHeader used for checking sequence&ack numbers
+   */
   void NotifyReceived(const TcpHeader &tcpHeader);
 
   /**
@@ -119,13 +129,18 @@ public:
   void UpdateAlpha (void);
 
   SequenceNumber32 GetHighSequenceNumber();
+  /**
+   * @brief Read and parse the window scale option
+   */
+  void ProcessOptionWScale(const Ptr<const TcpOption> option);
+
 protected:
   virtual void DoDispose (void);
 
 protected:
-  int32_t m_rwnd;          //!< current receive window
-  int32_t m_flowSize;      //!< the total size of current flow
-  int32_t m_sentSize;      //!< the sent size of current flow
+  uint32_t m_rwnd;          //!< current receive window
+  uint32_t m_flowSize;      //!< the total size of current flow
+  uint32_t m_sentSize;      //!< the sent size of current flow
   //int32_t m_bufferedSize;  //!< the size of current buffer
   uint32_t m_segSize;       //!< Setmeng size
 
@@ -148,6 +163,7 @@ private:
   SequenceNumber32 m_seqNumber;         //!< highest sequence number sent
   SequenceNumber32 m_updateRwndSeq;         //!< last sequence number upon which window was cut
   SequenceNumber32 m_updateAlphaSeq;        //!< last sequence number upon which alpha was updated
+  uint8_t m_sndWindShift;                  //!< Window shift to apply to incoming segments
 
   //Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
   ForwardTargetCallback m_forwardTarget;    //!< callback to forward packet

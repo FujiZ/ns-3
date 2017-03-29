@@ -81,8 +81,8 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
       tuple.destinationPort = dstPort;
 
       //TODO handle FIN TcpHeader
-      Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
-      if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
+      Ptr<ADDCNFlow> flow = ADDCNSlice::CreateSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
+      if((tcpHeader.GetFlags() & (TcpHeader::SYN | TcpHeader::ACK)) == TcpHeader::SYN)
       {
         flow->Initialize(); // New connection
         flow->SetSegmentSize(c3Tag.GetSegmentSize());
@@ -139,12 +139,9 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
     tuple.sourcePort = tcpHeader.GetSourcePort ();
     tuple.destinationPort = tcpHeader.GetDestinationPort ();
 
-    Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
+    Ptr<ADDCNFlow> flow = ADDCNSlice::CreateSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
     flow->UpdateEcnStatistics(ipHeader);
-    // TODO check logic
-    // TODO frequency of updating window?
-    if((tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN)) == TcpHeader::ACK)
-    {
+
       ADDCNFlow::FiveTuple rtuple;
       rtuple.sourceAddress = ipHeader.GetDestination ();
       rtuple.destinationAddress = ipHeader.GetSource ();
@@ -152,11 +149,35 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
       rtuple.sourcePort = tcpHeader.GetDestinationPort ();
       rtuple.destinationPort = tcpHeader.GetSourcePort ();
 
-      Ptr<ADDCNFlow> rflow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(rtuple);
+      Ptr<ADDCNFlow> rflow = ADDCNSlice::CreateSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(rtuple);
+
+    //if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
+    if((tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN)) == TcpHeader::SYN)
+    {
+      rflow->Initialize(); // New connection
+      rflow->SetSegmentSize(c3Tag.GetSegmentSize());
+      if(tcpHeader.HasOption (TcpOption::WINSCALE))
+      {
+        rflow->ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
+      }
+    }
+    // TODO check logic
+    // TODO frequency of updating window?
+    else if((tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN)) == (TcpHeader::SYN | TcpHeader::ACK))
+    {
+      if(tcpHeader.HasOption (TcpOption::WINSCALE))
+      {
+        rflow->ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
+      }
+    }
+    else
+    {
+    }
+
       rflow->NotifyReceived(tcpHeader);
       rflow->UpdateReceiveWindow(tcpHeader);
       rflow->SetReceiveWindow(packet);
-    }
+
   // if(tcpHeader.GetFlags() & TcpHeader::SYN)
   // {
   //    flow->Initialize();

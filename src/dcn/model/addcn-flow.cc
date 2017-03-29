@@ -94,7 +94,8 @@ ADDCNFlow::ADDCNFlow ()
     m_weightScaled(0.0),
     m_seqNumber(0),
     m_updateRwndSeq(0),
-    m_updateAlphaSeq(0)
+    m_updateAlphaSeq(0),
+    m_sndWindShift(0)
 {
   NS_LOG_FUNCTION (this);
   //m_tbf->SetSendTarget (MakeCallback (&ADDCNFlow::Forward, this));
@@ -120,6 +121,7 @@ ADDCNFlow::Initialize ()
   m_seqNumber = 0;
   m_updateRwndSeq = 0;
   m_updateAlphaSeq = 0;
+  m_sndWindShift = 0;
 }
 
 void
@@ -139,6 +141,7 @@ void
 ADDCNFlow::NotifyReceived(const TcpHeader &tcpHeader)
 {
   SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
+  // curSeq > m_updateAlphaSeq ensures updating alpha only one time every RTT
   if(curSeq > m_updateAlphaSeq)
   {
     m_updateAlphaSeq = m_seqNumber;
@@ -151,6 +154,7 @@ void
 ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
 {
   SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
+  // curSeq > m_updateRwndSeq ensures that this action is operated only one time every RTT
   if(m_alpha > 10e-7 && curSeq > m_updateRwndSeq)
   {
     m_updateRwndSeq = m_seqNumber;
@@ -172,7 +176,10 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
     return;
   }
   // TODO check whether valid
-  tcpHeader.SetWindowSize(m_rwnd);
+  // TODO check WScale option
+  uint32_t w = m_rwnd >> m_sndWindShift;
+  
+  tcpHeader.SetWindowSize(w);
   packet->AddHeader(tcpHeader);
   return;
 }
@@ -235,6 +242,27 @@ SequenceNumber32
 ADDCNFlow::GetHighSequenceNumber()
 {
   return m_seqNumber;
+}
+
+void
+ADDCNFlow::ProcessOptionWScale (const Ptr<const TcpOption> option)
+{
+  NS_LOG_FUNCTION (this << option);
+ 
+  Ptr<const TcpOptionWinScale> ws = DynamicCast<const TcpOptionWinScale> (option);
+
+  // In naming, we do the contrary of RFC 1323. The received scaling factor
+  // is Rcv.Wind.Scale (and not Snd.Wind.Scale)
+  m_sndWindShift = ws->GetScale ();
+
+  if (m_sndWindShift > 14)
+  {
+    NS_LOG_WARN ("Possible error; m_sndWindShift exceeds 14: " << m_sndWindShift);
+    m_sndWindShift = 14;
+  }
+
+  NS_LOG_INFO (" Received a scale factor of " <<
+               static_cast<int> (m_sndWindShift));
 }
 
 void
