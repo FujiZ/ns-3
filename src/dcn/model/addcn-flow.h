@@ -6,6 +6,7 @@
 #include "ns3/object.h"
 #include "ns3/packet.h"
 #include "ns3/ipv4-route.h"
+#include "ns3/tcp-header.h"
 
 #include "token-bucket-filter.h"
 #include "c3-ecn-recorder.h"
@@ -50,12 +51,12 @@ public:
    * \brief Set m_segsize param
    * \param size target segment size
    */
-  void SetSegmentSize(int32_t size);
+  void SetSegmentSize(uint32_t size);
 
   /**
    * \brief Re-calculate receive window; called on every ACK
    */
-  void UpdateReceiveWindow();
+  void UpdateReceiveWindow(const TcpHeader &tcpHeader);
 
   /**
    * \brief Set receive window part of target packet
@@ -63,7 +64,9 @@ public:
    */
   void SetReceiveWindow(Ptr<Packet> &packet);
 
-  void NotifyReceived(const Ipv4Header &header);
+  void UpdateEcnStatistics(const Ipv4Header &header);
+
+  void NotifyReceived(const TcpHeader &tcpHeader);
 
   /**
    * \brief callback to forward packets
@@ -115,6 +118,7 @@ public:
    */
   void UpdateAlpha (void);
 
+  SequenceNumber32 GetHighSequenceNumber();
 protected:
   virtual void DoDispose (void);
 
@@ -123,7 +127,7 @@ protected:
   int32_t m_flowSize;      //!< the total size of current flow
   int32_t m_sentSize;      //!< the sent size of current flow
   //int32_t m_bufferedSize;  //!< the size of current buffer
-  int32_t m_segSize;       //!< Setmeng size
+  uint32_t m_segSize;       //!< Setmeng size
 
   FiveTuple m_tuple; //!< <srcIP, srcPort, dstIP, dstPort, protocol> tuple of current flow
 
@@ -141,6 +145,9 @@ protected:
 
 private:
   TracedValue<double> m_weightScaled;   //!< flow scaled weight
+  SequenceNumber32 m_seqNumber;         //!< highest sequence number sent
+  SequenceNumber32 m_updateRwndSeq;         //!< last sequence number upon which window was cut
+  SequenceNumber32 m_updateAlphaSeq;        //!< last sequence number upon which alpha was updated
 
   //Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
   ForwardTargetCallback m_forwardTarget;    //!< callback to forward packet

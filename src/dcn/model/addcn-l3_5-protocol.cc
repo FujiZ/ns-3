@@ -82,10 +82,10 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
 
       //TODO handle FIN TcpHeader
       Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
-      if((tcpHeader.GetFlags() & (TcpHeader::SYN | TcpHeader::ACK)) == TcpHeader::SYN)
+      if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
       {
         flow->Initialize(); // New connection
-        // TODO SetSegSize(segsize);
+        flow->SetSegmentSize(c3Tag.GetSegmentSize());
       }
       flow->SetForwardTarget(MakeCallback(&ADDCNL3_5Protocol::ForwardDown, this));
       //flow->SetRoute(route);
@@ -94,6 +94,7 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
       c3Tag.SetPacketSize (GetPacketSize (packet, protocol));
       packet->AddPacketTag (c3Tag);
       flow->Send(packet, route);
+      return;
       /*
       Ptr<ADDCNTunnel> tunnel = ADDCNDivision::GetDivision (c3Tag.GetTenantId (), c3Tag.GetType ())->GetTunnel (src, dst);
       tunnel->SetForwardTarget (MakeCallback (&ADDCNL3_5Protocol::ForwardDown, this));
@@ -139,7 +140,7 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
     tuple.destinationPort = tcpHeader.GetDestinationPort ();
 
     Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
-    flow->NotifyReceived(ipHeader);
+    flow->UpdateEcnStatistics(ipHeader);
     // TODO check logic
     // TODO frequency of updating window?
     if((tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN)) == TcpHeader::ACK)
@@ -152,7 +153,8 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
       rtuple.destinationPort = tcpHeader.GetSourcePort ();
 
       Ptr<ADDCNFlow> rflow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(rtuple);
-      rflow->UpdateReceiveWindow();
+      rflow->NotifyReceived(tcpHeader);
+      rflow->UpdateReceiveWindow(tcpHeader);
       rflow->SetReceiveWindow(packet);
     }
   // if(tcpHeader.GetFlags() & TcpHeader::SYN)

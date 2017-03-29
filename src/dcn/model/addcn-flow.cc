@@ -87,10 +87,14 @@ ADDCNFlow::GetTypeId (void)
 ADDCNFlow::ADDCNFlow ()
   : m_flowSize (0),
     m_sentSize (0),
+    m_g (1.0/16.0),
     m_alpha (0.0),
     m_scale (1.0),
     m_weight (0.0),
-    m_weightScaled(0.0)
+    m_weightScaled(0.0),
+    m_seqNumber(0),
+    m_updateRwndSeq(0),
+    m_updateAlphaSeq(0)
 {
   NS_LOG_FUNCTION (this);
   //m_tbf->SetSendTarget (MakeCallback (&ADDCNFlow::Forward, this));
@@ -107,30 +111,51 @@ ADDCNFlow::Initialize ()
 {
   m_flowSize = 0;
   m_sentSize = 0;
+  m_g = 1.0 / 16.0;
   m_alpha = 0;
   //m_scale = 1.0;
   m_weight = 0.0;
   m_segSize = 0;
   m_weightScaled = 0.0;
+  m_seqNumber = 0;
+  m_updateRwndSeq = 0;
+  m_updateAlphaSeq = 0;
 }
 
 void
-ADDCNFlow::SetSegmentSize(int32_t size)
+ADDCNFlow::SetSegmentSize(uint32_t size)
 {
   m_segSize = size;
 }
 
+
 void
-ADDCNFlow::NotifyReceived(const Ipv4Header &header)
+ADDCNFlow::UpdateEcnStatistics(const Ipv4Header &header)
 {
   m_ecnRecorder->NotifyReceived(header);
 }
 
 void
-ADDCNFlow::UpdateReceiveWindow()
+ADDCNFlow::NotifyReceived(const TcpHeader &tcpHeader)
 {
-  if(m_alpha > 10e-7)
+  SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
+  if(curSeq > m_updateAlphaSeq)
+  {
+    m_updateAlphaSeq = m_seqNumber;
+    m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
+    m_ecnRecorder->Reset();
+  }
+}
+
+void
+ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
+{
+  SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
+  if(m_alpha > 10e-7 && curSeq > m_updateRwndSeq)
+  {
+    m_updateRwndSeq = m_seqNumber;
     m_rwnd = m_rwnd * (1 - m_alpha/2);
+  }
   else
     m_rwnd += m_weightScaled * m_segSize;
 }
@@ -174,6 +199,9 @@ ADDCNFlow::Send (Ptr<Packet> packet, Ptr<Ipv4Route> route)
 
   C3Tag c3Tag;
   NS_ASSERT (packet->PeekPacketTag (c3Tag));
+  TcpHeader tcpHeader;
+  packet->PeekHeader (tcpHeader);
+  this->m_seqNumber = tcpHeader.GetSequenceNumber ();
   m_flowSize = c3Tag.GetFlowSize ();
   m_sentSize += c3Tag.GetPacketSize ();
   m_forwardTarget (packet, m_tuple.sourceAddress, m_tuple.destinationAddress, m_tuple.protocol, route);
@@ -201,6 +229,12 @@ ADDCNFlow::UpdateAlpha()
 {
   NS_LOG_FUNCTION (this);
   m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
+}
+
+SequenceNumber32 
+ADDCNFlow::GetHighSequenceNumber()
+{
+  return m_seqNumber;
 }
 
 void

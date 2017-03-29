@@ -26,7 +26,8 @@ C3Tag::C3Tag ()
     m_type (C3Type::NONE),
     m_tenantId (0),
     m_flowSize (0),
-    m_packetSize (0)
+    m_packetSize (0),
+    m_segmentSize (1500)
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -50,6 +51,7 @@ C3Tag::GetSerializedSize (void) const
       + sizeof (m_tenantId)
       + sizeof (m_flowSize)
       + sizeof (m_packetSize)
+      + sizeof (m_segmentSize)
       + sizeof (double);
 }
 void
@@ -60,6 +62,7 @@ C3Tag::Serialize (TagBuffer buf) const
   buf.WriteU32 (m_tenantId);
   buf.WriteU32 (m_flowSize);
   buf.WriteU32 (m_packetSize);
+  buf.WriteU32 (m_segmentSize);
   buf.WriteDouble (m_deadline.ToDouble (Time::S));  ///time resolution in second
 }
 void
@@ -70,6 +73,7 @@ C3Tag::Deserialize (TagBuffer buf)
   m_tenantId = buf.ReadU32 ();
   m_flowSize = buf.ReadU32 ();
   m_packetSize = buf.ReadU32 ();
+  m_segmentSize = buf.ReadU32 ();
   m_deadline = Time::FromDouble (buf.ReadDouble (), Time::S);
 }
 void
@@ -78,6 +82,7 @@ C3Tag::Print (std::ostream &os) const
   NS_LOG_FUNCTION (this << &os);
   os << "C3 INFO [FlowSize: " << m_flowSize;
   os << ", PacketSize: " << m_packetSize;
+  os << ", SegmentSize: " << m_segmentSize;
   os << ", Deadline: " << m_deadline;
   os << "] ";
 }
@@ -132,6 +137,19 @@ uint32_t
 C3Tag::GetPacketSize (void) const
 {
   return m_packetSize;
+}
+
+void
+C3Tag::SetSegmentSize (uint32_t segmentSize)
+{
+  NS_LOG_FUNCTION (this << segmentSize);
+  m_segmentSize = segmentSize;
+}
+
+uint32_t
+C3Tag::GetSegmentSize (void) const
+{
+  return m_segmentSize;
 }
 
 void
