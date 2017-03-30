@@ -59,11 +59,13 @@ void
 C3EcnRecorder::NotifyReceived (const Ipv4Header &header)
 {
   NS_LOG_FUNCTION (this << header);
+  NS_LOG_DEBUG("TotalAck " << m_totalAck);
   ++ m_totalAck;
   if (header.GetEcn () == Ipv4Header::ECN_CE)
     {
       ++ m_markedAck;
     }
+  NS_LOG_DEBUG("TotalEce " << m_markedAck);
 }
 
 Ptr<C3EcnRecorder>

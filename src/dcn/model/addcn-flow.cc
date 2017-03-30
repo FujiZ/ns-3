@@ -98,6 +98,7 @@ ADDCNFlow::ADDCNFlow ()
     m_sndWindShift(0)
 {
   NS_LOG_FUNCTION (this);
+  m_ecnRecorder = CreateObject<C3EcnRecorder> ();
   //m_tbf->SetSendTarget (MakeCallback (&ADDCNFlow::Forward, this));
   //m_tbf->SetDropTarget (MakeCallback (&ADDCNFlow::Drop, this));
 }
@@ -122,11 +123,13 @@ ADDCNFlow::Initialize ()
   m_updateRwndSeq = 0;
   m_updateAlphaSeq = 0;
   m_sndWindShift = 0;
+  m_ecnRecorder->Reset();
 }
 
 void
 ADDCNFlow::SetSegmentSize(uint32_t size)
 {
+  NS_LOG_FUNCTION(this << size);
   m_segSize = size;
 }
 
@@ -134,6 +137,7 @@ ADDCNFlow::SetSegmentSize(uint32_t size)
 void
 ADDCNFlow::UpdateEcnStatistics(const Ipv4Header &header)
 {
+  NS_LOG_FUNCTION(this << header);
   m_ecnRecorder->NotifyReceived(header);
 }
 
@@ -153,6 +157,7 @@ ADDCNFlow::NotifyReceived(const TcpHeader &tcpHeader)
 void
 ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
 {
+  NS_LOG_FUNCTION(this << tcpHeader << "M_RWND" << m_rwnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
   SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
   // curSeq > m_updateRwndSeq ensures that this action is operated only one time every RTT
   if(m_alpha > 10e-7 && curSeq > m_updateRwndSeq)
@@ -162,14 +167,17 @@ ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
   }
   else
     m_rwnd += m_weightScaled * m_segSize;
+  m_rwnd = m_rwnd > m_segSize ? m_rwnd : m_segSize;
 }
 
 void
 ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
 {
+  NS_LOG_FUNCTION(this << packet );
   // TODO
   TcpHeader tcpHeader;
   uint32_t bytesRemoved = packet->RemoveHeader(tcpHeader);
+  NS_LOG_FUNCTION(this << "Initial Header " << tcpHeader);
   if(bytesRemoved == 0)
   {
     NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
@@ -181,6 +189,7 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
   
   tcpHeader.SetWindowSize(w);
   packet->AddHeader(tcpHeader);
+  NS_LOG_FUNCTION(this << "Window set" << packet);
   return;
 }
 

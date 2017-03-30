@@ -52,6 +52,7 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
     packet->PeekHeader (tcpHeader);
     C3Tag c3Tag;
 
+    NS_LOG_FUNCTION (this << tcpHeader);
     if(packet->RemovePacketTag (c3Tag))
     {
       ADDCNFlow::FiveTuple tuple;
@@ -84,6 +85,7 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
       Ptr<ADDCNFlow> flow = ADDCNSlice::CreateSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
       if((tcpHeader.GetFlags() & (TcpHeader::SYN | TcpHeader::ACK)) == TcpHeader::SYN)
       {
+        NS_LOG_DEBUG("SYN");
         flow->Initialize(); // New connection
         flow->SetSegmentSize(c3Tag.GetSegmentSize());
       }
@@ -101,6 +103,10 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
       tunnel->SetRoute (route);
       tunnel->Send (packet, protocol);
       */
+    }
+    else
+    {
+      NS_LOG_DEBUG("NO C3TAG");
     }
     // not a data packet: ACK or sth else
     // TODO
@@ -154,10 +160,12 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
     //if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
     if((tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN)) == TcpHeader::SYN)
     {
+      NS_LOG_DEBUG("Receive side, SYN");
       rflow->Initialize(); // New connection
       rflow->SetSegmentSize(c3Tag.GetSegmentSize());
       if(tcpHeader.HasOption (TcpOption::WINSCALE))
       {
+        NS_LOG_DEBUG("Receive side, SYN, WScale");
         rflow->ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
       }
     }
@@ -165,8 +173,10 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
     // TODO frequency of updating window?
     else if((tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN)) == (TcpHeader::SYN | TcpHeader::ACK))
     {
+      NS_LOG_DEBUG("Receive side, SYN & ACK");
       if(tcpHeader.HasOption (TcpOption::WINSCALE))
       {
+        NS_LOG_DEBUG("Receive side, SYN & ACK, WScale");
         rflow->ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
       }
     }
@@ -174,9 +184,12 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
     {
     }
 
+      NS_LOG_DEBUG("Receive side, Notify Receive");
       rflow->NotifyReceived(tcpHeader);
       rflow->UpdateReceiveWindow(tcpHeader);
       rflow->SetReceiveWindow(packet);
+      packet->PeekHeader (tcpHeader);
+      NS_LOG_FUNCTION(this << "Window Set Header " << tcpHeader);
 
   // if(tcpHeader.GetFlags() & TcpHeader::SYN)
   // {
