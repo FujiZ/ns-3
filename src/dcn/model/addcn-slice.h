@@ -31,6 +31,7 @@ namespace dcn {
 class ADDCNSlice : public Object
 {
 public:
+
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -66,6 +67,9 @@ public:
    // static Ptr<ADDCNFlow> GetFlow(const Ipv4Address &src, const Ipv4Address &dst, uint32_t srcPort, uint32_t dstPort, uint8_t protocol);
 
 
+  void SetSliceType (C3Type type);
+
+  C3Type GetSliceType ();
   /**
    * @brief AddSliceType
    * @param type objective type
@@ -122,7 +126,7 @@ protected:
 private:
 
   uint32_t m_tenantId;  //!< tenant id of slice
-  //C3Type m_type;    //!< objective type
+  C3Type m_type;    //!< objective type
   double m_weight;  //!< slice weight
   double m_scale;   //!< current scale factor for flows
 

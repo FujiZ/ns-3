@@ -31,6 +31,16 @@ ADDCNSlice::GetTypeId (void)
                      UintegerValue (0),
                      MakeUintegerAccessor (&ADDCNSlice::m_tenantId),
                      MakeUintegerChecker<uint32_t> ())
+      /*
+      .AddAttribute ("C3Type",
+                     "The type of slice, LS DS CS NONE",
+                     EnumValue (C3Type::NONE),
+                     MakeEnumAccessor (&ADDCNSlice::GetC3Type, &ADDCNSlice::SetC3Type),
+                     MakeEnumChecker (C3Type::NONE, "None",
+                                      C3Type::LS, "LS",
+                                      C3Type::DS, "DS",
+                                      C3Type::CS, "CS"))
+      */
       .AddAttribute ("Weight",
                      "The weight for Slice",
                      DoubleValue (1.0),
@@ -42,7 +52,7 @@ ADDCNSlice::GetTypeId (void)
 
 ADDCNSlice::ADDCNSlice (C3Type type)
   : m_tenantId (0),
-    //m_type (type),
+    m_type (type),
     m_weight (0.0),
     m_scale (1.0)
 {
@@ -83,10 +93,11 @@ ADDCNSlice::CreateSlice (uint32_t tenantId, C3Type type)
   else
     {
       ObjectFactory factory;
-      factory.SetTypeId (m_sliceTypeList[type]);
+      //factory.SetTypeId (m_sliceTypeList[type]);
       factory.Set ("TenantId", UintegerValue (tenantId));
       Ptr<ADDCNSlice> slice = factory.Create<ADDCNSlice> ();
       m_sliceList[std::make_pair(tenantId, type)] = slice;
+      slice->SetSliceType(type);
       return slice;
     }
 }
@@ -109,6 +120,20 @@ ADDCNSlice::GetFlow(const ADDCNFlow::FiveTuple &tup)
     m_flowList[tup] = flow;
     return flow;
   }
+}
+
+void
+ADDCNSlice::SetSliceType (C3Type type)
+{
+  NS_LOG_FUNCTION (this);
+  m_type = type;
+}
+
+C3Type
+ADDCNSlice::GetSliceType ()
+{
+  NS_LOG_FUNCTION (this);
+  return m_type;
 }
 
 void
