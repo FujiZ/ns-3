@@ -38,7 +38,7 @@ public:
    */
   static TypeId GetTypeId (void);
 
-  ADDCNSlice (C3Type type);
+  ADDCNSlice ();
 
   virtual ~ADDCNSlice ();
 
@@ -118,6 +118,7 @@ protected:
    * @return tenant id of current slice
    */
   uint32_t GetTenantId (void);
+  void SetTenantId (uint32_t tid);
 
   typedef std::map<ADDCNFlow::FiveTuple, Ptr<ADDCNFlow>> FlowList_t;
 

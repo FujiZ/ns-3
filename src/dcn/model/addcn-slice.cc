@@ -46,13 +46,14 @@ ADDCNSlice::GetTypeId (void)
                      DoubleValue (1.0),
                      MakeDoubleAccessor (&ADDCNSlice::m_weight),
                      MakeDoubleChecker<double> (0.0))
+      .AddConstructor<ADDCNSlice> ();
   ;
   return tid;
 }
 
-ADDCNSlice::ADDCNSlice (C3Type type)
+ADDCNSlice::ADDCNSlice ()
   : m_tenantId (0),
-    m_type (type),
+    m_type (C3Type::NONE),
     m_weight (0.0),
     m_scale (1.0)
 {
@@ -93,11 +94,12 @@ ADDCNSlice::CreateSlice (uint32_t tenantId, C3Type type)
   else
     {
       ObjectFactory factory;
-      //factory.SetTypeId (m_sliceTypeList[type]);
+      factory.SetTypeId ("ns3::dcn::ADDCNSlice");
       factory.Set ("TenantId", UintegerValue (tenantId));
       Ptr<ADDCNSlice> slice = factory.Create<ADDCNSlice> ();
-      m_sliceList[std::make_pair(tenantId, type)] = slice;
       slice->SetSliceType(type);
+      //slice->SetTenantId(tenantId);
+      m_sliceList[std::make_pair(tenantId, type)] = slice;
       return slice;
     }
 }
@@ -239,5 +241,10 @@ ADDCNSlice::GetTenantId (void)
   return m_tenantId;
 }
 
+void
+ADDCNSlice::SetTenantId(uint32_t tid)
+{
+  m_tenantId = tid;
+}
 } //namespace dcn
 } //namespace ns3
