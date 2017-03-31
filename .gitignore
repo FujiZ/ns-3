@@ -41,3 +41,4 @@ massif.*
 *.tr
 *.flowmon
 *.DS_Store
+result
