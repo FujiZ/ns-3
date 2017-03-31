@@ -29,6 +29,7 @@ SendTracer (Ptr<const Packet> packet)
   packet->AddByteTag (c3Tag);
 }
 
+
 void
 ReceiveTracer (Ptr<const Packet> packet,const Address &from)
 {
@@ -83,10 +84,10 @@ main (int argc, char *argv[])
 
   Address receiverAddress = InetSocketAddress(interfaces.GetAddress (1), port);
 
-  BulkSendHelper sender ("ns3::TcpSocketFactory", receiverAddress);
+  dcn::AddcnBulkSendHelper sender ("ns3::TcpSocketFactory", receiverAddress);
   sender.SetAttribute ("MaxBytes", UintegerValue (flowSize));
   ApplicationContainer senderApps = sender.Install (nodes.Get (0));
-  senderApps.Get (0)->TraceConnectWithoutContext ("Tx", MakeCallback (&SendTracer));
+  //senderApps.Get (0)->TraceConnectWithoutContext ("Tx", MakeCallback (&SendTracer));
   senderApps.Start (Seconds (2.0));
   senderApps.Stop (Seconds (50.0));
 

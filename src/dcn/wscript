@@ -28,6 +28,8 @@ def build(bld):
         'model/dctcp-socket.cc',
         'model/ip-l3_5-protocol.cc',
         'model/token-bucket-filter.cc',
+        'model/addcn-bulk-send-application.cc',
+        'helper/addcn-bulk-send-helper.cc',
         'helper/ip-l3_5-protocol-helper.cc',
     ]
 
@@ -58,6 +60,8 @@ def build(bld):
         'model/dctcp-socket.h',
         'model/ip-l3_5-protocol.h',
         'model/token-bucket-filter.h',
+        'model/addcn-bulk-send-application.h',
+        'helper/addcn-bulk-send-helper.h',
         'helper/ip-l3_5-protocol-helper.h',
     ]
 
