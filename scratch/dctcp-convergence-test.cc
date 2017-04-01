@@ -18,9 +18,9 @@ NS_LOG_COMPONENT_DEFINE ("DctcpConvergenceTest");
 uint32_t checkTimes;
 double avgQueueSize;
 
-// RED attributes
-std::string redLinkDataRate = "10Mbps";
-std::string redLinkDelay = "2ms";
+// attributes
+std::string linkDataRate = "1000Mbps";
+std::string linkDelay = "0.2ms";
 
 // The times
 double global_start_time;
@@ -155,20 +155,20 @@ BuildTopo (uint32_t clientNo, uint32_t serverNo)
 
 
   TrafficControlHelper tchPfifo;
-  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc");
-  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxPackets", UintegerValue (1000));
+  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc", "Limit", UintegerValue (250));
+  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxPackets", UintegerValue (250));
 
   TrafficControlHelper tchRed;
-  tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", StringValue (redLinkDataRate),
-                           "LinkDelay", StringValue (redLinkDelay));
+  tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", StringValue (linkDataRate),
+                           "LinkDelay", StringValue (linkDelay));
 
 
   NS_LOG_INFO ("Create channels");
   PointToPointHelper p2p;
 
   p2p.SetQueue ("ns3::DropTailQueue");
-  p2p.SetDeviceAttribute ("DataRate", StringValue ("10Mbps"));
-  p2p.SetChannelAttribute ("Delay", StringValue ("2ms"));
+  p2p.SetDeviceAttribute ("DataRate", StringValue (linkDataRate));
+  p2p.SetChannelAttribute ("Delay", StringValue (linkDelay));
 
   Ipv4AddressHelper ipv4;
   ipv4.SetBase ("10.1.1.0", "255.255.255.0");
@@ -188,8 +188,8 @@ BuildTopo (uint32_t clientNo, uint32_t serverNo)
     }
   {
     p2p.SetQueue ("ns3::DropTailQueue");
-    p2p.SetDeviceAttribute ("DataRate", StringValue (redLinkDataRate));
-    p2p.SetChannelAttribute ("Delay", StringValue (redLinkDelay));
+    p2p.SetDeviceAttribute ("DataRate", StringValue (linkDataRate));
+    p2p.SetChannelAttribute ("Delay", StringValue (linkDelay));
     NetDeviceContainer devs = p2p.Install (switchs);
     // only backbone link has RED queue disc
     queueDiscs = tchRed.Install (devs);
@@ -220,8 +220,8 @@ BuildAppsTest (void)
   OnOffHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (0), port));
   clientHelper.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
   clientHelper.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-  clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate ("10Mb/s")));
-  clientHelper.SetAttribute ("PacketSize", UintegerValue (1000));
+  clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate ("1000Mb/s")));
+  // clientHelper.SetAttribute ("PacketSize", UintegerValue (1000));
 
   ApplicationContainer clientApps = clientHelper.Install (clients);
 
@@ -241,9 +241,9 @@ BuildAppsTest (void)
 }
 
 void
-SetConfig (bool useEcn)
+SetConfig (bool useEcn, bool useDctcp)
 {
-  uint32_t meanPktSize = 500;
+  uint32_t meanPktSize = 512;
 
   GlobalValue::Bind ("ChecksumEnabled", BooleanValue (false));
   // RED params
@@ -253,21 +253,21 @@ SetConfig (bool useEcn)
   Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (0.002));
-  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (20));
+  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (25));
   Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (40));
   Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (250));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
 
   // TCP params
-  // 42 = headers size
   // Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1000 - 42));
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
   // Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
-  // Dctcp params
-  // Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::dcn::DctcpSocket")));
-  Config::SetDefault ("ns3::dcn::DctcpSocket::DctcpWeight", DoubleValue (1.0 / 16));
-
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
+  if (useDctcp)
+    {
+      Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::dcn::DctcpSocket")));
+      Config::SetDefault ("ns3::dcn::DctcpSocket::DctcpWeight", DoubleValue (1.0 / 16));
+    }
   if (useEcn)
     {
       Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
@@ -279,7 +279,8 @@ int
 main (int argc, char *argv[])
 {
 
-  bool useEcn = true;
+  bool useEcn = false;
+  bool useDctcp = false;
   std::string pathOut;
   bool writeForPlot = false;
   bool writePcap = false;
@@ -288,17 +289,18 @@ main (int argc, char *argv[])
   bool printRedStats = true;
 
   global_start_time = 0.0;
-  global_stop_time = 30.0;
+  global_stop_time = 10.0;
   sink_start_time = global_start_time;
   sink_stop_time = global_stop_time + 3.0;
   client_start_time = sink_start_time + 0.2;
   client_stop_time = global_stop_time - 1.0;
-  client_interval_time = 3.0;
+  client_interval_time = 2.0;
 
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory
   CommandLine cmd;
   cmd.AddValue ("useEcn", "<0/1> to use ecn in test", useEcn);
+  cmd.AddValue ("useDctcp", "<0/1> to use dctcp in test", useDctcp);
   cmd.AddValue ("pathOut", "Path to save results from --writeForPlot/--writePcap/--writeFlowMonitor", pathOut);
   cmd.AddValue ("writeForPlot", "<0/1> to write results for plot (gnuplot)", writeForPlot);
   cmd.AddValue ("writePcap", "<0/1> to write results in pcapfile", writePcap);
@@ -306,7 +308,7 @@ main (int argc, char *argv[])
 
   cmd.Parse (argc, argv);
 
-  SetConfig (useEcn);
+  SetConfig (useEcn, useDctcp);
   BuildTopo (3, 1);
   BuildAppsTest ();
 

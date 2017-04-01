@@ -224,8 +224,9 @@ DctcpSocket::HalveCwnd (void)
 {
   NS_LOG_FUNCTION (this);
   // halve cwnd according to DCTCP algo
-  m_tcb->m_ssThresh = std::max ((uint32_t)((1 - m_alpha / 2.0) * m_tcb->m_cWnd), 2 * m_tcb->m_segmentSize);
-  m_tcb->m_cWnd = std::max ((uint32_t)((1 - m_alpha / 2.0) * m_tcb->m_cWnd), m_tcb->m_segmentSize);
+  uint32_t newCwnd = (1 - m_alpha / 2.0) * m_tcb->m_cWnd;
+  m_tcb->m_ssThresh = std::max (newCwnd, 2 * m_tcb->m_segmentSize);
+  m_tcb->m_cWnd = std::max (newCwnd, m_tcb->m_segmentSize);
 }
 
 } // namespace dcn
