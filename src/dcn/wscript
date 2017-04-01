@@ -29,7 +29,9 @@ def build(bld):
         'model/ip-l3_5-protocol.cc',
         'model/token-bucket-filter.cc',
         'model/addcn-bulk-send-application.cc',
+        'model/addcn-packet-sink.cc',
         'helper/addcn-bulk-send-helper.cc',
+        'helper/addcn-packet-sink-helper.cc',
         'helper/ip-l3_5-protocol-helper.cc',
     ]
 
@@ -61,7 +63,9 @@ def build(bld):
         'model/ip-l3_5-protocol.h',
         'model/token-bucket-filter.h',
         'model/addcn-bulk-send-application.h',
+        'model/addcn-packet-sink.h',
         'helper/addcn-bulk-send-helper.h',
+        'helper/addcn-packet-sink-helper.h',
         'helper/ip-l3_5-protocol-helper.h',
     ]
 

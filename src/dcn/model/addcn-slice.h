@@ -50,6 +50,8 @@ public:
    */
   static Ptr<ADDCNSlice> GetSlice (uint32_t tenantId, C3Type type);
 
+  static Ptr<ADDCNSlice> GetSliceFromTuple (const ADDCNFlow::FiveTuple &tuple);
+
   /**
    * @brief CreateSlice according to its type
    * @param type objective type
@@ -134,8 +136,10 @@ private:
   typedef std::pair<uint32_t, C3Type> SliceListKey_t;
   typedef std::map<SliceListKey_t, Ptr<ADDCNSlice> > SliceList_t;
   typedef std::map<C3Type, std::string> SliceTypeList_t;
+  typedef std::map<ADDCNFlow::FiveTuple, Ptr<ADDCNSlice> > TupleSliceList_t;
 
   static SliceList_t m_sliceList;
+  static TupleSliceList_t m_tupleSliceList;
   static SliceTypeList_t m_sliceTypeList;
   static Time m_startTime;  //!< start time of slice
   static Time m_stopTime;   //!< stop time of slice

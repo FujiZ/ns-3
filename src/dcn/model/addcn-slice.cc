@@ -13,6 +13,7 @@ namespace dcn {
 
 NS_OBJECT_ENSURE_REGISTERED (ADDCNSlice);
 
+ADDCNSlice::TupleSliceList_t ADDCNSlice::m_tupleSliceList;
 ADDCNSlice::SliceList_t ADDCNSlice::m_sliceList;
 ADDCNSlice::SliceTypeList_t ADDCNSlice::m_sliceTypeList;
 Time ADDCNSlice::m_startTime;
@@ -66,9 +67,17 @@ ADDCNSlice::~ADDCNSlice ()
 }
 
 Ptr<ADDCNSlice>
+ADDCNSlice::GetSliceFromTuple (const ADDCNFlow::FiveTuple &tuple)
+{
+  NS_LOG_FUNCTION ("GetSliceFormTuple ");
+  auto iter = m_tupleSliceList.find (tuple);
+  NS_ASSERT(iter != m_tupleSliceList.end ());
+  return iter->second;
+}
+Ptr<ADDCNSlice>
 ADDCNSlice::GetSlice (uint32_t tenantId, C3Type type)
 {
-  NS_LOG_FUNCTION (tenantId << static_cast<uint8_t> (type));
+  NS_LOG_FUNCTION ("GetSlice " << tenantId << static_cast<uint8_t> (type));
 
   auto iter = m_sliceList.find (std::make_pair (tenantId, type));
   if (iter != m_sliceList.end ())
@@ -77,7 +86,7 @@ ADDCNSlice::GetSlice (uint32_t tenantId, C3Type type)
     }
   else
     {
-      return 0;
+      return CreateSlice(tenantId, type);
     }
 }
 
@@ -120,6 +129,7 @@ ADDCNSlice::GetFlow(const ADDCNFlow::FiveTuple &tup)
     flow->SetFiveTuple(tup);
     flow->UpdateScale(m_scale);
     m_flowList[tup] = flow;
+    m_tupleSliceList[tup] = this;
     return flow;
   }
 }

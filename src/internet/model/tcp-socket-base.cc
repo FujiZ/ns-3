@@ -2883,6 +2883,7 @@ TcpSocketBase::SendPendingData (bool withAck)
                     " pd->SFS " << m_txBuffer->SizeFromSequence (m_tcb->m_nextTxSequence));
 
       NS_LOG_DEBUG ("Window: " << w <<
+                    " rxwin " << m_rWnd <<
                     " cWnd: " << m_tcb->m_cWnd <<
                     " unAck: " << UnAckDataCount ());
 
@@ -3647,6 +3648,7 @@ void TcpSocketBase::UpdateWindowSize (const TcpHeader &header)
   uint32_t receivedWindow = header.GetWindowSize ();
   receivedWindow <<= m_sndWindShift;
   NS_LOG_INFO ("Received (scaled) window is " << receivedWindow << " bytes");
+  NS_LOG_DEBUG ("Received (scaled) window is " << receivedWindow << " bytes");
   if (m_state < ESTABLISHED)
     {
       m_rWnd = receivedWindow;

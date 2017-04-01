@@ -157,7 +157,7 @@ ADDCNFlow::NotifyReceived(const TcpHeader &tcpHeader)
 void
 ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
 {
-  NS_LOG_FUNCTION(this << tcpHeader << "M_RWND" << m_rwnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
+  NS_LOG_FUNCTION(this << tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rwnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
   SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
   // curSeq > m_updateRwndSeq ensures that this action is operated only one time every RTT
   if(m_alpha > 10e-7 && curSeq > m_updateRwndSeq)
@@ -168,6 +168,7 @@ ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
   else
     m_rwnd += m_weightScaled * m_segSize;
   m_rwnd = m_rwnd > m_segSize ? m_rwnd : m_segSize;
+  NS_LOG_FUNCTION(this << tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rwnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
 }
 
 void

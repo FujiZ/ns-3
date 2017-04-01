@@ -82,10 +82,9 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
       tuple.destinationPort = dstPort;
 
       //TODO handle FIN TcpHeader
-      Ptr<ADDCNFlow> flow = ADDCNSlice::CreateSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
+      Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
       if((tcpHeader.GetFlags() & (TcpHeader::SYN | TcpHeader::ACK)) == TcpHeader::SYN)
       {
-        NS_LOG_DEBUG("SYN");
         flow->Initialize(); // New connection
         flow->SetSegmentSize(c3Tag.GetSegmentSize());
       }
@@ -134,10 +133,12 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
   NS_LOG_FUNCTION (this << packet << ipHeader);
 
   C3Tag c3Tag;
+
+  TcpHeader tcpHeader;
+  packet->PeekHeader (tcpHeader);
+
   if (packet->PeekPacketTag (c3Tag))
-  {
-    TcpHeader tcpHeader;
-    packet->PeekHeader (tcpHeader);
+  { // At the receiver side
     ADDCNFlow::FiveTuple tuple;
     tuple.sourceAddress = ipHeader.GetSource ();
     tuple.destinationAddress = ipHeader.GetDestination ();
@@ -145,9 +146,11 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
     tuple.sourcePort = tcpHeader.GetSourcePort ();
     tuple.destinationPort = tcpHeader.GetDestinationPort ();
 
-    Ptr<ADDCNFlow> flow = ADDCNSlice::CreateSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
+    Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
     flow->UpdateEcnStatistics(ipHeader);
-
+  }
+  else
+  { // At the sender side
       ADDCNFlow::FiveTuple rtuple;
       rtuple.sourceAddress = ipHeader.GetDestination ();
       rtuple.destinationAddress = ipHeader.GetSource ();
@@ -155,8 +158,9 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
       rtuple.sourcePort = tcpHeader.GetDestinationPort ();
       rtuple.destinationPort = tcpHeader.GetSourcePort ();
 
-      Ptr<ADDCNFlow> rflow = ADDCNSlice::CreateSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(rtuple);
+      Ptr<ADDCNFlow> rflow = ADDCNSlice::GetSliceFromTuple(rtuple)->GetFlow(rtuple);
 
+    /*
     //if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
     if((tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN)) == TcpHeader::SYN)
     {
@@ -169,9 +173,10 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
         rflow->ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
       }
     }
+    */
     // TODO check logic
     // TODO frequency of updating window?
-    else if((tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN)) == (TcpHeader::SYN | TcpHeader::ACK))
+    if((tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN)) == (TcpHeader::SYN | TcpHeader::ACK))
     {
       NS_LOG_DEBUG("Receive side, SYN & ACK");
       if(tcpHeader.HasOption (TcpOption::WINSCALE))
@@ -179,15 +184,15 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
         NS_LOG_DEBUG("Receive side, SYN & ACK, WScale");
         rflow->ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
       }
+      rflow->NotifyReceived(tcpHeader);
     }
     else
     {
-    }
-
-      NS_LOG_DEBUG("Receive side, Notify Receive");
       rflow->NotifyReceived(tcpHeader);
       rflow->UpdateReceiveWindow(tcpHeader);
       rflow->SetReceiveWindow(packet);
+    }
+
       packet->PeekHeader (tcpHeader);
       NS_LOG_FUNCTION(this << "Window Set Header " << tcpHeader);
 

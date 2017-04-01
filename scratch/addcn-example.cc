@@ -58,6 +58,7 @@ main (int argc, char *argv[])
   LogComponentEnable ("ADDCNL3_5Protocol", LOG_LEVEL_ALL);
   LogComponentEnable ("ADDCNSlice", LOG_LEVEL_ALL);
   LogComponentEnable ("ADDCNFlow", LOG_LEVEL_ALL);
+  LogComponentEnable ("TcpSocketBase", LOG_LEVEL_DEBUG);
 
   NodeContainer nodes;
   nodes.Create (2);

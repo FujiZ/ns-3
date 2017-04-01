@@ -29,12 +29,13 @@
 #include "ns3/uinteger.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/tcp-socket-factory.h"
-#include "ns3/tcp-socket-base.h"
 
+#include "ns3/tcp-socket-base.h"
 #include "ns3/flow-id-tag.h"
+#include "c3-tag.h"
+
 #include "addcn-bulk-send-application.h"
 
-#include "c3-tag.h"
 
 
 namespace ns3 {
