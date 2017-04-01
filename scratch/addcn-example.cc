@@ -10,7 +10,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("ADDCNExample");
 
-const uint32_t flowSize = 100000;
+const uint32_t flowSize = 1000000;
 const Time deadline = Seconds (5.0);
 const uint32_t segSize = 536;
 const int port = 9;
@@ -64,7 +64,7 @@ main (int argc, char *argv[])
   nodes.Create (2);
 
   PointToPointHelper pointToPoint;
-  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("50Mbps"));
   pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
 
   NetDeviceContainer devices;

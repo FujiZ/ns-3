@@ -90,8 +90,8 @@ ADDCNFlow::ADDCNFlow ()
     m_g (1.0/16.0),
     m_alpha (0.0),
     m_scale (1.0),
-    m_weight (0.0),
-    m_weightScaled(0.0),
+    m_weight (1.0),
+    m_weightScaled(1.0),
     m_seqNumber(0),
     m_updateRwndSeq(0),
     m_updateAlphaSeq(0),
@@ -116,9 +116,9 @@ ADDCNFlow::Initialize ()
   m_g = 1.0 / 16.0;
   m_alpha = 0;
   //m_scale = 1.0;
-  m_weight = 0.0;
+  m_weight = 1.0;
   m_segSize = 0;
-  m_weightScaled = 0.0;
+  m_weightScaled = 1.0;
   m_seqNumber = 0;
   m_updateRwndSeq = 0;
   m_updateAlphaSeq = 0;
@@ -188,7 +188,8 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
   // TODO check WScale option
   uint32_t w = m_rwnd >> m_sndWindShift;
   
-  tcpHeader.SetWindowSize(w);
+  if(w < tcpHeader.GetWindowSize())
+    tcpHeader.SetWindowSize(w);
   packet->AddHeader(tcpHeader);
   NS_LOG_FUNCTION(this << "Window set" << packet);
   return;
@@ -237,7 +238,7 @@ ADDCNFlow::UpdateScale(const double s)
   if(s > 10e-7)
   {
     m_scale = s;
-    m_weightScaled = m_weight / m_scale;
+    m_weightScaled = m_weight * m_scale;
   }
 }
 

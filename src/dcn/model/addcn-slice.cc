@@ -55,7 +55,7 @@ ADDCNSlice::GetTypeId (void)
 ADDCNSlice::ADDCNSlice ()
   : m_tenantId (0),
     m_type (C3Type::NONE),
-    m_weight (0.0),
+    m_weight (1.0),
     m_scale (1.0)
 {
   NS_LOG_FUNCTION (this);
@@ -189,15 +189,28 @@ ADDCNSlice::UpdateAll (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
+  double total_weight = 0.0;
   for (auto it = m_sliceList.begin (); it != m_sliceList.end (); ++it)
-    {
+  {
+      Ptr<ADDCNSlice> slice = it->second;
+      total_weight += slice->m_weight;
+  }
+  if (total_weight > 10e-7)
+  for (auto it = m_sliceList.begin (); it != m_sliceList.end (); ++it)
+  {
+      Ptr<ADDCNSlice> slice = it->second;
+      slice->m_weight /= total_weight;
+  }
+
+  for (auto it = m_sliceList.begin (); it != m_sliceList.end (); ++it)
+  {
       Ptr<ADDCNSlice> slice = it->second;
       slice->Update ();
-    }
+  }
   if (Simulator::Now () + m_interval <= m_stopTime)
-    {
+  {
       m_timer.Schedule (m_interval);
-    }
+  }
 }
 
 void

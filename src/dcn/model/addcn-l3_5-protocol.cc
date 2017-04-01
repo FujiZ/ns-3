@@ -109,9 +109,9 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
     }
     // not a data packet: ACK or sth else
     // TODO
-    ForwardDown (packet, src, dst, protocol, route);
   }
   // check tag before send
+  ForwardDown (packet, src, dst, protocol, route);
 }
 
 void
@@ -185,6 +185,7 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
         rflow->ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
       }
       rflow->NotifyReceived(tcpHeader);
+      rflow->UpdateReceiveWindow(tcpHeader);
     }
     else
     {
@@ -195,22 +196,6 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
 
       packet->PeekHeader (tcpHeader);
       NS_LOG_FUNCTION(this << "Window Set Header " << tcpHeader);
-
-  // if(tcpHeader.GetFlags() & TcpHeader::SYN)
-  // {
-  //    flow->Initialize();
-  //    flow->SetSegSize();
-  // }   
-  // else
-  // {
-        //C3EcnRecorder::GetEcnRecorder (c3Tag.GetTenantId (), c3Tag.GetType (),
-        //                             header.GetSource (), header.GetDestination ())->NotifyReceived (header);
-  //    if(tcpHeader.GetFlags() & (TcpHeader::ACK | TcpHeader::SYN) == TcpHeader::ACK)
-  //    {
-  //      flow->UpdateReceiveWindow();
-  //    }
-  // }
-  // flow->SetReceiveWindow(packet);
   }
   return ForwardUp (packet, ipHeader, incomingInterface, ipHeader.GetProtocol ());
 }
