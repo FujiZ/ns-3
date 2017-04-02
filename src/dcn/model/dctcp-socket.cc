@@ -1,5 +1,8 @@
-#include "dctcp-socket.h"
 
+#define NS_LOG_APPEND_CONTEXT \
+  if (m_node) { std::clog << "[node " << m_node->GetId () << "] "; }
+
+#include "dctcp-socket.h"
 #include "ns3/log.h"
 
 namespace ns3 {
@@ -38,7 +41,7 @@ DctcpSocket::GetInstanceTypeId () const
 DctcpSocket::DctcpSocket (void)
   : TcpSocketBase (),
     m_g (1.0 / 16.0),
-    m_alpha (1.0),
+    m_alpha (0.0),
     m_ackedBytesEcn (0),
     m_ackedBytesTotal (0),
     m_alphaUpdateSeq (0),
@@ -125,6 +128,7 @@ DctcpSocket::UpdateAlpha (const TcpHeader &tcpHeader)
       // NS_LOG_DEBUG ("Before alpha update: " << m_alpha.Get ());
       m_alpha = (1 - m_g) * m_alpha + m_g * ((double)m_ackedBytesEcn / (m_ackedBytesTotal ? m_ackedBytesTotal : 1));
       // NS_LOG_DEBUG ("After alpha update: " << m_alpha.Get ());
+      NS_LOG_DEBUG("[ALPHA] " << Simulator::Now ().GetSeconds () << " " << m_alpha.Get ());
       m_ackedBytesEcn = m_ackedBytesTotal = 0;
     }
 }

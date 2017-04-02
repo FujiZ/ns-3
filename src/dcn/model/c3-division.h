@@ -122,7 +122,7 @@ protected:
 private:
 
   uint32_t m_tenantId;  //!< tenant id of divison
-  C3Type m_type;    //!< objective type
+  //C3Type m_type;    //!< objective type
   double m_weight;  //!< division weight
 
   typedef std::pair<uint32_t, C3Type> DivisionListKey_t;
