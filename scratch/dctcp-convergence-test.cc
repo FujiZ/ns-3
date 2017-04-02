@@ -19,8 +19,8 @@ uint32_t checkTimes;
 double avgQueueSize;
 
 // attributes
-std::string linkDataRate = "100Mbps";
-std::string linkDelay = "2ms";
+std::string linkDataRate;
+std::string linkDelay;
 
 // The times
 double global_start_time;
@@ -55,7 +55,7 @@ std::stringstream filePlotQueueAvg;
 void
 CheckQueueSize (Ptr<QueueDisc> queue)
 {
-  uint32_t qSize = StaticCast<DctcpFastQueueDisc> (queue)->GetQueueSize ();
+  uint32_t qSize = StaticCast<RedQueueDisc> (queue)->GetQueueSize ();
 
   avgQueueSize += qSize;
   checkTimes++;
@@ -155,15 +155,14 @@ BuildTopo (uint32_t clientNo, uint32_t serverNo)
 
 
   TrafficControlHelper tchPfifo;
-  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc", "Limit", UintegerValue (250));
-  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxPackets", UintegerValue (250));
+  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc", "Limit", UintegerValue (90));
+  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxPackets", UintegerValue (90));
 
   TrafficControlHelper tchRed;
-  tchRed.SetRootQueueDisc ("ns3::DctcpFastQueueDisc", "Threshold", UintegerValue(25),
-                           "Limit", UintegerValue (250));
-  //tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", StringValue (linkDataRate),
-  //                         "LinkDelay", StringValue (linkDelay));
-
+  //tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "Threshold", UintegerValue(25),
+  //                         "Limit", UintegerValue (200));
+  tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", StringValue (linkDataRate),
+                           "LinkDelay", StringValue (linkDelay));
 
   NS_LOG_INFO ("Create channels");
   PointToPointHelper p2p;
@@ -223,7 +222,7 @@ BuildAppsTest (void)
   OnOffHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (0), port));
   clientHelper.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
   clientHelper.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-  clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate ("100Mb/s")));
+  clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate (linkDataRate)));
   // clientHelper.SetAttribute ("PacketSize", UintegerValue (1000));
 
   ApplicationContainer clientApps = clientHelper.Install (clients);
@@ -246,19 +245,18 @@ BuildAppsTest (void)
 void
 SetConfig (bool useEcn, bool useDctcp)
 {
-  uint32_t meanPktSize = 512;
 
   GlobalValue::Bind ("ChecksumEnabled", BooleanValue (false));
   // RED params
   NS_LOG_INFO ("Set RED params");
   Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
-  Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (meanPktSize));
+  Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (500));
   Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (true));
-  Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (0.002));
-  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (25));
-  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (40));
-  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (250));
+  Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
+  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (10));
+  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (20));
+  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (90));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
 
@@ -289,8 +287,9 @@ main (int argc, char *argv[])
   bool writeForPlot = false;
   bool writePcap = false;
   bool flowMonitor = false;
+  bool writeThroughput = false;
 
-  bool printRedStats = false;
+  bool printRedStats = true;
 
   global_start_time = 0.0;
   global_stop_time = 100.0;
@@ -299,6 +298,9 @@ main (int argc, char *argv[])
   client_start_time = sink_start_time + 0.2;
   client_stop_time = global_stop_time - 1.0;
   client_interval_time = 20.0;
+
+  linkDataRate = "100Mbps";
+  linkDelay = "2ms";
 
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory
@@ -309,6 +311,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("writeForPlot", "<0/1> to write results for plot (gnuplot)", writeForPlot);
   cmd.AddValue ("writePcap", "<0/1> to write results in pcapfile", writePcap);
   cmd.AddValue ("writeFlowMonitor", "<0/1> to enable Flow Monitor and write their results", flowMonitor);
+  cmd.AddValue ("writeThroughput", "<0/1> to write throughtput results", writeThroughput);
 
   cmd.Parse (argc, argv);
 
@@ -341,7 +344,11 @@ main (int argc, char *argv[])
       Ptr<QueueDisc> queue = queueDiscs.Get (0);
       Simulator::ScheduleNow (&CheckQueueSize, queue);
     }
-  Simulator::Schedule (Seconds (sink_start_time), &CalculateThroughput);
+
+  if (writeThroughput)
+    {
+      Simulator::Schedule (Seconds (sink_start_time), &CalculateThroughput);
+    }
 
   Simulator::Stop (Seconds (sink_stop_time));
   Simulator::Run ();
@@ -371,14 +378,17 @@ main (int argc, char *argv[])
       std::cout << "\t " << st.qLimDrop << " drops due queue full" << std::endl;
     }
 
-  for (auto& resultList : throughputResult)
+  if (writeThroughput)
     {
-      std::stringstream ss;
-      ss << pathOut << "/throughput-" << resultList.first << ".txt";
-      std::ofstream out (ss.str ());
-      for (auto& entry : resultList.second)
+      for (auto& resultList : throughputResult)
         {
-          out << entry.first << "," << entry.second << std::endl;
+          std::stringstream ss;
+          ss << pathOut << "/throughput-" << resultList.first << ".txt";
+          std::ofstream out (ss.str ());
+          for (auto& entry : resultList.second)
+            {
+              out << entry.first << "," << entry.second << std::endl;
+            }
         }
     }
   Simulator::Destroy ();
