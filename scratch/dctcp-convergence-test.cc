@@ -19,8 +19,8 @@ uint32_t checkTimes;
 double avgQueueSize;
 
 // attributes
-std::string linkDataRate = "1000Mbps";
-std::string linkDelay = "0.2ms";
+std::string linkDataRate = "100Mbps";
+std::string linkDelay = "2ms";
 
 // The times
 double global_start_time;
@@ -159,7 +159,8 @@ BuildTopo (uint32_t clientNo, uint32_t serverNo)
   tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxPackets", UintegerValue (250));
 
   TrafficControlHelper tchRed;
-  tchRed.SetRootQueueDisc ("ns3::DctcpFastQueueDisc", "Threshold", UintegerValue(25));
+  tchRed.SetRootQueueDisc ("ns3::DctcpFastQueueDisc", "Threshold", UintegerValue(25),
+                           "Limit", UintegerValue (250));
   //tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", StringValue (linkDataRate),
   //                         "LinkDelay", StringValue (linkDelay));
 
@@ -219,16 +220,10 @@ BuildAppsTest (void)
    * onoffhelper is a client that send data to TCP destination
    */
   
-  /*
   OnOffHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (0), port));
   clientHelper.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
   clientHelper.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-  clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate ("1000Mb/s")));
-   */
-
-  BulkSendHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (0), port));
-  //clientHelper.SetAttribute ("MaxBytes", UintegerValue (3000));
-
+  clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate ("100Mb/s")));
   // clientHelper.SetAttribute ("PacketSize", UintegerValue (1000));
 
   ApplicationContainer clientApps = clientHelper.Install (clients);
@@ -287,7 +282,7 @@ int
 main (int argc, char *argv[])
 {
 
-  LogComponentEnable ("DctcpSocket", LOG_LEVEL_DEBUG);
+  // LogComponentEnable ("DctcpSocket", LOG_LEVEL_DEBUG);
   bool useEcn = false;
   bool useDctcp = false;
   std::string pathOut;
@@ -298,12 +293,12 @@ main (int argc, char *argv[])
   bool printRedStats = false;
 
   global_start_time = 0.0;
-  global_stop_time = 51.0;
+  global_stop_time = 100.0;
   sink_start_time = global_start_time;
   sink_stop_time = global_stop_time + 3.0;
   client_start_time = sink_start_time + 0.2;
   client_stop_time = global_stop_time - 1.0;
-  client_interval_time = 10.0;
+  client_interval_time = 20.0;
 
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory

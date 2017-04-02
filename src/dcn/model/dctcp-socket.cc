@@ -41,7 +41,7 @@ DctcpSocket::GetInstanceTypeId () const
 DctcpSocket::DctcpSocket (void)
   : TcpSocketBase (),
     m_g (1.0 / 16.0),
-    m_alpha (0.0),
+    m_alpha (1.0),
     m_ackedBytesEcn (0),
     m_ackedBytesTotal (0),
     m_alphaUpdateSeq (0),

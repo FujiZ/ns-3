@@ -42,7 +42,7 @@ C3Division::GetTypeId (void)
 
 C3Division::C3Division (C3Type type)
   : m_tenantId (0),
-    //m_type (type),
+    m_type (type),
     m_weight (0.0)
 {
   NS_LOG_FUNCTION (this);
