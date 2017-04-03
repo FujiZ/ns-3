@@ -39,6 +39,10 @@ massif.*
 /qtcreator-*
 *.txt
 *.tr
-*.flowmon
+*.sh
+*.plt
+*.png
+*.dat
+*.bak
 *.DS_Store
-result
+waf
