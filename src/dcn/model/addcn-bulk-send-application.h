@@ -27,6 +27,8 @@
 #include "ns3/ptr.h"
 #include "ns3/traced-callback.h"
 
+#include "c3-type.h"
+
 namespace ns3 {
 class Address;
 class Socket;
@@ -99,6 +101,19 @@ public:
    */
   Ptr<Socket> GetSocket (void) const;
 
+  void SetTenantId(uint32_t tenantId);
+  uint32_t GetTenantId();
+  void SetFlowType(C3Type &flowType);
+  C3Type GetFlowType();
+  void SetFlowSize(uint64_t flowSize);
+  uint64_t GetFlowSize();
+  void SetDeadline(Time &deadline);
+  Time GetDeadline();
+  void SetSegSize(uint32_t segSize);
+  uint32_t GetSegSize();
+
+  void SocketTxTracer(Ptr<Packet const> packet, const TcpHeader &header, Ptr<TcpSocketBase const> socketBase);
+
 protected:
   virtual void DoDispose (void);
 private:
@@ -119,6 +134,11 @@ private:
   uint64_t        m_totBytes;     //!< Total bytes sent so far
   TypeId          m_tid;          //!< The type of protocol to use.
 
+  uint32_t        m_tenantId;     //!< Tenant ID of current flow
+  C3Type          m_flowType;     //!< Flow type of current flow
+  uint64_t        m_flowSize;     //!< Size of flow to send
+  Time            m_deadline;     //!< Deadline of current flow
+  uint32_t        m_segSize;      //!< Semgment size; // TODO
   /// Traced Callback: sent packets
   TracedCallback<Ptr<const Packet> > m_txTrace;
 

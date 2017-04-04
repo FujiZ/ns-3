@@ -32,30 +32,15 @@
 
 #include "ns3/tcp-socket-base.h"
 #include "ns3/flow-id-tag.h"
-#include "c3-tag.h"
 
 #include "addcn-bulk-send-application.h"
+#include "c3-tag.h"
 
 
 
 namespace ns3 {
 namespace dcn {
-const uint32_t flowSize = 100000;
-const Time deadline = Seconds (5.0);
-const uint32_t segSize = 536;
 
-void SocketTxTracer(Ptr<Packet const> packet, const TcpHeader &header, Ptr<TcpSocketBase const> socketBase)
-{
-  static FlowIdTag flowIdTag;
-  ns3::dcn::C3Tag c3Tag;
-  c3Tag.SetFlowSize (flowSize);
-  c3Tag.SetDeadline (deadline);
-  c3Tag.SetSegmentSize (segSize);
-  c3Tag.SetType (ns3::dcn::C3Type::DS);
-  packet->AddPacketTag (flowIdTag);
-  packet->AddPacketTag (c3Tag);
-  packet->AddByteTag (c3Tag);
-}
 NS_LOG_COMPONENT_DEFINE ("AddcnBulkSendApplication");
 
 NS_OBJECT_ENSURE_REGISTERED (AddcnBulkSendApplication);
@@ -98,7 +83,12 @@ AddcnBulkSendApplication::GetTypeId (void)
 AddcnBulkSendApplication::AddcnBulkSendApplication ()
   : m_socket (0),
     m_connected (false),
-    m_totBytes (0)
+    m_totBytes (0),
+    m_tenantId (0),
+    m_flowType (ns3::dcn::C3Type::DS),
+    m_flowSize (100000),
+    m_deadline (Seconds(5.0)),
+    m_segSize (536)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -106,6 +96,21 @@ AddcnBulkSendApplication::AddcnBulkSendApplication ()
 AddcnBulkSendApplication::~AddcnBulkSendApplication ()
 {
   NS_LOG_FUNCTION (this);
+}
+
+void 
+AddcnBulkSendApplication::SocketTxTracer(Ptr<Packet const> packet, const TcpHeader &header, Ptr<TcpSocketBase const> socketBase)
+{
+  static FlowIdTag flowIdTag;
+  ns3::dcn::C3Tag c3Tag;
+  c3Tag.SetTenantId(m_tenantId);
+  c3Tag.SetType (m_flowType);
+  c3Tag.SetFlowSize (m_flowSize);
+  c3Tag.SetDeadline (m_deadline);
+  c3Tag.SetSegmentSize (m_segSize);
+  packet->AddPacketTag (flowIdTag);
+  packet->AddPacketTag (c3Tag);
+  packet->AddByteTag (c3Tag);
 }
 
 void
@@ -120,6 +125,77 @@ AddcnBulkSendApplication::GetSocket (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_socket;
+}
+
+void 
+AddcnBulkSendApplication::SetTenantId(uint32_t tenantId)
+{
+  NS_LOG_FUNCTION (this );
+  m_tenantId = tenantId;
+}
+
+uint32_t 
+AddcnBulkSendApplication::GetTenantId()
+{
+  NS_LOG_FUNCTION (this );
+  return m_tenantId;
+}
+
+void 
+AddcnBulkSendApplication::SetFlowType(C3Type &flowType)
+{
+  NS_LOG_FUNCTION (this );
+  m_flowType = flowType;
+}
+
+C3Type 
+AddcnBulkSendApplication::GetFlowType()
+{
+  NS_LOG_FUNCTION (this );
+  return m_flowType;
+}
+
+void 
+AddcnBulkSendApplication::SetFlowSize(uint64_t flowSize)
+{
+  NS_LOG_FUNCTION (this );
+  m_flowSize = flowSize;
+  this->SetMaxBytes (flowSize);
+}
+
+uint64_t 
+AddcnBulkSendApplication::GetFlowSize()
+{
+  NS_LOG_FUNCTION (this );
+  return m_flowSize;
+}
+
+void 
+AddcnBulkSendApplication::SetDeadline(Time &deadline)
+{
+  NS_LOG_FUNCTION (this );
+  m_deadline = deadline;
+}
+
+Time 
+AddcnBulkSendApplication::GetDeadline()
+{
+  NS_LOG_FUNCTION (this );
+  return m_deadline;
+}
+
+void 
+AddcnBulkSendApplication::SetSegSize(uint32_t segSize)
+{
+  NS_LOG_FUNCTION (this );
+  m_segSize = segSize;
+}
+
+uint32_t 
+AddcnBulkSendApplication::GetSegSize()
+{
+  NS_LOG_FUNCTION (this );
+  return m_segSize;
 }
 
 void
@@ -160,7 +236,7 @@ void AddcnBulkSendApplication::StartApplication (void) // Called at time specifi
           m_socket->Bind ();
         }
 
-      m_socket->TraceConnectWithoutContext("Tx", MakeCallback(&SocketTxTracer));
+      m_socket->TraceConnectWithoutContext("Tx", MakeCallback(&AddcnBulkSendApplication::SocketTxTracer, this));
       m_socket->Connect (m_peer);
       m_socket->ShutdownRecv ();
       m_socket->SetConnectCallback (
