@@ -4,7 +4,6 @@
 #include "dctcp-socket.h"
 
 namespace ns3 {
-namespace dcn {
 
 class D2tcpSocket : public DctcpSocket
 {
@@ -38,10 +37,19 @@ public:
 
 protected:
 
-  /// \todo update sentBytes in UpdateRttHistory
+  virtual void SendEmptyPacket (uint8_t flags);
+  virtual uint32_t SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck);
+
+  // update sentBytes in UpdateRttHistory
   virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                  bool isRetransmission);
   virtual void HalveCwnd (void);
+
+  /**
+   * @brief Check Deadline before sending a packet;
+   * @return true if not exceeded
+   */
+  bool CheckDeadline (void) const;
 
   // D2TCP related params
   Time                  m_deadline;         //!< deadline of current flow
@@ -49,8 +57,6 @@ protected:
   uint64_t              m_totalBytes;       //!< total bytes to send
   TracedValue<uint64_t> m_sentBytes;        //!< bytes already sent
 };
-
-} // namespace dcn
 
 /**
  * TracedValue Callback signature for Uint64

@@ -253,7 +253,7 @@ SetConfig (bool useEcn, bool useDctcp)
   Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (500));
   Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (true));
-  Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
+  // Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
   Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (10));
   Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (20));
   Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (90));
@@ -266,8 +266,8 @@ SetConfig (bool useEcn, bool useDctcp)
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
   if (useDctcp)
     {
-      Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::dcn::DctcpSocket")));
-      Config::SetDefault ("ns3::dcn::DctcpSocket::DctcpWeight", DoubleValue (1.0 / 16));
+      Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::DctcpSocket")));
+      Config::SetDefault ("ns3::DctcpSocket::DctcpWeight", DoubleValue (1.0 / 16));
     }
   if (useEcn)
     {

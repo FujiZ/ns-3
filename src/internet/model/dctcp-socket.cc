@@ -1,24 +1,19 @@
-
-#define NS_LOG_APPEND_CONTEXT \
-  if (m_node) { std::clog << "[node " << m_node->GetId () << "] "; }
-
 #include "dctcp-socket.h"
+
 #include "ns3/log.h"
 
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("DctcpSocket");
 
-namespace dcn {
-
 NS_OBJECT_ENSURE_REGISTERED (DctcpSocket);
 
 TypeId
 DctcpSocket::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::DctcpSocket")
+  static TypeId tid = TypeId ("ns3::DctcpSocket")
       .SetParent<TcpSocketBase> ()
-      .SetGroupName ("DCN")
+      .SetGroupName ("Internet")
       .AddConstructor<DctcpSocket> ()
       .AddAttribute ("DctcpWeight",
                      "Weigt for calculating DCTCP's alpha parameter",
@@ -233,5 +228,4 @@ DctcpSocket::HalveCwnd (void)
   m_tcb->m_cWnd = std::max (newCwnd, m_tcb->m_segmentSize);
 }
 
-} // namespace dcn
 } // namespace ns3

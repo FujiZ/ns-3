@@ -1,12 +1,11 @@
 #ifndef DCTCP_SOCKET_H
 #define DCTCP_SOCKET_H
 
-#include "ns3/tcp-socket-base.h"
-#include "ns3/tcp-congestion-ops.h"
-#include "ns3/tcp-l4-protocol.h"
+#include "tcp-socket-base.h"
+#include "tcp-congestion-ops.h"
+#include "tcp-l4-protocol.h"
 
 namespace ns3 {
-namespace dcn {
 
 class DctcpSocket : public TcpSocketBase
 {
@@ -61,7 +60,6 @@ protected:
 
 };
 
-} // namespace dcn
 } // namespace ns3
 
 #endif // DCTCP_SOCKET_H

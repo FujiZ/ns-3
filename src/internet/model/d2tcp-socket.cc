@@ -2,26 +2,27 @@
 
 #include "ns3/log.h"
 
+#include "ipv4-end-point.h"
+#include "ipv6-end-point.h"
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("D2tcpSocket");
-
-namespace dcn {
 
 NS_OBJECT_ENSURE_REGISTERED (D2tcpSocket);
 
 TypeId
 D2tcpSocket::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::D2tcpSocket")
+  static TypeId tid = TypeId ("ns3::D2tcpSocket")
       .SetParent<DctcpSocket> ()
-      .SetGroupName ("DCN")
+      .SetGroupName ("Internet")
       .AddConstructor<D2tcpSocket> ()
       .AddAttribute ("Deadline",
                      "Deadline for current flow.",
                      TimeValue (Time ()),
                      MakeTimeAccessor (&D2tcpSocket::m_deadline),
-                     MakeTimeChecker<Time> ())
+                     MakeTimeChecker ())
       .AddAttribute ("TotalBytes",
                      "Total bytes tobe sent.",
                      UintegerValue (0),
@@ -135,6 +136,33 @@ D2tcpSocket::Connect (const Address &address)
 }
 
 void
+D2tcpSocket::SendEmptyPacket (uint8_t flags)
+{
+  if (CheckDeadline ())
+    {
+      DctcpSocket::SendEmptyPacket (flags);
+    }
+  else
+    {
+      DoClose ();
+    }
+}
+
+uint32_t
+D2tcpSocket::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck)
+{
+  if (CheckDeadline ())
+    {
+      return DctcpSocket::SendDataPacket (seq, maxSize, withAck);
+    }
+  else
+    {
+      DoClose ();
+      return 0;
+    }
+}
+
+void
 D2tcpSocket::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool isRetransmission)
 {
   NS_LOG_FUNCTION (this);
@@ -155,8 +183,8 @@ D2tcpSocket::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool is
           if ((seq >= i->seq) && (seq < (i->seq + SequenceNumber32 (i->count))))
             { // Found it
               i->retx = true;
-              m_sentBytes -= i->count;
 
+              m_sentBytes -= i->count;
               i->count = ((seq + SequenceNumber32 (sz)) - i->seq); // And update count in hist
               m_sentBytes += i->count;
               break;
@@ -186,11 +214,16 @@ D2tcpSocket::HalveCwnd (void)
         }
     }
   double p = std::pow (m_alpha, d);
+  uint32_t newCwnd =  (uint32_t)((1 - p / 2.0) * m_tcb->m_cWnd);
   // halve cwnd according to D2TCP algo
-  m_tcb->m_ssThresh = std::max ((uint32_t)((1 - p / 2.0) * m_tcb->m_cWnd), 2 * m_tcb->m_segmentSize);
-  m_tcb->m_cWnd = std::max ((uint32_t)((1 - p / 2.0) * m_tcb->m_cWnd), m_tcb->m_segmentSize);
+  m_tcb->m_ssThresh = std::max (newCwnd, 2 * m_tcb->m_segmentSize);
+  m_tcb->m_cWnd = std::max (newCwnd, m_tcb->m_segmentSize);
 }
 
+bool
+D2tcpSocket::CheckDeadline (void) const
+{
+  return m_deadline != Time (0) && m_finishTime < Simulator::Now ();
+}
 
-} // namespace dcn
 } // namespace ns3
