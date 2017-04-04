@@ -85,7 +85,8 @@ ADDCNFlow::GetTypeId (void)
 }
 
 ADDCNFlow::ADDCNFlow ()
-  : m_flowSize (0),
+  : m_rwnd (0),
+    m_flowSize (0),
     m_sentSize (0),
     m_g (1.0/16.0),
     m_alpha (0.0),
@@ -111,6 +112,7 @@ ADDCNFlow::~ADDCNFlow ()
 void
 ADDCNFlow::Initialize ()
 {
+  m_rwnd = 0;
   m_flowSize = 0;
   m_sentSize = 0;
   m_g = 1.0 / 16.0;
