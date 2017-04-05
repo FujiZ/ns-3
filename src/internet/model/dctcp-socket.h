@@ -45,7 +45,7 @@ protected:
   virtual void Retransmit (void);
   virtual Ptr<TcpSocketBase> Fork (void);
   virtual void UpdateEcnState (const TcpHeader &tcpHeader);
-  virtual void HalveCwnd (void);
+  virtual void SlowDown (void);
 
   void UpdateAlpha (const TcpHeader &tcpHeader);
 

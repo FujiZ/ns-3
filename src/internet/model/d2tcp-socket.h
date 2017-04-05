@@ -43,7 +43,8 @@ protected:
   // update sentBytes in UpdateRttHistory
   virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                  bool isRetransmission);
-  virtual void HalveCwnd (void);
+  virtual Ptr<TcpSocketBase> Fork (void);
+  virtual void SlowDown (void);
 
   /**
    * @brief Check Deadline before sending a packet;

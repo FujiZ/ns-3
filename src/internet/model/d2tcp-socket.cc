@@ -193,8 +193,14 @@ D2tcpSocket::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool is
     }
 }
 
+Ptr<TcpSocketBase>
+D2tcpSocket::Fork (void)
+{
+  return CopyObject<D2tcpSocket> (this);
+}
+
 void
-D2tcpSocket::HalveCwnd (void)
+D2tcpSocket::SlowDown (void)
 {
   NS_LOG_FUNCTION (this);
 
@@ -223,7 +229,7 @@ D2tcpSocket::HalveCwnd (void)
 bool
 D2tcpSocket::CheckDeadline (void) const
 {
-  return m_deadline != Time (0) && m_finishTime < Simulator::Now ();
+  return m_deadline == Time (0) || m_finishTime < Simulator::Now ();
 }
 
 } // namespace ns3

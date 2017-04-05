@@ -1764,11 +1764,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
       if (callCongestionControl)
         {
-          m_congestionControl->IncreaseWindow (m_tcb, newSegsAcked);
-
-          NS_LOG_LOGIC ("Congestion control called: " <<
-                        " cWnd: " << m_tcb->m_cWnd <<
-                        " ssTh: " << m_tcb->m_ssThresh);
+          OpenCwnd (newSegsAcked);
         }
 
       // Reset the data retransmission count. We got a new ACK!
@@ -2837,7 +2833,7 @@ TcpSocketBase::SendPendingData (bool withAck)
         {
           NS_LOG_INFO ("Halving CWND duo to receiving ECN Echo.");
           m_ecnState |= ECN_SEND_CWR;
-          HalveCwnd ();
+          SlowDown ();
           /*
           if (m_tcb->m_congState == TcpSocketState::CA_OPEN)
             {
@@ -3789,11 +3785,22 @@ TcpSocketBase::UpdateEcnState (const TcpHeader &tcpHeader)
 }
 
 void
-TcpSocketBase::HalveCwnd (void)
+TcpSocketBase::SlowDown (void)
 {
   NS_LOG_FUNCTION (this);
   m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
-  m_tcb->m_cWnd = std::max ((uint32_t)m_tcb->m_cWnd/2, m_tcb->m_segmentSize);
+  m_tcb->m_cWnd = std::max (m_tcb->m_cWnd.Get () / 2, m_tcb->m_segmentSize);
+}
+
+void
+TcpSocketBase::OpenCwnd (uint32_t segmentAcked)
+{
+  NS_LOG_FUNCTION (this << segmentAcked);
+  m_congestionControl->IncreaseWindow (m_tcb, segmentAcked);
+
+  NS_LOG_LOGIC ("Congestion control called: " <<
+                " cWnd: " << m_tcb->m_cWnd <<
+                " ssTh: " << m_tcb->m_ssThresh);
 }
 
 uint32_t
