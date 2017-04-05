@@ -8,7 +8,10 @@
 #include "ns3/ipv4-route.h"
 #include "ns3/tcp-header.h"
 #include "ns3/tcp-option.h"
+#include "ns3/tcp-option-ts.h"
 #include "ns3/tcp-option-winscale.h"
+#include "ns3/tcp-socket-base.h"
+#include "ns3/tcp-congestion-ops.h"
 
 #include "token-bucket-filter.h"
 #include "c3-ecn-recorder.h"
@@ -134,6 +137,29 @@ public:
    */
   void ProcessOptionWScale(const Ptr<const TcpOption> option);
 
+  uint32_t BytesInFlight ();
+
+  uint32_t GetSsThresh (Ptr<const TcpSocketState> state, uint32_t bytesInFlight);
+
+  void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool isRetransmission);
+
+  void EstimateRtt (const TcpHeader& tcpHeader);
+
+  void ReTxTimeout (); // RTO, Different from TCP, only need to set dupAck = 0, CA_LOSS, CWND & SSThresh
+
+  void NewAck (SequenceNumber32 const& ack, bool resetRTO);
+
+  void DupAck ();
+
+  void ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+
+  void IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked);
+
+  uint32_t SlowStart (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked);
+
+  void CongestionAvoidance (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked);
+
+  uint32_t SafeSubtraction (uint32_t a, uint32_t b);
 protected:
   virtual void DoDispose (void);
 
@@ -158,6 +184,9 @@ protected:
   TracedValue<double> m_weight;  //!< real flow weight
   //DataRate m_rate;  //!< current flow rate
 
+  bool m_winScalingEnabled;
+  bool m_timestampEnabled;
+
 private:
   TracedValue<double> m_weightScaled;   //!< flow scaled weight
   SequenceNumber32 m_seqNumber;         //!< highest sequence number sent
@@ -165,8 +194,34 @@ private:
   SequenceNumber32 m_updateAlphaSeq;        //!< last sequence number upon which alpha was updated
   uint8_t m_sndWindShift;                  //!< Window shift to apply to incoming segments
 
+  SequenceNumber32 m_recover;
+  SequenceNumber32 m_SND_UNA;           //!<
+  SequenceNumber32 m_SND_NXT;           //!<
   //Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
   ForwardTargetCallback m_forwardTarget;    //!< callback to forward packet
+
+private:
+  /*
+  uint32_t              m_retxThresh;
+  bool                  m_limitedTx;
+  uint32_t              m_retransOut;
+  */
+  
+  EventId               m_retxEvent;
+  Time                  m_rto;
+  Time                  m_minRto;
+  Time                  m_lastRtt;
+  Time                  m_clockGranularity;
+
+  uint32_t              m_dupAckCount;
+  uint32_t              m_retransOut; 
+  uint32_t              m_bytesAckedNotProcessed;
+  bool                  m_isFirstPartialAck;
+  Ptr<TcpSocketState>   m_tcb;
+  Ptr<RttEstimator>     m_rtt;
+  RttHistory_t          m_history;  
+  //Ptr<TcpCongestionOps> m_congestionControl;
+  //bool m_isFirstPartialAck;
 };
 
 /**
