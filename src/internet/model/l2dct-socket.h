@@ -35,8 +35,22 @@ public:
 
 protected:
 
+  // update sentBytes in UpdateRttHistory
+  virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
+                                 bool isRetransmission);
+  virtual Ptr<TcpSocketBase> Fork (void);
+  virtual void SlowDown (void);
+  virtual void OpenCwnd (uint32_t segmentAcked);
+
+  double GetWeightC (void);
+
+  double m_weightMax;
+  double m_weightMin;
+
+  TracedValue<uint64_t> m_sentBytes;        //!< bytes already sent
+
 };
 
-}
+} // namespace ns3
 
 #endif // L2DCT_SOCKET_H
