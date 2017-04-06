@@ -221,6 +221,7 @@ def build(bld):
         'helper/rip-helper.cc',
         'model/dctcp-socket.cc',
         'model/d2tcp-socket.cc',
+        'model/l2dct-socket.cc',
         ]
 
     internet_test = bld.create_ns3_module_test_library('internet')
@@ -390,6 +391,7 @@ def build(bld):
         'helper/rip-helper.h',
         'model/dctcp-socket.h',
         'model/d2tcp-socket.h',
+        'model/l2dct-socket.h',
        ]
 
     if bld.env['NSC_ENABLED']:

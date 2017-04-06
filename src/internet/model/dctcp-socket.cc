@@ -219,7 +219,7 @@ DctcpSocket::UpdateEcnState (const TcpHeader &tcpHeader)
 }
 
 void
-DctcpSocket::SlowDown (void)
+DctcpSocket::DecreaseWindow (void)
 {
   NS_LOG_FUNCTION (this);
   // halve cwnd according to DCTCP algo

@@ -200,7 +200,7 @@ D2tcpSocket::Fork (void)
 }
 
 void
-D2tcpSocket::SlowDown (void)
+D2tcpSocket::DecreaseWindow (void)
 {
   NS_LOG_FUNCTION (this);
 

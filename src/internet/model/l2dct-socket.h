@@ -39,14 +39,16 @@ protected:
   virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                  bool isRetransmission);
   virtual Ptr<TcpSocketBase> Fork (void);
-  virtual void SlowDown (void);
-  virtual void OpenCwnd (uint32_t segmentAcked);
+  virtual void DecreaseWindow (void);
+  virtual void IncreaseWindow (uint32_t segmentAcked);
 
-  double GetWeightC (void);
+  void CongestionAvoidance (uint32_t segmentsAcked);
+  void UpdateWeightC (void);
+
 
   double m_weightMax;
   double m_weightMin;
-
+  TracedValue<double> m_weightC;
   TracedValue<uint64_t> m_sentBytes;        //!< bytes already sent
 
 };

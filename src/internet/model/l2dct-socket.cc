@@ -27,6 +27,10 @@ L2dctSocket::GetTypeId (void)
                      DoubleValue (0.125),
                      MakeDoubleAccessor (&L2dctSocket::m_weightMin),
                      MakeDoubleChecker<double> (0.0))
+      .AddTraceSource ("WeightC",
+                       "Current flow weight.",
+                       MakeTraceSourceAccessor (&L2dctSocket::m_weightC),
+                       "ns3::TracedValueCallback::Double")
       .AddTraceSource ("SentBytes",
                        "Bytes already sent.",
                        MakeTraceSourceAccessor (&L2dctSocket::m_sentBytes),
@@ -42,16 +46,18 @@ L2dctSocket::GetInstanceTypeId () const
 
 L2dctSocket::L2dctSocket (void)
   : DctcpSocket (),
-    m_wMax (2.5),
-    m_wMin (0.125),
+    m_weightMax (2.5),
+    m_weightMin (0.125),
+    m_weightC (0.0),
     m_sentBytes (0)
 {
 }
 
 L2dctSocket::L2dctSocket (const L2dctSocket &sock)
   : DctcpSocket (sock),
-    m_wMax (sock.m_wMax),
-    m_wMin (sock.m_wMin),
+    m_weightMax (sock.m_weightMax),
+    m_weightMin (sock.m_weightMin),
+    m_weightC (sock.m_weightC),
     m_sentBytes (sock.m_sentBytes)
 {
 }
@@ -94,22 +100,62 @@ L2dctSocket::Fork (void)
 }
 
 void
-L2dctSocket::SlowDown (void)
+L2dctSocket::DecreaseWindow (void)
 {
   NS_LOG_FUNCTION (this);
 
-  double weightC = GetWeightC ();
-  double b = std::pow (m_alpha, weightC);
+  UpdateWeightC ();
+  double b = std::pow (m_alpha, m_weightC);
   uint32_t newCwnd = (1 - b / 2) * m_tcb->m_cWnd;
-  // cutdown cwnd according to D2TCP algo
   ///\todo cut ssThresh to cwnd or (1-alpha/2)?
   m_tcb->m_ssThresh = std::max (newCwnd, 2 * m_tcb->m_segmentSize);
+  // cutdown cwnd according to D2TCP algo
   m_tcb->m_cWnd = std::max (newCwnd, m_tcb->m_segmentSize);
 }
 
 void
-L2dctSocket::OpenCwnd (uint32_t segmentAcked)
+L2dctSocket::IncreaseWindow (uint32_t segmentAcked)
 {
+  NS_LOG_FUNCTION (this << segmentAcked);
+
+  if (m_tcb->m_cWnd < m_tcb->m_ssThresh)
+    {
+      // slow start
+      m_congestionControl->IncreaseWindow (m_tcb, segmentAcked);
+    }
+  else
+    {
+      // congestion avoidance
+      CongestionAvoidance (segmentAcked);
+    }
+}
+
+void
+L2dctSocket::CongestionAvoidance (uint32_t segmentsAcked)
+{
+  NS_LOG_FUNCTION (this << segmentsAcked);
+
+  if (segmentsAcked > 0)
+    {
+      UpdateWeightC ();
+
+      double k = m_weightC / m_weightMax;
+      m_tcb->m_cWnd += static_cast<uint32_t> (k * GetSegSize ());
+
+      NS_LOG_INFO ("In CongAvoid, updated to cwnd " << m_tcb->m_cWnd <<
+                   " ssthresh " << m_tcb->m_ssThresh);
+    }
+}
+
+void
+L2dctSocket::UpdateWeightC (void)
+{
+  NS_LOG_FUNCTION (this);
+
+  uint32_t segCount = m_sentBytes / GetSegSize ();
+
+  double weightC = segCount <= 200 ? m_weightMax : (m_weightMax - (m_weightMax - m_weightMin) * (segCount - 200) / 800);
+  m_weightC = std::max (std::min (weightC, m_weightMax), m_weightMin);
 }
 
 } // namespace ns3

@@ -44,7 +44,7 @@ protected:
   virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                  bool isRetransmission);
   virtual Ptr<TcpSocketBase> Fork (void);
-  virtual void SlowDown (void);
+  virtual void DecreaseWindow (void);
 
   /**
    * @brief Check Deadline before sending a packet;

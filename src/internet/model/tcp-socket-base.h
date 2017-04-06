@@ -977,16 +977,16 @@ protected:
   virtual void UpdateEcnState (const TcpHeader &tcpHeader);
 
   /**
-   * @brief SlowDown when receive ECE ACK before send another data packet;
+   * @brief Decrease window when receive ECE ACK before send another data packet;
    * called in sendDataPacket; cut down cwnd && ssthresh
    */
-  virtual void SlowDown (void);
+  virtual void DecreaseWindow (void);
 
   /**
    * @brief Congestion avoidance algorithm implementation
    * @param segmentsAcked count of segments acked
    */
-  virtual void OpenCwnd (uint32_t segmentAcked);
+  virtual void IncreaseWindow (uint32_t segmentAcked);
 
   /**
    * \brief Performs a safe subtraction between a and b (a-b)
