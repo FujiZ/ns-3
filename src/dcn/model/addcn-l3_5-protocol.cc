@@ -197,8 +197,8 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
     }
 */
       rflow->NotifyReceive (packet, tcpHeader);
-      packet->PeekHeader (tcpHeader);
-      NS_LOG_FUNCTION(this << "Window Set Header " << tcpHeader);
+      //packet->PeekHeader (tcpHeader);
+      //NS_LOG_FUNCTION(this << "Window Set Header " << tcpHeader);
   }
   return ForwardUp (packet, ipHeader, incomingInterface, ipHeader.GetProtocol ());
 }

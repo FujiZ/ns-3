@@ -102,18 +102,11 @@ ADDCNFlow::ADDCNFlow ()
     m_recover(0)
 {
   NS_LOG_FUNCTION (this);
-  m_rto = Seconds(0.0);
-  m_minRto = Seconds(1.0); // RFC 6298 says min RTO=1 sec, but Linux uses 200ms
-  m_clockGranularity = Seconds (0.001);
-  m_lastRtt = Seconds(0.0);
-  m_dupAckCount = 0;
-  m_retransOut = 0;
-  m_bytesAckedNotProcessed = 0;
-  m_isFirstPartialAck = true;
   m_ecnRecorder = CreateObject<C3EcnRecorder> ();
   m_tcb      = CreateObject<TcpSocketState> ();
   m_rtt      = CreateObject<RttMeanDeviation> ();
 
+  Initialize();
   //m_tbf->SetSendTarget (MakeCallback (&ADDCNFlow::Forward, this));
   //m_tbf->SetDropTarget (MakeCallback (&ADDCNFlow::Drop, this));
 }
@@ -132,7 +125,7 @@ ADDCNFlow::Initialize ()
   m_sentSize = 0;
   m_g = 1.0 / 16.0;
   m_alpha = 0;
-  //m_scale = 1.0;
+  m_scale = 1.0;
   m_weight = 1.0;
   m_winScalingEnabled = true;
   m_timestampEnabled = true;
@@ -154,10 +147,23 @@ ADDCNFlow::Initialize ()
   m_bytesAckedNotProcessed = 0;
   m_isFirstPartialAck = true;
 
+  m_ecnState = TcpSocket::ECN_CONN;
   m_ecnRecorder->Reset ();
-  // TODO: Initialize TCB parameters
+  m_ecnEchoSeq = 0;
+
   m_rtt->Reset ();
   m_retxEvent.Cancel ();
+  m_tcb->m_initialCWnd = 1;
+  m_tcb->m_initialSsThresh = UINT32_MAX;
+  m_tcb->m_segmentSize = 536; 
+  m_tcb->m_lastAckedSeq = 0;
+  m_tcb->m_congState = TcpSocketState::CA_OPEN;
+  m_tcb->m_highTxMark = 0;
+  // Change m_nextTxSequence for non-zero initial sequence number
+  m_tcb->m_nextTxSequence = 0;
+
+  m_tcb->m_cWnd = m_tcb->m_initialCWnd * m_tcb->m_segmentSize;
+  m_tcb->m_ssThresh = m_tcb->m_initialSsThresh;
 }
 
 void
@@ -166,6 +172,8 @@ ADDCNFlow::SetSegmentSize(uint32_t size)
   NS_LOG_FUNCTION(this << size);
   m_segSize = size;
   m_tcb->m_segmentSize = size;
+  m_tcb->m_cWnd = m_tcb->m_initialCWnd * m_tcb->m_segmentSize;
+  m_tcb->m_ssThresh = m_tcb->m_initialSsThresh;
 }
 
 
@@ -177,7 +185,7 @@ ADDCNFlow::UpdateEcnStatistics(const Ipv4Header &header)
 }
 
 void
-ADDCNFlow::NotifyReceived(const TcpHeader &tcpHeader)
+ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
 {
   SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
   // curSeq > m_updateAlphaSeq ensures updating alpha only one time every RTT
@@ -213,7 +221,7 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
   // TODO
   TcpHeader tcpHeader;
   uint32_t bytesRemoved = packet->RemoveHeader(tcpHeader);
-  NS_LOG_FUNCTION(this << "Initial Header " << tcpHeader);
+  NS_LOG_FUNCTION(this << "[RWND] Initial Header " << tcpHeader);
   if(bytesRemoved == 0)
   {
     NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
@@ -221,12 +229,13 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
   }
   // TODO check whether valid
   // TODO check WScale option
+  m_rwnd = m_tcb->m_cWnd;
   uint32_t w = m_rwnd >> m_sndWindShift;
   
   if(w < tcpHeader.GetWindowSize())
     tcpHeader.SetWindowSize(w);
   packet->AddHeader(tcpHeader);
-  NS_LOG_FUNCTION(this << "Window set" << packet);
+  NS_LOG_FUNCTION(this << "[RWND] Altered Header " << tcpHeader);
   return;
 }
 
@@ -251,16 +260,55 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet, TcpHeader& tcpHeader)
 
   C3Tag c3Tag;
   NS_ASSERT (packet->PeekPacketTag (c3Tag));
+  uint32_t bytesRemoved = packet->RemoveHeader(tcpHeader);
+  if(bytesRemoved == 0)
+  {
+    NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
+    return;
+  }
+  uint8_t flags = tcpHeader.GetFlags();
   m_seqNumber = tcpHeader.GetSequenceNumber ();
-  m_flowSize = c3Tag.GetFlowSize ();
-  m_sentSize += c3Tag.GetPacketSize ();
 
-  if((tcpHeader.GetFlags() & (TcpHeader::SYN | TcpHeader::ACK)) == TcpHeader::SYN)
+  uint32_t sz = c3Tag.GetPacketSize ();
+  m_flowSize = c3Tag.GetFlowSize ();
+
+  m_sentSize += sz;
+  
+  NS_LOG_FUNCTION (this << "PacketSize" << sz);
+  if((flags & TcpHeader::SYN) == TcpHeader::SYN)
   {
     Initialize(); // New connection
     SetSegmentSize(c3Tag.GetSegmentSize());
   }
 
+  if ((m_ecnState & (TcpSocket::ECN_RX_ECHO | TcpSocket::ECN_SEND_CWR)) == TcpSocket::ECN_RX_ECHO)
+  {
+    NS_LOG_INFO ("Halving CWND duo to receiving ECN Echo.");
+    m_ecnState |= TcpSocket::ECN_SEND_CWR;
+    HalveCwnd ();
+    flags |= TcpHeader::CWR;
+    m_ecnState &= ~(TcpSocket::ECN_SEND_CWR | TcpSocket::ECN_RX_ECHO);
+    m_ecnEchoSeq = m_seqNumber;
+  }
+
+  m_tcb->m_nextTxSequence = std::max (m_tcb->m_nextTxSequence.Get (), m_seqNumber + sz);
+  m_tcb->m_highTxMark = std::max (m_seqNumber + sz, m_tcb->m_highTxMark.Get ());
+  if (m_seqNumber == m_tcb->m_lastAckedSeq && sz > 0) // Retransmit data packet
+  {
+    NS_LOG_FUNCTION (this << "Retransmission of data packet detected");
+    m_retransOut ++;
+  }
+
+  bool isRetransmission = m_seqNumber == m_tcb->m_lastAckedSeq;
+  UpdateRttHistory (m_seqNumber, sz, isRetransmission);
+
+  NS_LOG_FUNCTION (this << "m_nextTxSequence = " << m_tcb->m_nextTxSequence
+                        << "m_highTxMark = " << m_tcb->m_highTxMark
+                        << "m_lastAckedSeq = " << m_tcb->m_lastAckedSeq
+                        << "m_retransOut = " << m_retransOut);
+
+  tcpHeader.SetFlags(flags);
+  packet->AddHeader(tcpHeader);
   //m_forwardTarget (packet, m_tuple.sourceAddress, m_tuple.destinationAddress, m_tuple.protocol, route);
 }
 
@@ -275,18 +323,46 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, TcpHeader& tcpHeader)
       if(tcpHeader.HasOption (TcpOption::WINSCALE))
       {
         NS_LOG_DEBUG("Receive side, SYN, WScale");
+        m_winScalingEnabled = true;
         ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
       }
+      else
+      {
+        m_winScalingEnabled = false;
+      }
 
-      NotifyReceived(tcpHeader);
-      UpdateReceiveWindow(tcpHeader);
+      if(tcpHeader.HasOption (TcpOption::TS))
+      {
+        NS_LOG_DEBUG("Receive side, SYN, TS");
+        m_timestampEnabled = true;
+        ProcessOptionTimestamp (tcpHeader.GetOption (TcpOption::TS),
+                                       tcpHeader.GetSequenceNumber ());
+      }
+      else
+      {
+        m_timestampEnabled = false;
+      }
+      
+      //UpdateAlpha(tcpHeader);
+      //UpdateReceiveWindow(tcpHeader);
     }
-    else
+
+    
+    
+    if((tcpHeader.GetFlags() & TcpHeader::ACK) == TcpHeader::ACK)
     {
-      NotifyReceived(tcpHeader);
+      EstimateRtt(tcpHeader);
+      UpdateAlpha(tcpHeader);
+      ReceivedAck(packet, tcpHeader);
+    }
+    /*else
+    {
+      UpdateAlpha(tcpHeader);
       UpdateReceiveWindow(tcpHeader);
       SetReceiveWindow(packet);
-    }
+    }*/
+    if((tcpHeader.GetFlags() & TcpHeader::SYN) == 0)
+      SetReceiveWindow(packet);
 }
 
 double
@@ -340,6 +416,25 @@ ADDCNFlow::ProcessOptionWScale (const Ptr<const TcpOption> option)
                static_cast<int> (m_sndWindShift));
 }
 
+void
+ADDCNFlow::ProcessOptionTimestamp (const Ptr<const TcpOption> option,
+                                       const SequenceNumber32 &seq)
+{
+  NS_LOG_FUNCTION (this << option);
+
+  /*
+  Ptr<const TcpOptionTS> ts = DynamicCast<const TcpOptionTS> (option);
+
+  if (seq == m_rxBuffer->NextRxSequence () && seq <= m_highTxAck)
+    {
+      m_timestampToEcho = ts->GetTimestamp ();
+    }
+
+  NS_LOG_INFO (m_node->GetId () << " Got timestamp=" <<
+               m_timestampToEcho << " and Echo="     << ts->GetEcho ());
+  */
+}
+
 uint32_t
 ADDCNFlow::BytesInFlight ()
 {
@@ -360,13 +455,11 @@ ADDCNFlow::BytesInFlight ()
       duplicatedSize = (m_retransOut - m_dupAckCount)*m_tcb->m_segmentSize;
       bytesInFlight = flightSize + duplicatedSize;
     }
-  /*
   else
     {
       duplicatedSize = (m_dupAckCount - m_retransOut)*m_tcb->m_segmentSize;
       bytesInFlight = duplicatedSize > flightSize ? 0 : flightSize - duplicatedSize;
     }
-  */
 
   // m_bytesInFlight is traced; avoid useless assignments which would fire
   // fruitlessly the callback
@@ -460,7 +553,51 @@ ADDCNFlow::EstimateRtt (const TcpHeader& tcpHeader)
 void
 ADDCNFlow::ReTxTimeout ()
 {
-  // TODO
+  NS_LOG_FUNCTION (this);
+  m_recover = m_tcb->m_highTxMark;
+  
+  /*
+   * When a TCP sender detects segment loss using the retransmission timer
+   * and the given segment has not yet been resent by way of the
+   * retransmission timer, the value of ssthresh MUST be set to no more
+   * than the value given in equation (4):
+   *
+   *   ssthresh = max (FlightSize / 2, 2*SMSS)            (4)
+   *
+   * where, as discussed above, FlightSize is the amount of outstanding
+   * data in the network.
+   *
+   * On the other hand, when a TCP sender detects segment loss using the
+   * retransmission timer and the given segment has already been
+   * retransmitted by way of the retransmission timer at least once, the
+   * value of ssthresh is held constant.
+   *
+   * Conditions to decrement slow - start threshold are as follows:
+   *
+   * *) The TCP state should be less than disorder, which is nothing but open.
+   * If we are entering into the loss state from the open state, we have not yet
+   * reduced the slow - start threshold for the window of data. (Nat: Recovery?)
+   * *) If we have entered the loss state with all the data pointed to by high_seq
+   * acknowledged. Once again it means that in whatever state we are (other than
+   * open state), all the data from the window that got us into the state, prior to
+   * retransmission timer expiry, has been acknowledged. (Nat: How this can happen?)
+   * *) If the above two conditions fail, we still have one more condition that can
+   * demand reducing the slow - start threshold: If we are already in the loss state
+   * and have not yet retransmitted anything. The condition may arise in case we
+   * are not able to retransmit anything because of local congestion.
+   */
+
+  if (m_tcb->m_congState != TcpSocketState::CA_LOSS)
+    {
+      //m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_LOSS);
+      m_tcb->m_congState = TcpSocketState::CA_LOSS;
+      m_tcb->m_ssThresh = GetSsThresh (m_tcb, BytesInFlight ());
+      m_tcb->m_cWnd = m_tcb->m_segmentSize;
+    }
+
+  //m_tcb->m_nextTxSequence = m_txBuffer->HeadSequence (); // Restart from highest Ack
+  m_tcb->m_nextTxSequence = m_tcb->m_lastAckedSeq; // Restart from highest Ack
+  m_dupAckCount = 0;
 }
 
 void
@@ -485,7 +622,7 @@ ADDCNFlow::NewAck (SequenceNumber32 const& ack, bool resetRTO)
     }
 
   // Note the highest ACK and tell app to send more
-  NS_LOG_LOGIC ("TCP " << this << " NewAck " << ack <<
+  NS_LOG_LOGIC (this << " TCP " << this << " NewAck " << ack <<
                " numberAck " << (ack - m_tcb->m_lastAckedSeq)); // Number bytes ack'ed
   /*m_txBuffer->DiscardUpTo (ack);
   if (GetTxAvailable () > 0)
@@ -534,7 +671,7 @@ ADDCNFlow::DupAck ()
   if (m_tcb->m_congState == TcpSocketState::CA_DISORDER)
     {
       //if ((m_dupAckCount == m_retxThresh) && (m_highRxAckMark >= m_recover))
-      if ((m_dupAckCount == 3))
+      if (m_dupAckCount == 3)
         {
           // triple duplicate ack triggers fast retransmit (RFC2582 sec.3 bullet #1)
           NS_LOG_DEBUG (TcpSocketState::TcpCongStateName[m_tcb->m_congState] <<
@@ -588,7 +725,7 @@ ADDCNFlow::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
   if (ackNumber == m_tcb->m_lastAckedSeq
       && ackNumber < m_tcb->m_nextTxSequence
-      && packet->GetSize () == 0)
+      && (packet->GetSize () - tcpHeader.GetSerializedSize ()) == 0)
     {
       // There is a DupAck
       DupAck ();
@@ -615,6 +752,17 @@ ADDCNFlow::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
       NS_LOG_LOGIC (" Bytes acked: " << bytesAcked <<
                     " Segments acked: " << segsAcked <<
                     " bytes left: " << m_bytesAckedNotProcessed);
+
+      if ((m_ecnState & TcpSocket::ECN_CONN) && (tcpHeader.GetFlags () & TcpHeader::ECE))
+        {
+          NS_LOG_INFO ("Received ECN Echo. Checking if it's a valid one.");
+          if (m_ecnEchoSeq < tcpHeader.GetAckNumber ())
+            {
+              NS_LOG_INFO ("Received ECN Echo was valid.");
+              m_ecnEchoSeq = tcpHeader.GetAckNumber ();
+              m_ecnState |= TcpSocket::ECN_RX_ECHO;
+            }
+        }
 
       /* The following switch is made because m_dupAckCount can be
        * "inflated" through out-of-order segments (e.g. from retransmission,
@@ -839,6 +987,16 @@ ADDCNFlow::SafeSubtraction (uint32_t a, uint32_t b)
     }
 
   return 0;
+}
+
+void
+ADDCNFlow::HalveCwnd ()
+{
+  NS_LOG_FUNCTION (this);
+  m_tcb->m_ssThresh = GetSsThresh (m_tcb, BytesInFlight ());
+  //m_tcb->m_ssThresh = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), 2 * m_tcb->m_segmentSize);
+  // halve cwnd according to DCTCP algo
+  m_tcb->m_cWnd = std::max ((uint32_t)((1 - m_alpha / 2.0) * m_tcb->m_cWnd), m_tcb->m_segmentSize);
 }
 
 void

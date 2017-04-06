@@ -79,7 +79,7 @@ public:
    * \brief Called every time an ACK was received by the sender
    * \param tcpHeader used for checking sequence&ack numbers
    */
-  void NotifyReceived(const TcpHeader &tcpHeader);
+  void UpdateAlpha(const TcpHeader &tcpHeader);
 
   /**
    * \brief callback to forward packets
@@ -138,6 +138,9 @@ public:
    */
   void ProcessOptionWScale(const Ptr<const TcpOption> option);
 
+  void ProcessOptionTimestamp (const Ptr<const TcpOption> option,
+                                       const SequenceNumber32 &seq);
+
   uint32_t BytesInFlight ();
 
   uint32_t GetSsThresh (Ptr<const TcpSocketState> state, uint32_t bytesInFlight);
@@ -161,6 +164,8 @@ public:
   void CongestionAvoidance (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked);
 
   uint32_t SafeSubtraction (uint32_t a, uint32_t b);
+
+  void HalveCwnd ();
 protected:
   virtual void DoDispose (void);
 
@@ -196,6 +201,7 @@ private:
   uint8_t m_sndWindShift;                  //!< Window shift to apply to incoming segments
 
   SequenceNumber32 m_recover;
+  SequenceNumber32 m_ecnEchoSeq;
   SequenceNumber32 m_SND_UNA;           //!<
   SequenceNumber32 m_SND_NXT;           //!<
   //Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
@@ -214,6 +220,7 @@ private:
   Time                  m_lastRtt;
   Time                  m_clockGranularity;
 
+  uint8_t               m_ecnState;
   uint32_t              m_dupAckCount;
   uint32_t              m_retransOut; 
   uint32_t              m_bytesAckedNotProcessed;

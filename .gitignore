@@ -44,5 +44,7 @@ massif.*
 *.png
 *.dat
 *.bak
+*.swp
 *.DS_Store
+result*
 waf
