@@ -753,7 +753,7 @@ ADDCNFlow::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
                     " Segments acked: " << segsAcked <<
                     " bytes left: " << m_bytesAckedNotProcessed);
 
-      if ((m_ecnState & TcpSocket::ECN_CONN) && (tcpHeader.GetFlags () & TcpHeader::ECE))
+      if ((m_ecnState & TcpSocket::ECN_CONN) && ((tcpHeader.GetFlags () & (TcpHeader::SYN | TcpHeader::ECE)) == TcpHeader::ECE))
         {
           NS_LOG_INFO ("Received ECN Echo. Checking if it's a valid one.");
           if (m_ecnEchoSeq < tcpHeader.GetAckNumber ())
