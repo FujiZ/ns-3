@@ -245,19 +245,48 @@ ADDCNFlow::SetFiveTuple (ADDCNFlow::FiveTuple tuple)
 }
 
 void
-ADDCNFlow::Send (Ptr<Packet> packet, Ptr<Ipv4Route> route)
+ADDCNFlow::NotifySend (Ptr<Packet>& packet, TcpHeader& tcpHeader)
 {
-  NS_LOG_FUNCTION (this << packet);
-  NS_LOG_INFO ("Packet sent: " << packet);
+  NS_LOG_FUNCTION (this << tcpHeader);
 
   C3Tag c3Tag;
   NS_ASSERT (packet->PeekPacketTag (c3Tag));
-  TcpHeader tcpHeader;
-  packet->PeekHeader (tcpHeader);
-  this->m_seqNumber = tcpHeader.GetSequenceNumber ();
+  m_seqNumber = tcpHeader.GetSequenceNumber ();
   m_flowSize = c3Tag.GetFlowSize ();
   m_sentSize += c3Tag.GetPacketSize ();
-  m_forwardTarget (packet, m_tuple.sourceAddress, m_tuple.destinationAddress, m_tuple.protocol, route);
+
+  if((tcpHeader.GetFlags() & (TcpHeader::SYN | TcpHeader::ACK)) == TcpHeader::SYN)
+  {
+    Initialize(); // New connection
+    SetSegmentSize(c3Tag.GetSegmentSize());
+  }
+
+  //m_forwardTarget (packet, m_tuple.sourceAddress, m_tuple.destinationAddress, m_tuple.protocol, route);
+}
+
+void
+ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, TcpHeader& tcpHeader)
+{
+  NS_LOG_FUNCTION (this << tcpHeader);
+
+    if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
+    {
+      NS_LOG_DEBUG("From Receive side, SYN");
+      if(tcpHeader.HasOption (TcpOption::WINSCALE))
+      {
+        NS_LOG_DEBUG("Receive side, SYN, WScale");
+        ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
+      }
+
+      NotifyReceived(tcpHeader);
+      UpdateReceiveWindow(tcpHeader);
+    }
+    else
+    {
+      NotifyReceived(tcpHeader);
+      UpdateReceiveWindow(tcpHeader);
+      SetReceiveWindow(packet);
+    }
 }
 
 double

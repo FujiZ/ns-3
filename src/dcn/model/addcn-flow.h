@@ -104,7 +104,8 @@ public:
    * make sure that the packet contain c3tag before pass in it
    * the packet size should be marked in c3l3.5p
    */
-  void Send (Ptr<Packet> packet, Ptr<Ipv4Route> route);
+  void NotifySend (Ptr<Packet> &packet, TcpHeader& tcpHeader);
+  void NotifyReceive (Ptr<Packet> &packet, TcpHeader& tcpHeader);
 
   /**
    * @brief Update tunnel info (weight)
