@@ -222,8 +222,8 @@ D2tcpSocket::DecreaseWindow (void)
   double p = std::pow (m_alpha, d);
   uint32_t newCwnd =  (1 - p / 2.0) * m_tcb->m_cWnd;
   // halve cwnd according to D2TCP algo
-  m_tcb->m_ssThresh = std::max (newCwnd, 2 * m_tcb->m_segmentSize);
-  m_tcb->m_cWnd = std::max (newCwnd, m_tcb->m_segmentSize);
+  m_tcb->m_ssThresh = std::max (newCwnd, 2 * GetSegSize ());
+  m_tcb->m_cWnd = std::max (newCwnd, GetSegSize ());
 }
 
 bool
