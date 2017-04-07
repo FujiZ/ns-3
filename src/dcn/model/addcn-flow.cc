@@ -85,7 +85,7 @@ ADDCNFlow::GetTypeId (void)
 }
 
 ADDCNFlow::ADDCNFlow ()
-  : m_rwnd (0),
+  : m_rWnd (0),
     m_flowSize (0),
     m_sentSize (0),
     m_g (1.0/16.0),
@@ -121,7 +121,7 @@ ADDCNFlow::~ADDCNFlow ()
 void
 ADDCNFlow::Initialize ()
 {
-  m_rwnd = 0;
+  m_rWnd = 0;
   m_flowSize = 0;
   m_sentSize = 0;
   m_g = 1.0 / 16.0;
@@ -204,18 +204,18 @@ ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
 void
 ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
 {
-  NS_LOG_FUNCTION(this << tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rwnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
+  NS_LOG_FUNCTION(this << tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rWnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
   SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
   // curSeq > m_updateRwndSeq ensures that this action is operated only one time every RTT
   if(m_alpha > 10e-7 && curSeq > m_updateRwndSeq)
   {
     m_updateRwndSeq = m_seqNumber;
-    m_rwnd = m_rwnd * (1 - m_alpha/2);
+    m_rWnd = m_rWnd * (1 - m_alpha/2);
   }
   else
-    m_rwnd += m_weightScaled * m_segSize;
-  m_rwnd = m_rwnd > m_segSize ? m_rwnd : m_segSize;
-  NS_LOG_FUNCTION(this << tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rwnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
+    m_rWnd += m_weightScaled * m_segSize;
+  m_rWnd = m_rWnd > m_segSize ? m_rWnd : m_segSize;
+  NS_LOG_FUNCTION(this << tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rWnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
 }
 
 void
@@ -233,11 +233,12 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
   }
   // TODO check whether valid
   // TODO check WScale option
-  m_rwnd = m_tcb->m_cWnd;
-  uint32_t w = m_rwnd >> m_sndWindShift;
+  //m_rWnd = m_tcb->m_cWnd;
+  uint32_t w = m_tcb->m_cWnd >> m_sndWindShift;
   
   if(w < tcpHeader.GetWindowSize())
     tcpHeader.SetWindowSize(w);
+  m_rWnd = tcpHeader.GetWindowSize() << m_sndWindShift;
   packet->AddHeader(tcpHeader);
   NS_LOG_FUNCTION(this << "[RWND] Altered Header " << tcpHeader);
   return;
@@ -478,7 +479,7 @@ ADDCNFlow::BytesInFlight ()
 uint32_t
 ADDCNFlow::Window ()
 {
-  return std::min (m_rwnd, m_tcb->m_cWnd.Get ());
+  return std::min (m_rWnd, m_tcb->m_cWnd.Get ());
 }
 
 uint32_t
@@ -1006,6 +1007,7 @@ ADDCNFlow::SafeSubtraction (uint32_t a, uint32_t b)
 void
 ADDCNFlow::HalveCwnd ()
 {
+  NS_LOG_FUNCTION (this << "alpha" << m_alpha << "m_rWnd" << m_rWnd << "m_cWnd" << m_tcb->m_cWnd);
   //m_tcb->m_ssThresh = GetSsThresh (m_tcb, BytesInFlight ());
   m_tcb->m_ssThresh = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), 2 * m_tcb->m_segmentSize);
   // halve cwnd according to DCTCP algo

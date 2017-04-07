@@ -172,7 +172,7 @@ protected:
   virtual void DoDispose (void);
 
 protected:
-  uint32_t m_rwnd;          //!< current receive window
+  uint32_t m_rWnd;          //!< current receive window
   uint32_t m_flowSize;      //!< the total size of current flow
   uint32_t m_sentSize;      //!< the sent size of current flow
   //int32_t m_bufferedSize;  //!< the size of current buffer
