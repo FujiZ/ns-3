@@ -200,6 +200,7 @@ private:
   SequenceNumber32 m_seqNumber;         //!< highest sequence number sent
   SequenceNumber32 m_updateRwndSeq;         //!< last sequence number upon which window was cut
   SequenceNumber32 m_updateAlphaSeq;        //!< last sequence number upon which alpha was updated
+  SequenceNumber32 m_dctcpMaxSeq;           //!< 
   uint8_t m_sndWindShift;                  //!< Window shift to apply to incoming segments
 
   SequenceNumber32 m_recover;

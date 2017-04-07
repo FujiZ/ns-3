@@ -98,6 +98,7 @@ ADDCNFlow::ADDCNFlow ()
     m_seqNumber(0),
     m_updateRwndSeq(0),
     m_updateAlphaSeq(0),
+    m_dctcpMaxSeq(0),
     m_sndWindShift(0),
     m_recover(0)
 {
@@ -134,6 +135,7 @@ ADDCNFlow::Initialize ()
   m_seqNumber = 0;
   m_updateRwndSeq = 0;
   m_updateAlphaSeq = 0;
+  m_dctcpMaxSeq = 0;
   m_recover = 0;
   m_sndWindShift = 0;
 
@@ -192,7 +194,7 @@ ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
   // curSeq > m_updateAlphaSeq ensures updating alpha only one time every RTT
   if(curSeq > m_updateAlphaSeq)
   {
-    m_updateAlphaSeq = m_seqNumber;
+    m_updateAlphaSeq = m_dctcpMaxSeq;
     m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
     m_ecnRecorder->Reset();
   }
@@ -491,6 +493,8 @@ ADDCNFlow::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool isRe
 {
   NS_LOG_FUNCTION (this);
 
+  m_dctcpMaxSeq =std::max (std::max (seq + sz, m_tcb->m_highTxMark.Get ()), m_dctcpMaxSeq);
+
   // update the history of sequence numbers used to calculate the RTT
   if (isRetransmission == false)
     { // This is the next expected one, just log at end
@@ -606,6 +610,8 @@ ADDCNFlow::ReTxTimeout ()
   //m_tcb->m_nextTxSequence = m_txBuffer->HeadSequence (); // Restart from highest Ack
   m_tcb->m_nextTxSequence = m_tcb->m_lastAckedSeq; // Restart from highest Ack
   m_dupAckCount = 0;
+  // set dctcp seq value if retransmit (why?)
+  m_updateAlphaSeq = m_dctcpMaxSeq = m_tcb->m_nextTxSequence;
 }
 
 void
