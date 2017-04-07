@@ -143,6 +143,8 @@ public:
 
   uint32_t BytesInFlight ();
 
+  uint32_t Window ();
+
   uint32_t GetSsThresh (Ptr<const TcpSocketState> state, uint32_t bytesInFlight);
 
   void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool isRetransmission);

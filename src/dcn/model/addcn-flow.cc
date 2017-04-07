@@ -187,6 +187,7 @@ ADDCNFlow::UpdateEcnStatistics(const Ipv4Header &header)
 void
 ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
 {
+  NS_LOG_FUNCTION(this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
   SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
   // curSeq > m_updateAlphaSeq ensures updating alpha only one time every RTT
   if(curSeq > m_updateAlphaSeq)
@@ -195,6 +196,7 @@ ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
     m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
     m_ecnRecorder->Reset();
   }
+  NS_LOG_FUNCTION(this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
 }
 
 void
@@ -469,6 +471,12 @@ ADDCNFlow::BytesInFlight ()
   //  }
 
   return bytesInFlight;
+}
+
+uint32_t
+ADDCNFlow::Window ()
+{
+  return std::min (m_rwnd, m_tcb->m_cWnd.Get ());
 }
 
 uint32_t
@@ -992,11 +1000,11 @@ ADDCNFlow::SafeSubtraction (uint32_t a, uint32_t b)
 void
 ADDCNFlow::HalveCwnd ()
 {
-  NS_LOG_FUNCTION (this);
-  m_tcb->m_ssThresh = GetSsThresh (m_tcb, BytesInFlight ());
-  //m_tcb->m_ssThresh = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), 2 * m_tcb->m_segmentSize);
+  //m_tcb->m_ssThresh = GetSsThresh (m_tcb, BytesInFlight ());
+  m_tcb->m_ssThresh = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), 2 * m_tcb->m_segmentSize);
   // halve cwnd according to DCTCP algo
-  m_tcb->m_cWnd = std::max ((uint32_t)((1 - m_alpha / 2.0) * m_tcb->m_cWnd), m_tcb->m_segmentSize);
+  m_tcb->m_cWnd = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), m_tcb->m_segmentSize);
+  NS_LOG_FUNCTION (this << "alpha" << m_alpha << "m_ssThresh" << m_tcb->m_ssThresh << "m_cWnd" << m_tcb->m_cWnd);
 }
 
 void

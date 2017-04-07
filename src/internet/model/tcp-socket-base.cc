@@ -1289,7 +1289,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
        * or <SYN,ACK>) MUST NOT be scaled (from RFC 7323 page 9). But should be
        * saved anyway..
        */
-      m_rWnd = tcpHeader.GetWindowSize ();
+      m_rWnd = 536;//tcpHeader.GetWindowSize ();
 
       if (tcpHeader.HasOption (TcpOption::WINSCALE) && m_winScalingEnabled)
         {
@@ -2945,7 +2945,8 @@ uint32_t
 TcpSocketBase::Window (void) const
 {
   NS_LOG_FUNCTION (this);
-  return std::min (m_rWnd.Get (), m_tcb->m_cWnd.Get ());
+  //return std::min (m_rWnd.Get (), m_tcb->m_cWnd.Get ());
+  return m_rWnd.Get ();
 }
 
 uint32_t

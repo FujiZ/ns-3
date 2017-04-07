@@ -291,7 +291,7 @@ int
 main (int argc, char *argv[])
 {
 
-  // LogComponentEnable ("DctcpSocket", LOG_LEVEL_DEBUG);
+  LogComponentEnable ("DctcpSocket", LOG_LEVEL_FUNCTION);
   // LogComponentEnable ("ADDCNExample", LOG_LEVEL_ALL);
   LogComponentEnable ("ADDCNL3_5Protocol", LOG_LEVEL_ALL);
   LogComponentEnable ("ADDCNSlice", LOG_LEVEL_ALL);
