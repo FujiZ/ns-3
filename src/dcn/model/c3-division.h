@@ -57,21 +57,20 @@ public:
   static Ptr<C3Division> CreateDivision (uint32_t tenantId, C3Type type);
 
   /**
-   * @brief GetTunnel
-   * @param src tunnel src addr
-   * @param dst tunnel dst addr
-   * @return required tunnel
-   */
-  virtual Ptr<C3Tunnel> GetTunnel (const Ipv4Address &src, const Ipv4Address &dst) = 0;
-
-
-  /**
    * @brief AddDivisionType
    * @param type objective type
    * @param tid TypeId of division
    * the division MUST have a default constructor
    */
   static void AddDivisionType (C3Type type, std::string tid);
+
+  /**
+   * @brief GetTunnel
+   * @param src tunnel src addr
+   * @param dst tunnel dst addr
+   * @return required tunnel
+   */
+  virtual Ptr<C3Tunnel> GetTunnel (const Ipv4Address &src, const Ipv4Address &dst) = 0;
 
   /**
    * @brief Update division

@@ -1,6 +1,6 @@
 #include "c3-division.h"
 
-#include "cmath"
+#include <cmath>
 
 #include "ns3/log.h"
 #include "ns3/object-factory.h"
@@ -130,6 +130,7 @@ C3Division::Update (void)
           tunnel->SetWeight (weight);
         }
     }
+  m_timer.Schedule (m_interval);
 }
 
 void
