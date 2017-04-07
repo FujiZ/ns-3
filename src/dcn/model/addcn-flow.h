@@ -52,6 +52,7 @@ public:
    */
   void Initialize();
 
+  void SetTenantId(int32_t tenantId);
   /**
    * \brief Set m_segsize param
    * \param size target segment size
@@ -172,6 +173,7 @@ protected:
   virtual void DoDispose (void);
 
 protected:
+  int32_t m_tenantId;
   uint32_t m_rWnd;          //!< current receive window
   uint32_t m_flowSize;      //!< the total size of current flow
   uint32_t m_sentSize;      //!< the sent size of current flow

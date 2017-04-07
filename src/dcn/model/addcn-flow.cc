@@ -1,3 +1,6 @@
+#define NS_LOG_APPEND_CONTEXT \
+  if (m_tenantId >= 0) { std::clog << " [node " << m_tenantId << "] "; }
+
 #include "addcn-flow.h"
 
 #include "ns3/log.h"
@@ -85,7 +88,8 @@ ADDCNFlow::GetTypeId (void)
 }
 
 ADDCNFlow::ADDCNFlow ()
-  : m_rWnd (0),
+  : m_tenantId (-1),
+    m_rWnd (0),
     m_flowSize (0),
     m_sentSize (0),
     m_g (1.0/16.0),
@@ -169,6 +173,12 @@ ADDCNFlow::Initialize ()
 }
 
 void
+ADDCNFlow::SetTenantId(int32_t tenantId)
+{
+  m_tenantId = tenantId;
+}
+
+void
 ADDCNFlow::SetSegmentSize(uint32_t size)
 {
   NS_LOG_FUNCTION(this << size);
@@ -177,7 +187,6 @@ ADDCNFlow::SetSegmentSize(uint32_t size)
   m_tcb->m_cWnd = m_tcb->m_initialCWnd * m_tcb->m_segmentSize;
   m_tcb->m_ssThresh = m_tcb->m_initialSsThresh;
 }
-
 
 void
 ADDCNFlow::UpdateEcnStatistics(const Ipv4Header &header)
@@ -222,7 +231,6 @@ void
 ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
 {
   NS_LOG_FUNCTION(this << packet );
-  // TODO
   TcpHeader tcpHeader;
   uint32_t bytesRemoved = packet->RemoveHeader(tcpHeader);
   NS_LOG_FUNCTION(this << "[RWND] Initial Header " << tcpHeader);
@@ -231,14 +239,16 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
     NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
     return;
   }
-  // TODO check whether valid
-  // TODO check WScale option
-  //m_rWnd = m_tcb->m_cWnd;
-  uint32_t w = m_tcb->m_cWnd >> m_sndWindShift;
-  
+
+  uint32_t m_shift = 0;
+  if((tcpHeader.GetFlags() & TcpHeader::SYN) == 0)
+    m_shift = m_sndWindShift;
+
+  uint32_t w = m_tcb->m_cWnd >> m_shift;
+
   if(w < tcpHeader.GetWindowSize())
     tcpHeader.SetWindowSize(w);
-  m_rWnd = tcpHeader.GetWindowSize() << m_sndWindShift;
+  m_rWnd = tcpHeader.GetWindowSize() << m_shift;
   packet->AddHeader(tcpHeader);
   NS_LOG_FUNCTION(this << "[RWND] Altered Header " << tcpHeader);
   return;
@@ -296,16 +306,18 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet, TcpHeader& tcpHeader)
     m_ecnEchoSeq = m_seqNumber;
   }
 
-  m_tcb->m_nextTxSequence = std::max (m_tcb->m_nextTxSequence.Get (), m_seqNumber + sz);
-  m_tcb->m_highTxMark = std::max (m_seqNumber + sz, m_tcb->m_highTxMark.Get ());
-  if (m_seqNumber == m_tcb->m_lastAckedSeq && sz > 0) // Retransmit data packet
+  bool isRetransmission = false;
+  if (m_seqNumber == m_tcb->m_lastAckedSeq && m_seqNumber < m_tcb->m_nextTxSequence && sz > 0) // Retransmit data packet
   {
     NS_LOG_FUNCTION (this << "Retransmission of data packet detected");
+    isRetransmission = true;
     m_retransOut ++;
   }
 
-  bool isRetransmission = m_seqNumber == m_tcb->m_lastAckedSeq;
   UpdateRttHistory (m_seqNumber, sz, isRetransmission);
+
+  m_tcb->m_nextTxSequence = std::max (m_tcb->m_nextTxSequence.Get (), m_seqNumber + sz);
+  m_tcb->m_highTxMark = std::max (m_seqNumber + sz, m_tcb->m_highTxMark.Get ());
 
   NS_LOG_FUNCTION (this << "m_nextTxSequence = " << m_tcb->m_nextTxSequence
                         << "m_highTxMark = " << m_tcb->m_highTxMark
@@ -366,8 +378,8 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, TcpHeader& tcpHeader)
       UpdateReceiveWindow(tcpHeader);
       SetReceiveWindow(packet);
     }*/
-    if((tcpHeader.GetFlags() & TcpHeader::SYN) == 0)
-      SetReceiveWindow(packet);
+    //if((tcpHeader.GetFlags() & TcpHeader::SYN) == 0)
+    SetReceiveWindow(packet);
 }
 
 double
@@ -613,6 +625,9 @@ ADDCNFlow::ReTxTimeout ()
   m_dupAckCount = 0;
   // set dctcp seq value if retransmit (why?)
   m_updateAlphaSeq = m_dctcpMaxSeq = m_tcb->m_nextTxSequence;
+
+  NS_LOG_FUNCTION ("RTO. Reset cwnd to " <<  m_tcb->m_cWnd << ", ssthresh to " <<
+                m_tcb->m_ssThresh << ", restart from seqnum " << m_tcb->m_nextTxSequence);
 }
 
 void

@@ -246,7 +246,7 @@ BuildAppsTest (void)
       app->SetStopTime (Seconds (clientStopTime));
       app->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, i));
       app->SetFlowSize (0);
-      app->SetTenantId (i);
+      app->SetTenantId (i-1);
       clientStartTime += client_interval_time;
       clientStopTime -=  client_interval_time;
       i++;

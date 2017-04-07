@@ -126,6 +126,7 @@ ADDCNSlice::GetFlow(const ADDCNFlow::FiveTuple &tup)
   else
   {
     Ptr<ADDCNFlow> flow = CreateObject<ADDCNFlow> ();
+    flow->SetTenantId(m_tenantId);
     flow->SetFiveTuple(tup);
     flow->UpdateScale(m_scale);
     m_flowList[tup] = flow;

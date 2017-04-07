@@ -1,3 +1,7 @@
+
+#define NS_LOG_APPEND_CONTEXT \
+  if (m_node) { std::clog << " [node " << m_node->GetId () << "] "; }
+
 #include "dctcp-socket.h"
 
 #include "ns3/log.h"
