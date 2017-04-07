@@ -74,33 +74,8 @@ public:
   static void AddDivisionType (C3Type type, std::string tid);
 
   /**
-   * @brief Set start time
-   * @param start time to start global division update
-   */
-  static void Start (Time start);
-
-  /**
-   * @brief Set stop time
-   * @param stop time to stop global division update
-   */
-  static void Stop (Time stop);
-
-  /**
-   * @brief Set timer Interval
-   * @param interval
-   */
-  static void SetInterval (Time interval);
-
-  /**
-   * @brief Global Update
-   * update all divisions in the network
-   */
-  static void UpdateAll (void);
-
-  /**
    * @brief Update division
    * update tunnels in divisions
-   * called by global timer (?)
    */
   void Update (void);
 
@@ -112,7 +87,7 @@ protected:
    * @brief GetTenantId
    * @return tenant id of current division
    */
-  uint32_t GetTenantId (void);
+  uint32_t GetTenantId (void) const;
 
   typedef std::pair<Ipv4Address, Ipv4Address> TunnelListKey_t;
   typedef std::map<TunnelListKey_t, Ptr<C3Tunnel> > TunnelList_t;
@@ -121,9 +96,15 @@ protected:
 
 private:
 
+  void InitTimer (void);
+
   uint32_t m_tenantId;  //!< tenant id of divison
   C3Type m_type;    //!< objective type
   double m_weight;  //!< division weight
+
+  // timer parameter
+  Timer m_timer;     //!< timer to call GlobalUpdate ()
+  Time m_interval;   //!< interval to call GlobalUpdate ()
 
   typedef std::pair<uint32_t, C3Type> DivisionListKey_t;
   typedef std::map<DivisionListKey_t, Ptr<C3Division> > DivisionList_t;
@@ -131,10 +112,6 @@ private:
 
   static DivisionList_t m_divisionList;
   static DivisionTypeList_t m_divisionTypeList;
-  static Time m_startTime;  //!< start time of division
-  static Time m_stopTime;   //!< stop time of division
-  static Time m_interval;   //!< interval to call GlobalUpdate ()
-  static Timer m_timer;     //!< timer to call GlobalUpdate ()
 };
 
 } //namespace dcn

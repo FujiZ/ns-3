@@ -22,6 +22,11 @@ C3Tunnel::GetTypeId (void)
                      DoubleValue (0.625),
                      MakeDoubleAccessor (&C3Tunnel::m_g),
                      MakeDoubleChecker<double> (0.0, 1.0))
+      .AddAttribute ("Interval",
+                     "Interval to execute tunnel update.",
+                     TimeValue (Time ("100us")),
+                     MakeTimeAccessor (&C3Tunnel::m_interval),
+                     MakeTimeChecker (Time (0)))
       .AddTraceSource ("Alpha",
                        "an estimate of the fraction of packets that are marked",
                        MakeTraceSourceAccessor (&C3Tunnel::m_alpha),
@@ -45,10 +50,13 @@ C3Tunnel::C3Tunnel (uint32_t tenantId, C3Type type,
     m_alpha (0.0),
     m_g (0.625),
     m_weight (0.0),
-    m_weightRequest (0.0)
+    m_weightRequest (0.0),
+    m_timer (Timer::CANCEL_ON_DESTROY)
 {
   NS_LOG_FUNCTION (this);
   m_ecnRecorder = C3EcnRecorder::CreateEcnRecorder (tenantId, type, src, dst);
+  // set a proper interval to call the first update
+  Simulator::ScheduleNow (&C3Tunnel::InitTimer, this);
 }
 
 C3Tunnel::~C3Tunnel ()
@@ -71,19 +79,14 @@ C3Tunnel::SetForwardTarget (ForwardTargetCallback cb)
 }
 
 void
-C3Tunnel::UpdateInfo (void)
+C3Tunnel::Update (void)
 {
   NS_LOG_FUNCTION (this);
-
-  UpdateAlpha ();
-  double weightRequest = 0;
-  for (auto it = m_flowList.begin (); it != m_flowList.end (); ++it)
-    {
-      Ptr<C3Flow> flow = it->second;
-      flow->UpdateInfo ();
-      weightRequest += flow->GetWeight ();
-    }
-  m_weightRequest = weightRequest;
+  UpdateInfo ();
+  UpdateRate ();
+  ScheduleFlow ();
+  // schedule next event
+  m_timer.Schedule (m_interval);
 }
 
 double
@@ -100,27 +103,10 @@ C3Tunnel::SetWeight (double weight)
 }
 
 void
-C3Tunnel::UpdateRate (void)
-{
-  NS_LOG_FUNCTION (this);
-  if (m_ecnRecorder->GetMarkedCount ())
-    {
-      NS_LOG_DEBUG ("Congestion detected");
-      m_rate = DataRate ((1 - m_alpha * m_weight) * m_rate.GetBitRate ());
-    }
-  else
-    {
-      NS_LOG_DEBUG ("No congestion");
-      m_rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
-    }
-  m_ecnRecorder->Reset ();
-}
-
-void
 C3Tunnel::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
-  ///\todo dispose ecn recorder
+  m_timer.Cancel ();
   m_ecnRecorder = 0;
   m_forwardTarget.Nullify ();
   m_route = 0;
@@ -142,10 +128,45 @@ C3Tunnel::GetRate (void) const
 }
 
 void
-C3Tunnel::UpdateAlpha (void)
+C3Tunnel::UpdateInfo (void)
 {
   NS_LOG_FUNCTION (this);
+
+  // update alpha
   m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
+
+  double weightRequest = 0;
+  for (auto it = m_flowList.begin (); it != m_flowList.end (); ++it)
+    {
+      Ptr<C3Flow> flow = it->second;
+      flow->UpdateInfo ();
+      weightRequest += flow->GetWeight ();
+    }
+  m_weightRequest = weightRequest;
+}
+
+void
+C3Tunnel::UpdateRate (void)
+{
+  NS_LOG_FUNCTION (this);
+  if (m_ecnRecorder->GetMarkedCount ())
+    {
+      NS_LOG_DEBUG ("Congestion detected");
+      m_rate = DataRate ((1 - m_alpha * m_weight) * m_rate.GetBitRate ());
+    }
+  else
+    {
+      NS_LOG_DEBUG ("No congestion");
+      m_rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
+    }
+  m_ecnRecorder->Reset ();
+}
+
+void
+C3Tunnel::InitTimer (void)
+{
+  m_timer.SetFunction (&C3Tunnel::Update, this);
+  m_timer.Schedule (m_interval);
 }
 
 } //namespace dcn

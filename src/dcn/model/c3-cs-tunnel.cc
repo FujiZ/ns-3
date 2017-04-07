@@ -50,7 +50,7 @@ C3CsTunnel::Send (Ptr<Packet> packet, uint8_t protocol)
 }
 
 void
-C3CsTunnel::Schedule (void)
+C3CsTunnel::ScheduleFlow (void)
 {
   NS_LOG_FUNCTION (this);
 

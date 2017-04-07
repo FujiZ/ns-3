@@ -8,8 +8,10 @@
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv4-route.h"
 #include "ns3/object.h"
+#include "ns3/nstime.h"
 #include "ns3/packet.h"
 #include "ns3/ptr.h"
+#include "ns3/timer.h"
 #include "ns3/traced-value.h"
 
 #include "c3-ecn-recorder.h"
@@ -60,10 +62,12 @@ public:
   virtual void Send (Ptr<Packet> packet, uint8_t protocol) = 0;
 
   /**
-   * @brief Update tunnel info (weight, congestion status)
-   * called by upper division
+   * @brief Update tunnnel periodically
+   * 1) update tunnel info (flow, alpha etc.)
+   * 2) update tunnel rate (according weight & alpha)
+   * 3) schedule flow inside the tunnel
    */
-  virtual void UpdateInfo (void);
+  void Update (void);
 
   /**
    * @brief GetWeightRequest
@@ -77,19 +81,6 @@ public:
    * called by division, set tunnel weight response
    */
   void SetWeight (double weight);
-
-  /**
-   * @brief Update tunnel rate;
-   * update tunnel rate according to ecn info
-   */
-  void UpdateRate (void);
-
-  /**
-   * @brief in-tunnel schedule
-   * alloc tunnel rate to flows inside the tunnel
-   * scale flow rate inside the tunnel
-   */
-  virtual void Schedule (void) = 0;
 
 protected:
 
@@ -109,16 +100,32 @@ protected:
    */
   DataRate GetRate (void) const;
 
+  /**
+   * @brief Update tunnel info (weight, congestion status)
+   * called by upper division
+   */
+  virtual void UpdateInfo (void);
+
+  /**
+   * @brief Update tunnel rate;
+   * update tunnel rate according to ecn info
+   */
+  void UpdateRate (void);
+
+  /**
+   * @brief in-tunnel schedule
+   * alloc tunnel rate to flows inside the tunnel
+   * scale flow rate inside the tunnel
+   */
+  virtual void ScheduleFlow (void) = 0;
+
   typedef std::map<uint32_t, Ptr<C3Flow> > FlowList_t;
 
   FlowList_t m_flowList;    //!< flow list
 
 private:
-  /**
-   * @brief UpdateAlpha
-   * update alpha value
-   */
-  void UpdateAlpha (void);
+
+  void InitTimer (void);
 
   Ipv4Address m_src;   //!< src address of tunnel
   Ipv4Address m_dst;  //!< dst address of tunnel
@@ -134,6 +141,9 @@ private:
   TracedValue<double> m_weight;  //!< real tunnel weight
   TracedValue<double> m_weightRequest;   //!< tunnel weight request
   DataRate m_rate;  //!< current tunnel rate
+  // tunnel timer parameter
+  Timer m_timer;
+  Time m_interval;
 };
 
 } //namespace dcn

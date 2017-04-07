@@ -50,7 +50,7 @@ C3DsTunnel::Send (Ptr<Packet> packet, uint8_t protocol)
 }
 
 void
-C3DsTunnel::Schedule (void)
+C3DsTunnel::ScheduleFlow (void)
 {
   NS_LOG_FUNCTION (this);
   std::vector<Ptr<C3DsFlow> > flowList;

@@ -23,7 +23,7 @@ public:
 
   //inherited from C3Tunnel
   virtual void Send (Ptr<Packet> packet, uint8_t protocol);
-  virtual void Schedule (void);
+  virtual void ScheduleFlow (void);
 
 private:
   /**
