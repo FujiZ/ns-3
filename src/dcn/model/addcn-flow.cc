@@ -93,7 +93,7 @@ ADDCNFlow::ADDCNFlow ()
     m_flowSize (0),
     m_sentSize (0),
     m_g (1.0/16.0),
-    m_alpha (0.0),
+    m_alpha (1.0),
     m_scale (1.0),
     m_weight (1.0),
     m_winScalingEnabled (true),
@@ -129,7 +129,7 @@ ADDCNFlow::Initialize ()
   m_flowSize = 0;
   m_sentSize = 0;
   m_g = 1.0 / 16.0;
-  m_alpha = 0;
+  m_alpha = 1.0;
   m_scale = 1.0;
   m_weight = 1.0;
   m_winScalingEnabled = true;

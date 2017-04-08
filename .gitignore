@@ -48,3 +48,4 @@ massif.*
 *.DS_Store
 result*
 waf
+temp*
