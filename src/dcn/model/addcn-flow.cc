@@ -106,7 +106,7 @@ ADDCNFlow::ADDCNFlow ()
     m_sndWindShift(0),
     m_recover(0)
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   m_ecnRecorder = CreateObject<C3EcnRecorder> ();
   m_tcb      = CreateObject<TcpSocketState> ();
   m_rtt      = CreateObject<RttMeanDeviation> ();
@@ -118,7 +118,7 @@ ADDCNFlow::ADDCNFlow ()
 
 ADDCNFlow::~ADDCNFlow ()
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   m_retxEvent.Cancel ();
 }
 
@@ -187,7 +187,7 @@ ADDCNFlow::SetTenantId(int32_t tenantId)
 void
 ADDCNFlow::SetSegmentSize(uint32_t size)
 {
-  NS_LOG_FUNCTION (size);
+  NS_LOG_FUNCTION (this << size);
   m_segSize = size;
   m_tcb->m_segmentSize = size;
   /*
@@ -199,35 +199,35 @@ ADDCNFlow::SetSegmentSize(uint32_t size)
 uint32_t
 ADDCNFlow::GetSegSize ()
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   return m_tcb->m_segmentSize;
 }
 
 uint32_t
 ADDCNFlow::GetInitialCwnd ()
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   return m_tcb->m_initialCWnd;
 }
 
 uint32_t
 ADDCNFlow::GetInitialSSThresh ()
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   return m_tcb->m_initialSsThresh;
 }
 
 void
 ADDCNFlow::UpdateEcnStatistics(const Ipv4Header &header)
 {
-  NS_LOG_FUNCTION (header);
+  NS_LOG_FUNCTION (this << header);
   m_ecnRecorder->NotifyReceived(header);
 }
 
 void
 ADDCNFlow::UpdateEcnStatistics(const TcpHeader &tcpHeader)
 {
-  NS_LOG_FUNCTION (tcpHeader);
+  NS_LOG_FUNCTION (this << tcpHeader);
   m_ecnRecorder->NotifyReceived(tcpHeader);
 }
 
@@ -235,7 +235,7 @@ void
 ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
 {
 #ifdef DCTCPACK
-  NS_LOG_FUNCTION (tcpHeader);
+  NS_LOG_FUNCTION (this << tcpHeader);
   int32_t ackedBytes = tcpHeader.GetAckNumber () - m_highRxAckMark;
   if (ackedBytes > 0)
     {
@@ -259,7 +259,7 @@ ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
       m_ackedBytesEcn = m_ackedBytesTotal = 0;
     }
 #else
-  NS_LOG_FUNCTION (tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
+  NS_LOG_FUNCTION (this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
   // curSeq > m_updateAlphaSeq ensures updating alpha only one time every RTT
   if(tcpHeader.GetAckNumber () > m_updateAlphaSeq)
   {
@@ -267,14 +267,14 @@ ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
     m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
     m_ecnRecorder->Reset();
   }
-  NS_LOG_FUNCTION (tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
+  NS_LOG_FUNCTION (this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
 #endif
 }
 
 void
 ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
 {
-  NS_LOG_FUNCTION (tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rWnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
+  NS_LOG_FUNCTION (this << tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rWnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
   SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
   // curSeq > m_updateRwndSeq ensures that this action is operated only one time every RTT
   if(m_alpha > 10e-7 && curSeq > m_updateRwndSeq)
@@ -285,16 +285,16 @@ ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
   else
     m_rWnd += m_weightScaled * m_segSize;
   m_rWnd = m_rWnd > m_segSize ? m_rWnd : m_segSize;
-  NS_LOG_FUNCTION (tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rWnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
+  NS_LOG_FUNCTION (this << tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rWnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
 }
 
 void
 ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
 {
-  NS_LOG_FUNCTION (packet );
+  NS_LOG_FUNCTION (this << packet );
   TcpHeader tcpHeader;
   uint32_t bytesRemoved = packet->RemoveHeader(tcpHeader);
-  NS_LOG_FUNCTION ("[RWND] Initial Header " << tcpHeader);
+  NS_LOG_FUNCTION (this << "[RWND] Initial Header " << tcpHeader);
   if(bytesRemoved == 0)
   {
     NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
@@ -318,21 +318,21 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
   }
   tcpHeader.SetFlags (flags);
   packet->AddHeader(tcpHeader);
-  NS_LOG_FUNCTION ("[RWND] Altered Header " << tcpHeader);
+  NS_LOG_FUNCTION (this << "[RWND] Altered Header " << tcpHeader);
   return;
 }
 
 void
 ADDCNFlow::SetForwardTarget (ForwardTargetCallback cb)
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   m_forwardTarget = cb;
 }
 
 void 
 ADDCNFlow::SetFiveTuple (ADDCNFlow::FiveTuple tuple)
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   m_tuple = tuple;
 }
 
@@ -349,7 +349,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
     NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
     return;
   }
-  NS_LOG_FUNCTION (tcpHeader);
+  NS_LOG_FUNCTION (this << tcpHeader);
 
   uint8_t flags = tcpHeader.GetFlags();
   m_seqNumber = tcpHeader.GetSequenceNumber ();
@@ -450,7 +450,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
   bool isRetransmission = false;
   if (m_seqNumber == m_tcb->m_lastAckedSeq && m_seqNumber < m_tcb->m_nextTxSequence && sz > 0) // Retransmit data packet
   {
-    NS_LOG_FUNCTION ("Retransmission of data packet detected");
+    NS_LOG_FUNCTION (this << "Retransmission of data packet detected");
     isRetransmission = true;
     m_retransOut ++;
   }
@@ -460,7 +460,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
   m_tcb->m_nextTxSequence = std::max (m_tcb->m_nextTxSequence.Get (), m_seqNumber + sz);
   m_tcb->m_highTxMark = std::max (m_seqNumber + sz, m_tcb->m_highTxMark.Get ());
 
-  NS_LOG_FUNCTION ("m_nextTxSequence = " << m_tcb->m_nextTxSequence
+  NS_LOG_FUNCTION (this << "m_nextTxSequence = " << m_tcb->m_nextTxSequence
                         << "m_highTxMark = " << m_tcb->m_highTxMark
                         << "m_lastAckedSeq = " << m_tcb->m_lastAckedSeq
                         << "m_retransOut = " << m_retransOut);
@@ -473,7 +473,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
 void
 ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
 {
-  NS_LOG_FUNCTION (header);
+  NS_LOG_FUNCTION (this << header);
   TcpHeader tcpHeader;
   // Peel off TCP header and do validity checking
   uint32_t bytesRemoved = packet->PeekHeader (tcpHeader);
@@ -483,7 +483,7 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
       NS_LOG_ERROR ("Bytes removed: " << bytesRemoved << " invalid");
       return; // Discard invalid packet
     }
-  NS_LOG_FUNCTION (tcpHeader);
+  NS_LOG_FUNCTION (this << tcpHeader);
 
   if (header.GetEcn() == Ipv4Header::ECN_CE)
    {
@@ -651,7 +651,7 @@ ADDCNFlow::GetWeight (void) const
 void
 ADDCNFlow::UpdateScale(const double s)
 {
-  NS_LOG_FUNCTION (s);
+  NS_LOG_FUNCTION (this << s);
   if(s > 10e-7)
   {
     m_scale = s;
@@ -662,7 +662,7 @@ ADDCNFlow::UpdateScale(const double s)
 void
 ADDCNFlow::UpdateAlpha()
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
 }
 
@@ -675,7 +675,7 @@ ADDCNFlow::GetHighSequenceNumber()
 void
 ADDCNFlow::ProcessOptionWScale (const Ptr<const TcpOption> option)
 {
-  NS_LOG_FUNCTION (option);
+  NS_LOG_FUNCTION (this << option);
  
   Ptr<const TcpOptionWinScale> ws = DynamicCast<const TcpOptionWinScale> (option);
 
@@ -697,7 +697,7 @@ void
 ADDCNFlow::ProcessOptionTimestamp (const Ptr<const TcpOption> option,
                                        const SequenceNumber32 &seq)
 {
-  NS_LOG_FUNCTION (option);
+  NS_LOG_FUNCTION (this << option);
 
   /*
   Ptr<const TcpOptionTS> ts = DynamicCast<const TcpOptionTS> (option);
@@ -716,7 +716,7 @@ uint32_t
 ADDCNFlow::BytesInFlight ()
 {
   // TODO
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   // Previous (see bug 1783):
   // uint32_t bytesInFlight = m_highTxMark.Get () - m_txBuffer->HeadSequence ();
   // RFC 4898 page 23
@@ -757,14 +757,14 @@ ADDCNFlow::Window ()
 uint32_t
 ADDCNFlow::GetSsThresh (Ptr<const TcpSocketState> state, uint32_t bytesInFlight)
 {
-  NS_LOG_FUNCTION (state << bytesInFlight);
+  NS_LOG_FUNCTION (this << state << bytesInFlight);
   return std::max (2 * state->m_segmentSize, bytesInFlight / 2);
 }
 
 void
 ADDCNFlow::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool isRetransmission)
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
 
   m_dctcpMaxSeq =std::max (std::max (seq + sz, m_tcb->m_highTxMark.Get ()), m_dctcpMaxSeq);
 
@@ -833,14 +833,14 @@ ADDCNFlow::EstimateRtt (const TcpHeader& tcpHeader)
       // RFC 6298, clause 2.4
       m_rto = Max (m_rtt->GetEstimate () + Max (m_clockGranularity, m_rtt->GetVariation () * 4), m_minRto);
       m_lastRtt = m_rtt->GetEstimate ();
-      NS_LOG_FUNCTION (m_lastRtt);
+      NS_LOG_FUNCTION (this << m_lastRtt);
     }
 }
 
 void
 ADDCNFlow::ReTxTimeout ()
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   m_recover = m_tcb->m_highTxMark;
   
   /*
@@ -888,14 +888,14 @@ ADDCNFlow::ReTxTimeout ()
   // set dctcp seq value if retransmit (why?)
   m_updateAlphaSeq = m_dctcpMaxSeq = m_tcb->m_nextTxSequence;
 
-  NS_LOG_FUNCTION ("RTO. Reset cwnd to " <<  m_tcb->m_cWnd << ", ssthresh to " <<
+  NS_LOG_FUNCTION (this << "RTO. Reset cwnd to " <<  m_tcb->m_cWnd << ", ssthresh to " <<
                 m_tcb->m_ssThresh << ", restart from seqnum " << m_tcb->m_nextTxSequence);
 }
 
 void
 ADDCNFlow::NewAck (SequenceNumber32 const& ack, bool resetRTO)
 {
-  NS_LOG_FUNCTION (ack);
+  NS_LOG_FUNCTION (this << ack);
 
   //if (m_state != TcpSocket::SYN_RCVD && resetRTO)
   if (resetRTO)
@@ -945,7 +945,7 @@ ADDCNFlow::NewAck (SequenceNumber32 const& ack, bool resetRTO)
 void
 ADDCNFlow::DupAck ()
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   ++m_dupAckCount;
 
   if (m_tcb->m_congState == TcpSocketState::CA_OPEN)
@@ -1002,7 +1002,7 @@ ADDCNFlow::DupAck ()
 void 
 ADDCNFlow::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
-  NS_LOG_FUNCTION (tcpHeader);
+  NS_LOG_FUNCTION (this << tcpHeader);
 
   NS_ASSERT (0 != (tcpHeader.GetFlags () & TcpHeader::ACK));
   NS_ASSERT (m_tcb->m_segmentSize > 0);
@@ -1227,7 +1227,7 @@ ADDCNFlow::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 void
 ADDCNFlow::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
-  NS_LOG_FUNCTION (tcb << segmentsAcked);
+  NS_LOG_FUNCTION (this << tcb << segmentsAcked);
 
   if (tcb->m_cWnd < tcb->m_ssThresh)
     {
@@ -1243,7 +1243,7 @@ ADDCNFlow::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 uint32_t
 ADDCNFlow::SlowStart (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
-  NS_LOG_FUNCTION (tcb << segmentsAcked);
+  NS_LOG_FUNCTION (this << tcb << segmentsAcked);
 
   if (segmentsAcked >= 1)
     {
@@ -1258,7 +1258,7 @@ ADDCNFlow::SlowStart (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 void
 ADDCNFlow::CongestionAvoidance (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
-  NS_LOG_FUNCTION (tcb << segmentsAcked);
+  NS_LOG_FUNCTION (this << tcb << segmentsAcked);
 
   if (segmentsAcked > 0)
     {
@@ -1284,18 +1284,18 @@ ADDCNFlow::SafeSubtraction (uint32_t a, uint32_t b)
 void
 ADDCNFlow::HalveCwnd ()
 {
-  NS_LOG_FUNCTION ("alpha" << m_alpha << "m_rWnd" << m_rWnd << "m_cWnd" << m_tcb->m_cWnd);
+  NS_LOG_FUNCTION (this << "alpha" << m_alpha << "m_rWnd" << m_rWnd << "m_cWnd" << m_tcb->m_cWnd);
   //m_tcb->m_ssThresh = GetSsThresh (m_tcb, BytesInFlight ());
   m_tcb->m_ssThresh = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), 2 * m_tcb->m_segmentSize);
   // halve cwnd according to DCTCP algo
   m_tcb->m_cWnd = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), m_tcb->m_segmentSize);
-  NS_LOG_FUNCTION ("alpha" << m_alpha << "m_ssThresh" << m_tcb->m_ssThresh << "m_cWnd" << m_tcb->m_cWnd);
+  NS_LOG_FUNCTION (this << "alpha" << m_alpha << "m_ssThresh" << m_tcb->m_ssThresh << "m_cWnd" << m_tcb->m_cWnd);
 }
 
 void
 ADDCNFlow::UpdateEcnState (const TcpHeader &tcpHeader)
 {
-  NS_LOG_FUNCTION (tcpHeader);
+  NS_LOG_FUNCTION (this << tcpHeader);
 
   if (m_ceReceived && !(m_ecnState & TcpSocket::ECN_TX_ECHO))
     {
@@ -1328,7 +1328,7 @@ ADDCNFlow::UpdateEcnState (const TcpHeader &tcpHeader)
 void 
 ADDCNFlow::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
-  NS_LOG_FUNCTION (tcpHeader);
+  NS_LOG_FUNCTION (this << tcpHeader);
   // Extract the flags. PSH, URG, CWR and ECE are not honoured.
   uint8_t tcpflags = tcpHeader.GetFlags ()
       & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
@@ -1357,7 +1357,7 @@ ADDCNFlow::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 void
 ADDCNFlow::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
-  NS_LOG_FUNCTION (tcpHeader);
+  NS_LOG_FUNCTION (this << tcpHeader);
   // Extract the flags. PSH, URG, CWR and ECE are not honoured.
   uint8_t tcpflags = tcpHeader.GetFlags ()
       & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
@@ -1426,7 +1426,7 @@ ADDCNFlow::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 void
 ADDCNFlow::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
-  NS_LOG_FUNCTION (tcpHeader);
+  NS_LOG_FUNCTION (this << tcpHeader);
   // Extract the flags. PSH, URG, CWR and ECE are not honoured.
   uint8_t tcpflags = tcpHeader.GetFlags ()
       & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
@@ -1467,7 +1467,7 @@ ADDCNFlow::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 void
 ADDCNFlow::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
-  NS_LOG_FUNCTION (tcpHeader);
+  NS_LOG_FUNCTION (this << tcpHeader);
   // Extract the flags. PSH, URG, CWR and ECE are not honoured.
   uint8_t tcpflags = tcpHeader.GetFlags () &
       ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
@@ -1507,7 +1507,7 @@ ADDCNFlow::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 void
 ADDCNFlow::DoDispose (void)
 {
-  NS_LOG_FUNCTION ();
+  NS_LOG_FUNCTION (this);
   m_forwardTarget.Nullify ();
   Object::DoDispose ();
 }
