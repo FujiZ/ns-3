@@ -340,7 +340,12 @@ void
 ADDCNFlow::NotifySend (Ptr<Packet>& packet)
 {
   C3Tag c3Tag;
-  NS_ASSERT (packet->PeekPacketTag (c3Tag));
+  uint32_t segSize = 536;
+  if (packet->PeekPacketTag (c3Tag))
+  {
+    segSize = c3Tag.GetSegmentSize ();
+    m_flowSize = c3Tag.GetFlowSize ();
+  }
 
   TcpHeader tcpHeader;
   uint32_t bytesRemoved = packet->RemoveHeader(tcpHeader);
@@ -354,8 +359,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
   uint8_t flags = tcpHeader.GetFlags();
   m_seqNumber = tcpHeader.GetSequenceNumber ();
 
-  uint32_t sz = c3Tag.GetPacketSize ();
-  m_flowSize = c3Tag.GetFlowSize ();
+  uint32_t sz = packet->GetSize ();
 
   m_sentSize += sz;
   
@@ -365,7 +369,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
     if((flags & TcpHeader::SYN) == TcpHeader::SYN)
     {
       Initialize(); // New connection
-      SetSegmentSize(c3Tag.GetSegmentSize());
+      SetSegmentSize(segSize);
       if((flags & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
         m_ecnEnabled = true;
       else
@@ -393,7 +397,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
     if((flags & TcpHeader::SYN) == TcpHeader::SYN)
     {
       Initialize(); // New connection
-      SetSegmentSize(c3Tag.GetSegmentSize());
+      SetSegmentSize(segSize);
       if((flags & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
         m_ecnEnabled = true;
       else

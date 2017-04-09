@@ -50,16 +50,17 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
   {
     TcpHeader tcpHeader;
     packet->PeekHeader (tcpHeader);
-    C3Tag c3Tag;
 
     NS_LOG_FUNCTION (this << tcpHeader);
-    if(packet->RemovePacketTag (c3Tag))
-    { // From Sender side
-      ADDCNFlow::FiveTuple tuple;
-      tuple.sourceAddress = src;
-      tuple.destinationAddress = dst;
-      tuple.protocol = protocol;
 
+    ADDCNFlow::FiveTuple tuple;
+    tuple.sourceAddress = src;
+    tuple.destinationAddress = dst;
+    tuple.protocol = protocol;
+    tuple.sourcePort = tcpHeader.GetSourcePort ();
+    tuple.destinationPort = tcpHeader.GetDestinationPort ();
+
+    /*
       // we rely on the fact that for both TCP and UDP the ports are
       // carried in the first 4 octects.
       // This allows to read the ports even on fragmented packets
@@ -77,11 +78,11 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
       dstPort |= data[2];
       dstPort <<= 8;
       dstPort |= data[3];
- 
-      tuple.sourcePort = srcPort;
-      tuple.destinationPort = dstPort;
+    */
 
-      //TODO handle FIN TcpHeader
+    C3Tag c3Tag;
+    if(packet->RemovePacketTag (c3Tag))
+    { // From Sender side, even EMPTY packets like ACK, SYN. Done through socket level send trace
       Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
       //if((tcpHeader.GetFlags() & (TcpHeader::SYN | TcpHeader::ACK)) == TcpHeader::SYN)
       //{
@@ -106,9 +107,15 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
     else
     {
       NS_LOG_DEBUG("NO C3TAG");
+      ADDCNFlow::FiveTuple rtuple;
+      rtuple.sourceAddress = dst;
+      rtuple.destinationAddress = src;
+      rtuple.protocol = protocol;
+      rtuple.sourcePort = tcpHeader.GetDestinationPort ();
+      rtuple.destinationPort = tcpHeader.GetSourcePort ();
+      Ptr<ADDCNFlow> flow = ADDCNSlice::GetSliceFromTuple(rtuple)->GetFlow(tuple);
+      flow->NotifySend(packet);
     }
-    // not a data packet: ACK or sth else
-    // TODO
   }
   // check tag before send
   ForwardDown (packet, src, dst, protocol, route);
@@ -131,37 +138,44 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
                          Ptr<Ipv4Interface> incomingInterface)
 {
   NS_LOG_FUNCTION (this << packet << ipHeader);
+  uint8_t protocol = ipHeader.GetProtocol ();
 
-  C3Tag c3Tag;
+  if(protocol == 6) // TCP
+  {
+    C3Tag c3Tag;
+    TcpHeader tcpHeader;
+    packet->PeekHeader (tcpHeader);
 
-  TcpHeader tcpHeader;
-  packet->PeekHeader (tcpHeader);
-
-  if (packet->PeekPacketTag (c3Tag))
-  { // At the receiver side
-    ADDCNFlow::FiveTuple tuple;
+    ADDCNFlow::FiveTuple tuple, rtuple;
     tuple.sourceAddress = ipHeader.GetSource ();
     tuple.destinationAddress = ipHeader.GetDestination ();
     tuple.protocol = ipHeader.GetProtocol ();
     tuple.sourcePort = tcpHeader.GetSourcePort ();
     tuple.destinationPort = tcpHeader.GetDestinationPort ();
 
-    Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
-    if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
-      flow->UpdateEcnStatistics(tcpHeader); // TO closely track dctcp
-    else
-      flow->UpdateEcnStatistics(ipHeader);
-  }
-  else // TODO: What if both side supports C3Tag?
-  { // At the sender side
-      ADDCNFlow::FiveTuple rtuple;
-      rtuple.sourceAddress = ipHeader.GetDestination ();
-      rtuple.destinationAddress = ipHeader.GetSource ();
-      rtuple.protocol = ipHeader.GetProtocol ();
-      rtuple.sourcePort = tcpHeader.GetDestinationPort ();
-      rtuple.destinationPort = tcpHeader.GetSourcePort ();
+    rtuple.sourceAddress = ipHeader.GetDestination ();
+    rtuple.destinationAddress = ipHeader.GetSource ();
+    rtuple.protocol = ipHeader.GetProtocol ();
+    rtuple.sourcePort = tcpHeader.GetDestinationPort ();
+    rtuple.destinationPort = tcpHeader.GetSourcePort ();
 
+    if (packet->PeekPacketTag (c3Tag))
+    { // At the receiver side
+#ifdef DCTCPACK
+      Ptr<ADDCNFlow> rflow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(rtuple);
+      rflow->NotifyReceive (packet, ipHeader);
+#else
+      Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
+      if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
+        flow->UpdateEcnStatistics(tcpHeader); // TO closely track dctcp
+      else
+        flow->UpdateEcnStatistics(ipHeader);
+#endif
+    }
+    else // TODO: What if both side supports C3Tag?
+    { // At the sender side
       Ptr<ADDCNFlow> rflow = ADDCNSlice::GetSliceFromTuple(rtuple)->GetFlow(rtuple);
+      rflow->NotifyReceive (packet, ipHeader);
 
     /*
     //if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
@@ -177,9 +191,7 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
       }
     }
     */
-    // TODO check logic
-    // TODO frequency of updating window?
-/*
+  /*
     if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
     {
       NS_LOG_DEBUG("Receive side, SYN");
@@ -199,9 +211,9 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
       rflow->SetReceiveWindow(packet);
     }
 */
-      rflow->NotifyReceive (packet, ipHeader);
       //packet->PeekHeader (tcpHeader);
       //NS_LOG_FUNCTION(this << "Window Set Header " << tcpHeader);
+    }
   }
   return ForwardUp (packet, ipHeader, incomingInterface, ipHeader.GetProtocol ());
 }
