@@ -106,7 +106,7 @@ ADDCNFlow::ADDCNFlow ()
     m_sndWindShift(0),
     m_recover(0)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION ();
   m_ecnRecorder = CreateObject<C3EcnRecorder> ();
   m_tcb      = CreateObject<TcpSocketState> ();
   m_rtt      = CreateObject<RttMeanDeviation> ();
@@ -118,7 +118,7 @@ ADDCNFlow::ADDCNFlow ()
 
 ADDCNFlow::~ADDCNFlow ()
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION ();
   m_retxEvent.Cancel ();
 }
 
@@ -141,6 +141,7 @@ ADDCNFlow::Initialize ()
   m_updateAlphaSeq = 0;
   m_dctcpMaxSeq = 0;
   m_recover = 0;
+  m_highRxAckMark = 0;
   m_sndWindShift = 0;
 
   m_rto = Seconds(0.0);
@@ -152,10 +153,16 @@ ADDCNFlow::Initialize ()
   m_retransOut = 0;
   m_bytesAckedNotProcessed = 0;
   m_isFirstPartialAck = true;
+  m_ecnTransition = false;
 
-  m_ecnState = TcpSocket::ECN_CONN;
+  m_state = TcpSocket::LISTEN;
+  m_ecnState = TcpSocket::ECN_DISABLED;
   m_ecnRecorder->Reset ();
   m_ecnEchoSeq = 0;
+  m_ecnEnabled = false;
+  m_ceReceived = false;
+
+  m_ackedBytesEcn = m_ackedBytesTotal = 0;
 
   m_rtt->Reset ();
   m_retxEvent.Cancel ();
@@ -167,7 +174,6 @@ ADDCNFlow::Initialize ()
   m_tcb->m_highTxMark = 0;
   // Change m_nextTxSequence for non-zero initial sequence number
   m_tcb->m_nextTxSequence = 0;
-
   m_tcb->m_cWnd = m_tcb->m_initialCWnd * m_tcb->m_segmentSize;
   m_tcb->m_ssThresh = m_tcb->m_initialSsThresh;
 }
@@ -181,46 +187,94 @@ ADDCNFlow::SetTenantId(int32_t tenantId)
 void
 ADDCNFlow::SetSegmentSize(uint32_t size)
 {
-  NS_LOG_FUNCTION(this << size);
+  NS_LOG_FUNCTION (size);
   m_segSize = size;
   m_tcb->m_segmentSize = size;
+  /*
   m_tcb->m_cWnd = m_tcb->m_initialCWnd * m_tcb->m_segmentSize;
   m_tcb->m_ssThresh = m_tcb->m_initialSsThresh;
+  */
+}
+
+uint32_t
+ADDCNFlow::GetSegSize ()
+{
+  NS_LOG_FUNCTION ();
+  return m_tcb->m_segmentSize;
+}
+
+uint32_t
+ADDCNFlow::GetInitialCwnd ()
+{
+  NS_LOG_FUNCTION ();
+  return m_tcb->m_initialCWnd;
+}
+
+uint32_t
+ADDCNFlow::GetInitialSSThresh ()
+{
+  NS_LOG_FUNCTION ();
+  return m_tcb->m_initialSsThresh;
 }
 
 void
 ADDCNFlow::UpdateEcnStatistics(const Ipv4Header &header)
 {
-  NS_LOG_FUNCTION(this << header);
+  NS_LOG_FUNCTION (header);
   m_ecnRecorder->NotifyReceived(header);
 }
 
 void
 ADDCNFlow::UpdateEcnStatistics(const TcpHeader &tcpHeader)
 {
-  NS_LOG_FUNCTION(this << tcpHeader);
+  NS_LOG_FUNCTION (tcpHeader);
   m_ecnRecorder->NotifyReceived(tcpHeader);
 }
 
 void
 ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
 {
-  NS_LOG_FUNCTION(this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
-  SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
+#ifdef DCTCPACK
+  NS_LOG_FUNCTION (tcpHeader);
+  int32_t ackedBytes = tcpHeader.GetAckNumber () - m_highRxAckMark;
+  if (ackedBytes > 0)
+    {
+      m_ackedBytesTotal += ackedBytes;
+      if (tcpHeader.GetFlags () & TcpHeader::ECE)
+        {
+          m_ackedBytesEcn += ackedBytes;
+        }
+    }
+  /*
+   * check for barrier indicating its time to recalculate alpha.
+   * this code basically updated alpha roughly once per RTT.
+   */
+  double ratio = (double)m_ackedBytesEcn / (m_ackedBytesTotal ? m_ackedBytesTotal : 1);
+  NS_LOG_DEBUG ("Before alpha update: " << m_alpha.Get () << "ratio: " << ratio);
+  if (tcpHeader.GetAckNumber () > m_alphaUpdateSeq)
+    {
+      m_alphaUpdateSeq = m_dctcpMaxSeq;
+      m_alpha = (1 - m_g) * m_alpha + m_g * ratio;
+      NS_LOG_DEBUG ("After alpha update: " << m_alpha.Get ());
+      m_ackedBytesEcn = m_ackedBytesTotal = 0;
+    }
+#else
+  NS_LOG_FUNCTION (tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
   // curSeq > m_updateAlphaSeq ensures updating alpha only one time every RTT
-  if(curSeq > m_updateAlphaSeq)
+  if(tcpHeader.GetAckNumber () > m_updateAlphaSeq)
   {
     m_updateAlphaSeq = m_dctcpMaxSeq;
     m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
     m_ecnRecorder->Reset();
   }
-  NS_LOG_FUNCTION(this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
+  NS_LOG_FUNCTION (tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
+#endif
 }
 
 void
 ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
 {
-  NS_LOG_FUNCTION(this << tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rWnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
+  NS_LOG_FUNCTION (tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rWnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
   SequenceNumber32 curSeq = tcpHeader.GetAckNumber ();
   // curSeq > m_updateRwndSeq ensures that this action is operated only one time every RTT
   if(m_alpha > 10e-7 && curSeq > m_updateRwndSeq)
@@ -231,24 +285,25 @@ ADDCNFlow::UpdateReceiveWindow(const TcpHeader &tcpHeader)
   else
     m_rWnd += m_weightScaled * m_segSize;
   m_rWnd = m_rWnd > m_segSize ? m_rWnd : m_segSize;
-  NS_LOG_FUNCTION(this << tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rWnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
+  NS_LOG_FUNCTION (tcpHeader << "SEG_SIZE" << m_segSize << "M_RWND" << m_rWnd << "ALPHA" << m_alpha << "m_weightScaled" << m_weightScaled);
 }
 
 void
 ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
 {
-  NS_LOG_FUNCTION(this << packet );
+  NS_LOG_FUNCTION (packet );
   TcpHeader tcpHeader;
   uint32_t bytesRemoved = packet->RemoveHeader(tcpHeader);
-  NS_LOG_FUNCTION(this << "[RWND] Initial Header " << tcpHeader);
+  NS_LOG_FUNCTION ("[RWND] Initial Header " << tcpHeader);
   if(bytesRemoved == 0)
   {
     NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
     return;
   }
 
+  uint8_t flags = tcpHeader.GetFlags();
   uint32_t m_shift = 0;
-  if((tcpHeader.GetFlags() & TcpHeader::SYN) == 0)
+  if((flags & TcpHeader::SYN) == 0)
     m_shift = m_sndWindShift;
 
   uint32_t w = m_tcb->m_cWnd >> m_shift;
@@ -256,38 +311,46 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
   if(w < tcpHeader.GetWindowSize())
     tcpHeader.SetWindowSize(w);
   m_rWnd = tcpHeader.GetWindowSize() << m_shift;
+  if (!m_ecnEnabled)
+  {
+    NS_LOG_DEBUG ("ECN not supported by upper layer, purging out flags");
+    flags &= ~(TcpHeader::ECE | TcpHeader::CWR);
+  }
+  tcpHeader.SetFlags (flags);
   packet->AddHeader(tcpHeader);
-  NS_LOG_FUNCTION(this << "[RWND] Altered Header " << tcpHeader);
+  NS_LOG_FUNCTION ("[RWND] Altered Header " << tcpHeader);
   return;
 }
 
 void
 ADDCNFlow::SetForwardTarget (ForwardTargetCallback cb)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION ();
   m_forwardTarget = cb;
 }
 
 void 
 ADDCNFlow::SetFiveTuple (ADDCNFlow::FiveTuple tuple)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION ();
   m_tuple = tuple;
 }
 
 void
-ADDCNFlow::NotifySend (Ptr<Packet>& packet, TcpHeader& tcpHeader)
+ADDCNFlow::NotifySend (Ptr<Packet>& packet)
 {
-  NS_LOG_FUNCTION (this << tcpHeader);
-
   C3Tag c3Tag;
   NS_ASSERT (packet->PeekPacketTag (c3Tag));
+
+  TcpHeader tcpHeader;
   uint32_t bytesRemoved = packet->RemoveHeader(tcpHeader);
   if(bytesRemoved == 0)
   {
     NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
     return;
   }
+  NS_LOG_FUNCTION (tcpHeader);
+
   uint8_t flags = tcpHeader.GetFlags();
   m_seqNumber = tcpHeader.GetSequenceNumber ();
 
@@ -296,25 +359,98 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet, TcpHeader& tcpHeader)
 
   m_sentSize += sz;
   
-  NS_LOG_FUNCTION (this << "PacketSize" << sz);
-  if((flags & TcpHeader::SYN) == TcpHeader::SYN)
-  {
-    Initialize(); // New connection
-    SetSegmentSize(c3Tag.GetSegmentSize());
+  NS_LOG_DEBUG ("PacketSize" << sz);
+  if (m_state == TcpSocket::LISTEN)
+  {// Initialize from sender side
+    if((flags & TcpHeader::SYN) == TcpHeader::SYN)
+    {
+      Initialize(); // New connection
+      SetSegmentSize(c3Tag.GetSegmentSize());
+      if((flags & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
+        m_ecnEnabled = true;
+      else
+        m_ecnEnabled = false;
+      flags |= (TcpHeader::CWR | TcpHeader::ECE); // Force sender side to enable TcpSocket::ECN
+    
+      m_state = TcpSocket::SYN_SENT;
+      m_ecnState &= ~TcpSocket::ECN_CONN; // because sender is not yet aware about receiver's TcpSocket::ECN capability
+    }
   }
-
-  if (m_ecnState & TcpSocket::ECN_SEND_CWR)
+  else if(m_state == TcpSocket::SYN_RCVD)
+  {// Initialize receiver side
+    if((flags & (TcpHeader::SYN | TcpHeader::ACK)) == (TcpHeader::SYN | TcpHeader::ACK))
+    {
+      if(flags & TcpHeader::ECE)
+        m_ecnEnabled = true;
+      else
+        m_ecnEnabled = false;
+      if(m_ecnState & TcpSocket::ECN_CONN) // IF send side without l3.5
+        flags |= TcpHeader::ECE; // Force receiver side to enable TcpSocket::ECN
+    }
+  }
+  else if(m_state == TcpSocket::SYN_SENT)
+  {// From Send side
+    if((flags & TcpHeader::SYN) == TcpHeader::SYN)
+    {
+      Initialize(); // New connection
+      SetSegmentSize(c3Tag.GetSegmentSize());
+      if((flags & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
+        m_ecnEnabled = true;
+      else
+        m_ecnEnabled = false;
+      flags |= (TcpHeader::CWR | TcpHeader::ECE); // Force sender side to enable TcpSocket::ECN
+    
+      m_state = TcpSocket::SYN_SENT;
+      m_ecnState &= ~TcpSocket::ECN_CONN; // because sender is not yet aware about receiver's TcpSocket::ECN capability
+    }
+  }
+  else if(m_state == TcpSocket::ESTABLISHED)
   {
-    NS_LOG_INFO ("Sending CWR. We're reseting ECN Echo Received flag.");
-    flags |= TcpHeader::CWR;
-    m_ecnState &= ~(TcpSocket::ECN_SEND_CWR | TcpSocket::ECN_RX_ECHO);
-    m_ecnEchoSeq = m_seqNumber;
+    if (m_ecnState & TcpSocket::ECN_SEND_CWR)
+    {
+      NS_LOG_INFO ("Sending CWR. We're reseting TcpSocket::ECN Echo Received flag.");
+      flags |= TcpHeader::CWR;
+      m_ecnState &= ~(TcpSocket::ECN_SEND_CWR | TcpSocket::ECN_RX_ECHO);
+      m_ecnEchoSeq = m_seqNumber;
+    }
+    if (flags & TcpHeader::ACK) //&& (m_ecnState & TcpSocket::ECN_TX_ECHO))
+    {
+      //NS_LOG_INFO ("Sending ECE echo. We're sending TcpSocket::ECN Echo in TcpSocket::ECN_TX_ECHO state.");
+      //flags |= TcpHeader::ECE;
+      // TODO: Handle delayed ack
+      flags &= ~TcpHeader::ECE;// Purging ECE set by upper layer
+      if (m_ecnState & TcpSocket::ECN_CONN)
+        {
+          if (m_ecnTransition)
+            {
+              NS_LOG_INFO ("ECN Echo reverse");
+              if (!(m_ecnState & TcpSocket::ECN_TX_ECHO))
+                {
+                  NS_LOG_DEBUG ("Sending TcpSocket::ECN Echo.");
+                  flags |= TcpHeader::ECE;
+                }
+              m_ecnTransition = false;
+            }
+          else if (m_ecnState & TcpSocket::ECN_TX_ECHO)
+            {
+              NS_LOG_DEBUG ("Sending TcpSocket::ECN Echo.");
+              flags |= TcpHeader::ECE;
+            }
+        }
+    }
+    /*
+    else if(flags & TcpHeader::ECE)
+    {
+      NS_LOG_INFO ("Cancelling ECE echo. We shouldn't send TcpSocket::ECN Echo outside TcpSocket::ECN_TX_ECHO state.");
+      flags &= ~TcpHeader::ECE;
+    }
+    */
   }
 
   bool isRetransmission = false;
   if (m_seqNumber == m_tcb->m_lastAckedSeq && m_seqNumber < m_tcb->m_nextTxSequence && sz > 0) // Retransmit data packet
   {
-    NS_LOG_FUNCTION (this << "Retransmission of data packet detected");
+    NS_LOG_FUNCTION ("Retransmission of data packet detected");
     isRetransmission = true;
     m_retransOut ++;
   }
@@ -324,7 +460,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet, TcpHeader& tcpHeader)
   m_tcb->m_nextTxSequence = std::max (m_tcb->m_nextTxSequence.Get (), m_seqNumber + sz);
   m_tcb->m_highTxMark = std::max (m_seqNumber + sz, m_tcb->m_highTxMark.Get ());
 
-  NS_LOG_FUNCTION (this << "m_nextTxSequence = " << m_tcb->m_nextTxSequence
+  NS_LOG_FUNCTION ("m_nextTxSequence = " << m_tcb->m_nextTxSequence
                         << "m_highTxMark = " << m_tcb->m_highTxMark
                         << "m_lastAckedSeq = " << m_tcb->m_lastAckedSeq
                         << "m_retransOut = " << m_retransOut);
@@ -335,16 +471,129 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet, TcpHeader& tcpHeader)
 }
 
 void
-ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, TcpHeader& tcpHeader)
+ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
 {
-  NS_LOG_FUNCTION (this << tcpHeader);
+  NS_LOG_FUNCTION (header);
+  TcpHeader tcpHeader;
+  // Peel off TCP header and do validity checking
+  uint32_t bytesRemoved = packet->PeekHeader (tcpHeader);
+  //SequenceNumber32 seq = tcpHeader.GetSequenceNumber ();
+  if (bytesRemoved == 0 || bytesRemoved > 60)
+    {
+      NS_LOG_ERROR ("Bytes removed: " << bytesRemoved << " invalid");
+      return; // Discard invalid packet
+    }
+  NS_LOG_FUNCTION (tcpHeader);
 
+  if (header.GetEcn() == Ipv4Header::ECN_CE)
+   {
+     NS_LOG_INFO ("Received CE packet");
+     m_ceReceived = true;
+   }
+  if (m_ecnState & TcpSocket::ECN_CONN)
+    {
+      UpdateEcnState (tcpHeader);
+      m_ceReceived = false;
+    }
+
+  if (tcpHeader.GetFlags () & TcpHeader::SYN)
+    {
+      /* The window field in a segment where the TcpSocket::SYN bit is set (i.e., a <SYN>
+       * or <SYN,ACK>) MUST NOT be scaled (from RFC 7323 page 9). But should be
+       * saved anyway..
+       */
+      // TODO:m_rWnd = tcpHeader.GetWindowSize ();
+
+      if (tcpHeader.HasOption (TcpOption::WINSCALE) && m_winScalingEnabled)
+        {
+          ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
+        }
+      else
+        {
+          m_winScalingEnabled = false;
+        }
+
+      // When receiving a <SYN> or <SYN-ACK> we should adapt TS to the other end
+      if (tcpHeader.HasOption (TcpOption::TS) && m_timestampEnabled)
+        {
+          ProcessOptionTimestamp (tcpHeader.GetOption (TcpOption::TS),
+                                  tcpHeader.GetSequenceNumber ());
+        }
+      else
+        {
+          m_timestampEnabled = false;
+        }
+
+      // Initialize cWnd and ssThresh
+      m_tcb->m_cWnd = GetInitialCwnd () * GetSegSize ();
+      m_tcb->m_ssThresh = GetInitialSSThresh ();
+
+      if (tcpHeader.GetFlags () & TcpHeader::ACK)
+        {
+          EstimateRtt (tcpHeader);
+          m_highRxAckMark = tcpHeader.GetAckNumber ();
+        }
+    }
+  else if (tcpHeader.GetFlags () & TcpHeader::ACK)
+   {
+     EstimateRtt (tcpHeader);
+     if (tcpHeader.GetAckNumber () > m_highRxAckMark)
+       m_highRxAckMark = tcpHeader.GetAckNumber ();
+   }
+  /*
+  else if (tcpHeader.GetFlags () & TcpHeader::ACK)
+   {
+      NS_ASSERT (!(tcpHeader.GetFlags () & TcpHeader::SYN));
+      if (m_timestampEnabled)
+        {
+          if (!tcpHeader.HasOption (TcpOption::TS))
+            {
+              // Ignoring segment without TS, RFC 7323
+              NS_LOG_LOGIC ("At state " << TcpStateName[m_state] <<
+                            " received packet of seq [" << seq <<
+                            ":" << seq + packet->GetSize () <<
+                            ") without TS option. Silently discard it");
+              return;
+            }
+          else
+            {
+              ProcessOptionTimestamp (tcpHeader.GetOption (TcpOption::TS),
+                                      tcpHeader.GetSequenceNumber ());
+            }
+        }
+
+      EstimateRtt (tcpHeader);
+      UpdateWindowSize (tcpHeader);
+    }
+  */
+
+  // TCP state machine code in different process functions
+  // C.f.: tcp_rcv_state_process() in tcp_input.c in Linux kernel
+  switch (m_state)
+    {
+    case TcpSocket::ESTABLISHED:
+      ProcessEstablished (packet, tcpHeader);
+      break;
+    case TcpSocket::LISTEN:
+      ProcessListen (packet, tcpHeader);
+      break;
+    case TcpSocket::SYN_SENT:
+      ProcessSynSent (packet, tcpHeader);
+      break;
+    case TcpSocket::SYN_RCVD:
+      ProcessSynRcvd (packet, tcpHeader);
+      break;
+    default: // mute compiler
+      break;
+    }
+
+    /*
     if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
     {
-      NS_LOG_DEBUG("From Receive side, SYN");
+      NS_LOG_DEBUG("From Receive side, TcpSocket::SYN");
       if(tcpHeader.HasOption (TcpOption::WINSCALE))
       {
-        NS_LOG_DEBUG("Receive side, SYN, WScale");
+        NS_LOG_DEBUG("Receive side, TcpSocket::SYN, WScale");
         m_winScalingEnabled = true;
         ProcessOptionWScale (tcpHeader.GetOption (TcpOption::WINSCALE));
       }
@@ -355,7 +604,7 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, TcpHeader& tcpHeader)
 
       if(tcpHeader.HasOption (TcpOption::TS))
       {
-        NS_LOG_DEBUG("Receive side, SYN, TS");
+        NS_LOG_DEBUG("Receive side, TcpSocket::SYN, TS");
         m_timestampEnabled = true;
         ProcessOptionTimestamp (tcpHeader.GetOption (TcpOption::TS),
                                        tcpHeader.GetSequenceNumber ());
@@ -374,9 +623,9 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, TcpHeader& tcpHeader)
     if((tcpHeader.GetFlags() & TcpHeader::ACK) == TcpHeader::ACK)
     {
       EstimateRtt(tcpHeader);
-      UpdateAlpha(tcpHeader);
+      //UpdateAlpha(tcpHeader);
       ReceivedAck(packet, tcpHeader);
-    }
+    }*/
     /*else
     {
       UpdateAlpha(tcpHeader);
@@ -384,14 +633,12 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, TcpHeader& tcpHeader)
       SetReceiveWindow(packet);
     }*/
     //if((tcpHeader.GetFlags() & TcpHeader::SYN) == 0)
-
-  if ((m_ecnState & (TcpSocket::ECN_RX_ECHO | TcpSocket::ECN_SEND_CWR)) == TcpSocket::ECN_RX_ECHO)
-  {
-    NS_LOG_INFO ("Halving CWND duo to receiving ECN Echo.");
-    m_ecnState |= TcpSocket::ECN_SEND_CWR;
-    HalveCwnd ();
-  }
-
+    if ((m_ecnState & (TcpSocket::ECN_RX_ECHO | TcpSocket::ECN_SEND_CWR)) == TcpSocket::ECN_RX_ECHO)
+    {
+      NS_LOG_INFO ("Halving CWND duo to receiving TcpSocket::ECN Echo.");
+      m_ecnState |= TcpSocket::ECN_SEND_CWR;
+      HalveCwnd ();
+    }
     SetReceiveWindow(packet);
 }
 
@@ -404,7 +651,7 @@ ADDCNFlow::GetWeight (void) const
 void
 ADDCNFlow::UpdateScale(const double s)
 {
-  NS_LOG_FUNCTION (this << s);
+  NS_LOG_FUNCTION (s);
   if(s > 10e-7)
   {
     m_scale = s;
@@ -415,7 +662,7 @@ ADDCNFlow::UpdateScale(const double s)
 void
 ADDCNFlow::UpdateAlpha()
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION ();
   m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
 }
 
@@ -428,7 +675,7 @@ ADDCNFlow::GetHighSequenceNumber()
 void
 ADDCNFlow::ProcessOptionWScale (const Ptr<const TcpOption> option)
 {
-  NS_LOG_FUNCTION (this << option);
+  NS_LOG_FUNCTION (option);
  
   Ptr<const TcpOptionWinScale> ws = DynamicCast<const TcpOptionWinScale> (option);
 
@@ -450,7 +697,7 @@ void
 ADDCNFlow::ProcessOptionTimestamp (const Ptr<const TcpOption> option,
                                        const SequenceNumber32 &seq)
 {
-  NS_LOG_FUNCTION (this << option);
+  NS_LOG_FUNCTION (option);
 
   /*
   Ptr<const TcpOptionTS> ts = DynamicCast<const TcpOptionTS> (option);
@@ -469,7 +716,7 @@ uint32_t
 ADDCNFlow::BytesInFlight ()
 {
   // TODO
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION ();
   // Previous (see bug 1783):
   // uint32_t bytesInFlight = m_highTxMark.Get () - m_txBuffer->HeadSequence ();
   // RFC 4898 page 23
@@ -510,14 +757,14 @@ ADDCNFlow::Window ()
 uint32_t
 ADDCNFlow::GetSsThresh (Ptr<const TcpSocketState> state, uint32_t bytesInFlight)
 {
-  NS_LOG_FUNCTION (this << state << bytesInFlight);
+  NS_LOG_FUNCTION (state << bytesInFlight);
   return std::max (2 * state->m_segmentSize, bytesInFlight / 2);
 }
 
 void
 ADDCNFlow::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool isRetransmission)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION ();
 
   m_dctcpMaxSeq =std::max (std::max (seq + sz, m_tcb->m_highTxMark.Get ()), m_dctcpMaxSeq);
 
@@ -543,6 +790,8 @@ ADDCNFlow::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool isRe
 void
 ADDCNFlow::EstimateRtt (const TcpHeader& tcpHeader)
 {
+  UpdateAlpha(tcpHeader);
+
   SequenceNumber32 ackSeq = tcpHeader.GetAckNumber ();
   Time m = Time (0.0);
 
@@ -584,14 +833,14 @@ ADDCNFlow::EstimateRtt (const TcpHeader& tcpHeader)
       // RFC 6298, clause 2.4
       m_rto = Max (m_rtt->GetEstimate () + Max (m_clockGranularity, m_rtt->GetVariation () * 4), m_minRto);
       m_lastRtt = m_rtt->GetEstimate ();
-      NS_LOG_FUNCTION (this << m_lastRtt);
+      NS_LOG_FUNCTION (m_lastRtt);
     }
 }
 
 void
 ADDCNFlow::ReTxTimeout ()
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION ();
   m_recover = m_tcb->m_highTxMark;
   
   /*
@@ -646,11 +895,11 @@ ADDCNFlow::ReTxTimeout ()
 void
 ADDCNFlow::NewAck (SequenceNumber32 const& ack, bool resetRTO)
 {
-  NS_LOG_FUNCTION (this << ack);
+  NS_LOG_FUNCTION (ack);
 
-  //if (m_state != SYN_RCVD && resetRTO)
+  //if (m_state != TcpSocket::SYN_RCVD && resetRTO)
   if (resetRTO)
-    { // Set RTO unless the ACK is received in SYN_RCVD state
+    { // Set RTO unless the ACK is received in TcpSocket::SYN_RCVD state
       NS_LOG_LOGIC (this << " Cancelled ReTxTimeout event which was set to expire at " <<
                     (Simulator::Now () + Simulator::GetDelayLeft (m_retxEvent)).GetSeconds ());
       m_retxEvent.Cancel ();
@@ -696,7 +945,7 @@ ADDCNFlow::NewAck (SequenceNumber32 const& ack, bool resetRTO)
 void
 ADDCNFlow::DupAck ()
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION ();
   ++m_dupAckCount;
 
   if (m_tcb->m_congState == TcpSocketState::CA_OPEN)
@@ -753,7 +1002,7 @@ ADDCNFlow::DupAck ()
 void 
 ADDCNFlow::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
-  NS_LOG_FUNCTION (this << tcpHeader);
+  NS_LOG_FUNCTION (tcpHeader);
 
   NS_ASSERT (0 != (tcpHeader.GetFlags () & TcpHeader::ACK));
   NS_ASSERT (m_tcb->m_segmentSize > 0);
@@ -798,10 +1047,10 @@ ADDCNFlow::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
       if ((m_ecnState & TcpSocket::ECN_CONN) && ((tcpHeader.GetFlags () & (TcpHeader::SYN | TcpHeader::ECE)) == TcpHeader::ECE))
         {
-          NS_LOG_INFO ("Received ECN Echo. Checking if it's a valid one.");
+          NS_LOG_INFO ("Received TcpSocket::ECN Echo. Checking if it's a valid one.");
           if (m_ecnEchoSeq < tcpHeader.GetAckNumber ())
             {
-              NS_LOG_INFO ("Received ECN Echo was valid.");
+              NS_LOG_INFO ("Received TcpSocket::ECN Echo was valid.");
               m_ecnEchoSeq = tcpHeader.GetAckNumber ();
               m_ecnState |= TcpSocket::ECN_RX_ECHO;
             }
@@ -978,7 +1227,7 @@ ADDCNFlow::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 void
 ADDCNFlow::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
-  NS_LOG_FUNCTION (this << tcb << segmentsAcked);
+  NS_LOG_FUNCTION (tcb << segmentsAcked);
 
   if (tcb->m_cWnd < tcb->m_ssThresh)
     {
@@ -994,7 +1243,7 @@ ADDCNFlow::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 uint32_t
 ADDCNFlow::SlowStart (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
-  NS_LOG_FUNCTION (this << tcb << segmentsAcked);
+  NS_LOG_FUNCTION (tcb << segmentsAcked);
 
   if (segmentsAcked >= 1)
     {
@@ -1009,7 +1258,7 @@ ADDCNFlow::SlowStart (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 void
 ADDCNFlow::CongestionAvoidance (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
-  NS_LOG_FUNCTION (this << tcb << segmentsAcked);
+  NS_LOG_FUNCTION (tcb << segmentsAcked);
 
   if (segmentsAcked > 0)
     {
@@ -1035,18 +1284,230 @@ ADDCNFlow::SafeSubtraction (uint32_t a, uint32_t b)
 void
 ADDCNFlow::HalveCwnd ()
 {
-  NS_LOG_FUNCTION (this << "alpha" << m_alpha << "m_rWnd" << m_rWnd << "m_cWnd" << m_tcb->m_cWnd);
+  NS_LOG_FUNCTION ("alpha" << m_alpha << "m_rWnd" << m_rWnd << "m_cWnd" << m_tcb->m_cWnd);
   //m_tcb->m_ssThresh = GetSsThresh (m_tcb, BytesInFlight ());
   m_tcb->m_ssThresh = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), 2 * m_tcb->m_segmentSize);
   // halve cwnd according to DCTCP algo
   m_tcb->m_cWnd = std::max ((uint32_t)((1 - m_alpha / 2.0) * Window ()), m_tcb->m_segmentSize);
-  NS_LOG_FUNCTION (this << "alpha" << m_alpha << "m_ssThresh" << m_tcb->m_ssThresh << "m_cWnd" << m_tcb->m_cWnd);
+  NS_LOG_FUNCTION ("alpha" << m_alpha << "m_ssThresh" << m_tcb->m_ssThresh << "m_cWnd" << m_tcb->m_cWnd);
+}
+
+void
+ADDCNFlow::UpdateEcnState (const TcpHeader &tcpHeader)
+{
+  NS_LOG_FUNCTION (tcpHeader);
+
+  if (m_ceReceived && !(m_ecnState & TcpSocket::ECN_TX_ECHO))
+    {
+      NS_LOG_INFO ("Congestion was experienced. Start sending TcpSocket::ECN Echo.");
+      m_ecnState |= TcpSocket::ECN_TX_ECHO;
+      m_ecnTransition = true;
+      //m_delAckCount = m_delAckMaxCount;
+    }
+  else if (!m_ceReceived && (m_ecnState & TcpSocket::ECN_TX_ECHO))
+    {
+      m_ecnState &= ~TcpSocket::ECN_TX_ECHO;
+      m_ecnTransition = true;
+      //m_delAckCount = m_delAckMaxCount;
+    }
+
+  /*
+  if ((tcpHeader.GetFlags () & TcpHeader::CWR) && (m_ecnState & TcpSocket::ECN_TX_ECHO))
+    {
+      NS_LOG_INFO ("Transmitter Halved the CWND. Stop sending TcpSocket::ECN Echo.");
+      m_ecnState &= ~TcpSocket::ECN_TX_ECHO;
+    }
+  if (m_ceReceived && !(m_ecnState & TcpSocket::ECN_TX_ECHO))
+    {
+      NS_LOG_INFO ("Congestion was experienced. Start sending TcpSocket::ECN Echo.");
+      m_ecnState |= TcpSocket::ECN_TX_ECHO;
+    }
+  */
+}
+
+void 
+ADDCNFlow::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader)
+{
+  NS_LOG_FUNCTION (tcpHeader);
+  // Extract the flags. PSH, URG, CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags ()
+      & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
+
+  // Fork a socket if received a TcpSocket::SYN. Do nothing otherwise.
+  // C.f.: the TcpSocket::LISTEN part in tcp_v4_do_rcv() in tcp_ipv4.c in Linux kernel
+  if (tcpflags != TcpHeader::SYN)
+    {
+      return;
+    }
+
+  NS_LOG_DEBUG ("LISTEN -> TcpSocket::SYN_RCVD");
+  m_state = TcpSocket::SYN_RCVD;
+  // check if we received Setup TcpSocket::ECN TcpSocket::SYN packet
+  if ((tcpHeader.GetFlags () & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
+    {
+      NS_LOG_INFO ("Received TcpSocket::ECN TcpSocket::SYN packet. We can establish TcpSocket::ECN Connection.");
+      m_ecnState |= TcpSocket::ECN_CONN;
+    }
+  else
+    {
+      m_ecnState &= ~TcpSocket::ECN_CONN;
+    }
+}
+
+void
+ADDCNFlow::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
+{
+  NS_LOG_FUNCTION (tcpHeader);
+  // Extract the flags. PSH, URG, CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags ()
+      & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
+
+  if (tcpflags == 0)
+    { // Bare data, accept it and move to TcpSocket::ESTABLISHED state. This is not a normal behaviour. Remove this?
+      NS_LOG_DEBUG ("SYN_SENT -> TcpSocket::ESTABLISHED");
+
+      NS_LOG_INFO ("Opposite doesn't support TcpSocket::ECN.");
+      m_ecnState &= ~TcpSocket::ECN_CONN;
+
+      //m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_OPEN);
+      m_state = TcpSocket::ESTABLISHED;
+      //m_connected = true;
+      m_retxEvent.Cancel ();
+      //m_delAckCount = m_delAckMaxCount;
+      // TODO:ReceivedData (packet, tcpHeader);
+    }
+  else if (tcpflags == TcpHeader::ACK)
+    { // Ignore ACK in TcpSocket::SYN_SENT
+    }
+  else if (tcpflags == TcpHeader::SYN)
+    { // Received TcpSocket::SYN, move to TcpSocket::SYN_RCVD state and respond with TcpSocket::SYN+ACK
+      NS_LOG_DEBUG ("SYN_SENT -> TcpSocket::SYN_RCVD");
+      m_state = TcpSocket::SYN_RCVD;
+ 
+      /* Check if we recieved an TcpSocket::ECN TcpSocket::SYN packet. Change the TcpSocket::ECN state of receiver to TcpSocket::ECN_IDLE if the traffic is TcpSocket::ECN capable and 
+       * sender has sent TcpSocket::ECN TcpSocket::SYN packet
+       */
+      if ((tcpHeader.GetFlags () & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
+        {
+          NS_LOG_INFO ("Received TcpSocket::ECN TcpSocket::SYN packet");
+          m_ecnState |= TcpSocket::ECN_CONN;
+          //SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK | TcpHeader::ECE);
+        }
+      else
+        {
+          m_ecnState &= ~TcpSocket::ECN_CONN;
+          //SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);    
+        }
+    }
+  else if (tcpflags == (TcpHeader::SYN | TcpHeader::ACK))
+  //         && m_tcb->m_nextTxSequence + SequenceNumber32 (1) == tcpHeader.GetAckNumber ())
+    { // Handshake completed
+      NS_LOG_DEBUG ("SYN_SENT -> TcpSocket::ESTABLISHED");
+      //m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_OPEN);
+      m_state = TcpSocket::ESTABLISHED;
+      //m_connected = true;
+      m_retxEvent.Cancel ();
+
+      /* Check if we received an TcpSocket::ECN TcpSocket::SYN-ACK packet. Change the TcpSocket::ECN state of sender to TcpSocket::ECN_IDLE if receiver has sent an TcpSocket::ECN TcpSocket::SYN-ACK 
+       * packet and the  traffic is TcpSocket::ECN Capable
+       */
+      if ((tcpHeader.GetFlags () & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::ECE))
+        {
+          NS_LOG_INFO ("Received TcpSocket::ECN TcpSocket::SYN-ACK packet.");
+          m_ecnState |= TcpSocket::ECN_CONN;
+        }
+      else
+        {
+          m_ecnState &= ~TcpSocket::ECN_CONN;
+        }
+    }
+}
+
+void
+ADDCNFlow::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader)
+{
+  NS_LOG_FUNCTION (tcpHeader);
+  // Extract the flags. PSH, URG, CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags ()
+      & ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
+
+  if (tcpflags == 0
+      || (tcpflags == TcpHeader::ACK))
+  //        && m_tcb->m_nextTxSequence + SequenceNumber32 (1) == tcpHeader.GetAckNumber ()))
+    { // If it is bare data, accept it and move to TcpSocket::ESTABLISHED state. This is
+      // possibly due to ACK lost in 3WHS. If in-sequence ACK is received, the
+      // handshake is completed nicely.
+      NS_LOG_DEBUG ("SYN_RCVD -> ESTABLISHED");
+      //m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_OPEN);
+      m_state = TcpSocket::ESTABLISHED;
+      //m_connected = true;
+      m_retxEvent.Cancel ();
+      //m_tcb->m_highTxMark = ++m_tcb->m_nextTxSequence;
+      //m_txBuffer->SetHeadSequence (m_tcb->m_nextTxSequence);
+
+      ReceivedAck (packet, tcpHeader);
+    }
+  else if (tcpflags == TcpHeader::SYN)
+    { // Probably the peer lost my TcpSocket::SYN+ACK
+      // Check if we received an TcpSocket::ECN TcpSocket::SYN packet.
+      if ((tcpHeader.GetFlags () & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
+        {
+          NS_LOG_INFO ("Received TcpSocket::ECN TcpSocket::SYN packet");
+          m_ecnState |= TcpSocket::ECN_CONN;
+         // SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK |TcpHeader::ECE);
+        }
+      else
+        {
+          m_ecnState &= ~TcpSocket::ECN_CONN;
+          //SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
+        }
+    }
+}
+
+void
+ADDCNFlow::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeader)
+{
+  NS_LOG_FUNCTION (tcpHeader);
+  // Extract the flags. PSH, URG, CWR and ECE are not honoured.
+  uint8_t tcpflags = tcpHeader.GetFlags () &
+      ~(TcpHeader::PSH | TcpHeader::URG | TcpHeader::CWR | TcpHeader::ECE);
+
+  // Different flags are different events
+  if (tcpflags == TcpHeader::ACK)
+    {
+      if (tcpHeader.GetAckNumber () < m_tcb->m_lastAckedSeq)
+        {
+          // Case 1:  If the ACK is a duplicate (SEG.ACK < SND.UNA), it can be ignored.
+          // Pag. 72 RFC 793
+          NS_LOG_LOGIC ("Ignored ack of " << tcpHeader.GetAckNumber () <<
+                        " SND.UNA = " << m_tcb->m_lastAckedSeq);
+
+          // TODO: RFC 5961 5.2 [Blind Data Injection Attack].[Mitigation]
+        }
+      else if (tcpHeader.GetAckNumber () > m_tcb->m_highTxMark)
+        {
+          // If the ACK acks something not yet sent (SEG.ACK > HighTxMark) then
+          // send an ACK, drop the segment, and return.
+          // Pag. 72 RFC 793
+          NS_LOG_LOGIC ("Ignored ack of " << tcpHeader.GetAckNumber () <<
+                        " HighTxMark = " << m_tcb->m_highTxMark);
+
+          // Receiver sets ECE flags when it receives a packet with CE bit on or sender hasn’t responded to TcpSocket::ECN echo sent by receiver
+          //SendAckPacket ();
+        }
+      else
+        {
+          // SND.UNA < SEG.ACK =< HighTxMark
+          // Pag. 72 RFC 793
+          ReceivedAck (packet, tcpHeader);
+        }
+    }
 }
 
 void
 ADDCNFlow::DoDispose (void)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION ();
   m_forwardTarget.Nullify ();
   Object::DoDispose ();
 }

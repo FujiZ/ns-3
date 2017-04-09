@@ -54,7 +54,7 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
 
     NS_LOG_FUNCTION (this << tcpHeader);
     if(packet->RemovePacketTag (c3Tag))
-    {
+    { // From Sender side
       ADDCNFlow::FiveTuple tuple;
       tuple.sourceAddress = src;
       tuple.destinationAddress = dst;
@@ -94,7 +94,7 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
       // set packet size before forward down
       c3Tag.SetPacketSize (GetPacketSize (packet, protocol));
       packet->AddPacketTag (c3Tag);
-      flow->NotifySend(packet, tcpHeader);
+      flow->NotifySend(packet);
       //return;
       /*
       Ptr<ADDCNTunnel> tunnel = ADDCNDivision::GetDivision (c3Tag.GetTenantId (), c3Tag.GetType ())->GetTunnel (src, dst);
@@ -199,7 +199,7 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
       rflow->SetReceiveWindow(packet);
     }
 */
-      rflow->NotifyReceive (packet, tcpHeader);
+      rflow->NotifyReceive (packet, ipHeader);
       //packet->PeekHeader (tcpHeader);
       //NS_LOG_FUNCTION(this << "Window Set Header " << tcpHeader);
   }

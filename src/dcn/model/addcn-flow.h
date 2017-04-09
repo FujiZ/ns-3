@@ -6,6 +6,7 @@
 #include "ns3/object.h"
 #include "ns3/packet.h"
 #include "ns3/ipv4-route.h"
+#include "ns3/ipv4-header.h"
 #include "ns3/tcp-header.h"
 #include "ns3/tcp-option.h"
 #include "ns3/tcp-option-ts.h"
@@ -59,6 +60,11 @@ public:
    */
   void SetSegmentSize(uint32_t size);
 
+  uint32_t GetSegSize();
+
+  uint32_t GetInitialCwnd ();
+
+  uint32_t GetInitialSSThresh ();
   /**
    * \brief Re-calculate receive window; called on every ACK
    */
@@ -106,8 +112,8 @@ public:
    * make sure that the packet contain c3tag before pass in it
    * the packet size should be marked in c3l3.5p
    */
-  void NotifySend (Ptr<Packet> &packet, TcpHeader& tcpHeader);
-  void NotifyReceive (Ptr<Packet> &packet, TcpHeader& tcpHeader);
+  void NotifySend (Ptr<Packet> &packet);
+  void NotifyReceive (Ptr<Packet> &packet, const Ipv4Header& header);
 
   /**
    * @brief Update tunnel info (weight)
@@ -170,6 +176,17 @@ public:
   uint32_t SafeSubtraction (uint32_t a, uint32_t b);
 
   void HalveCwnd ();
+
+  void UpdateEcnState (const TcpHeader &tcpHeader);
+
+  void ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+
+  void ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+
+  void ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+
+  void ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+
 protected:
   virtual void DoDispose (void);
 
@@ -189,6 +206,10 @@ protected:
   double m_g;                         //!< parameter g used in alpha updates
   TracedValue<double> m_alpha;        //!< alpha extracted from ECN feedback, indicating flow congestion status
   Ptr<C3EcnRecorder> m_ecnRecorder;   //!< ecn recorder
+  double m_ackedBytesEcn;
+  double m_ackedBytesTotal;
+  bool   m_ecnEnabled;                //!< whether upper layer supports ECN
+  bool   m_ceReceived;
 
   // flow weight parameter
   TracedValue<double> m_scale;   //!< scale updated by corresponding slice
@@ -204,6 +225,7 @@ private:
   SequenceNumber32 m_updateRwndSeq;         //!< last sequence number upon which window was cut
   SequenceNumber32 m_updateAlphaSeq;        //!< last sequence number upon which alpha was updated
   SequenceNumber32 m_dctcpMaxSeq;           //!< 
+  SequenceNumber32 m_highRxAckMark;
   uint8_t m_sndWindShift;                  //!< Window shift to apply to incoming segments
 
   SequenceNumber32 m_recover;
@@ -226,11 +248,13 @@ private:
   Time                  m_lastRtt;
   Time                  m_clockGranularity;
 
+  TcpSocket::TcpStates_t           m_state;
   uint8_t               m_ecnState;
   uint32_t              m_dupAckCount;
   uint32_t              m_retransOut; 
   uint32_t              m_bytesAckedNotProcessed;
   bool                  m_isFirstPartialAck;
+  bool                  m_ecnTransition;
   Ptr<TcpSocketState>   m_tcb;
   Ptr<RttEstimator>     m_rtt;
   RttHistory_t          m_history;  
