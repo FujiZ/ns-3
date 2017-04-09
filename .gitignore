@@ -44,4 +44,5 @@ massif.*
 *.png
 *.dat
 *.DS_Store
-waf
+/waf
+.directory

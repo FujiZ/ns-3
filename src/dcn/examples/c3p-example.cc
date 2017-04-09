@@ -10,13 +10,13 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("C3pExample");
 
 void
-SendTracer (Ptr<const Packet> packet)
+TxTrace (Ptr<const Packet> packet)
 {
   NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s client sent " << packet->GetSize () << " bytes");
 }
 
 void
-ReceiveTracer (Ptr<const Packet> packet, const Address &from)
+RxTrace (Ptr<const Packet> packet, const Address &from)
 {
   NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server received " << packet->GetSize () << " bytes");
 }
@@ -59,7 +59,6 @@ main (int argc, char *argv[])
   address.SetBase ("10.1.1.0", "255.255.255.0");
   Ipv4InterfaceContainer interfaces = address.Assign (devices);
 
-  /*
   UdpEchoServerHelper echoServer (9);
   ApplicationContainer serverApps = echoServer.Install (nodes.Get (1));
   serverApps.Start (Seconds (1.0));
@@ -72,21 +71,20 @@ main (int argc, char *argv[])
 
   ApplicationContainer clientApps = echoClient.Install (nodes.Get (0));
   clientApps.Start (Seconds (2.0));
-  clientApps.Stop (Seconds (50.0));
-  */
+  clientApps.Stop (Seconds (10.0));
 
   Address receiverAddress = InetSocketAddress(interfaces.GetAddress (1), 10);
 
   PacketSinkHelper receiver ("ns3::TcpSocketFactory", receiverAddress);
   ApplicationContainer receiverApps = receiver.Install (nodes.Get (1));
-  receiverApps.Get (0)->TraceConnectWithoutContext ("Rx", MakeCallback (&ReceiveTracer));
+  receiverApps.Get (0)->TraceConnectWithoutContext ("Rx", MakeCallback (&RxTrace));
   receiverApps.Start (Seconds (1.0));
-  receiverApps.Stop (Seconds (15.0));
+  receiverApps.Stop (Seconds (10.0));
 
   BulkSendHelper sender ("ns3::TcpSocketFactory", receiverAddress);
   sender.SetAttribute ("MaxBytes", UintegerValue (3000));
   ApplicationContainer senderApps = sender.Install (nodes.Get (0));
-  senderApps.Get (0)->TraceConnectWithoutContext ("Tx", MakeCallback (&SendTracer));
+  senderApps.Get (0)->TraceConnectWithoutContext ("Tx", MakeCallback (&TxTrace));
   senderApps.Start (Seconds (2.0));
   senderApps.Stop (Seconds (10.0));
 
