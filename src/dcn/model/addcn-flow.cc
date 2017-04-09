@@ -251,9 +251,9 @@ ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
    */
   double ratio = (double)m_ackedBytesEcn / (m_ackedBytesTotal ? m_ackedBytesTotal : 1);
   NS_LOG_DEBUG ("Before alpha update: " << m_alpha.Get () << "ratio: " << ratio);
-  if (tcpHeader.GetAckNumber () > m_alphaUpdateSeq)
+  if (tcpHeader.GetAckNumber () > m_updateAlphaSeq)
     {
-      m_alphaUpdateSeq = m_dctcpMaxSeq;
+      m_updateAlphaSeq = m_dctcpMaxSeq;
       m_alpha = (1 - m_g) * m_alpha + m_g * ratio;
       NS_LOG_DEBUG ("After alpha update: " << m_alpha.Get ());
       m_ackedBytesEcn = m_ackedBytesTotal = 0;

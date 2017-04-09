@@ -1,6 +1,8 @@
 #ifndef ADDCN_FLOW_H
 #define ADDCN_FLOW_H
 
+#define DCTCPACK
+
 #include <stdint.h>
 
 #include "ns3/object.h"
