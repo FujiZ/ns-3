@@ -68,6 +68,19 @@ C3EcnRecorder::NotifyReceived (const Ipv4Header &header)
   NS_LOG_DEBUG("TotalEce " << m_markedAck);
 }
 
+void
+C3EcnRecorder::NotifyReceived (const TcpHeader &tcpHeader)
+{
+  NS_LOG_FUNCTION (this << tcpHeader);
+  NS_LOG_DEBUG("TotalAck " << m_totalAck);
+  ++ m_totalAck;
+  if (tcpHeader.GetFlags () & TcpHeader::ECE)
+    {
+      ++ m_markedAck;
+    }
+  NS_LOG_DEBUG("TotalEce " << m_markedAck);
+}
+
 Ptr<C3EcnRecorder>
 C3EcnRecorder::GetEcnRecorder (uint32_t tenantId, C3Type type,
                                const Ipv4Address &src, const Ipv4Address &dst)

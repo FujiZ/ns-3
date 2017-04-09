@@ -75,6 +75,7 @@ public:
    * \param header Ipv4Header where CE mark holds
    */
   void UpdateEcnStatistics(const Ipv4Header &header);
+  void UpdateEcnStatistics(const TcpHeader &tcpHeader);
 
   /**
    * \brief Called every time an ACK was received by the sender

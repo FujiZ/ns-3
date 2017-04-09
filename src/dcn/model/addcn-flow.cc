@@ -196,6 +196,13 @@ ADDCNFlow::UpdateEcnStatistics(const Ipv4Header &header)
 }
 
 void
+ADDCNFlow::UpdateEcnStatistics(const TcpHeader &tcpHeader)
+{
+  NS_LOG_FUNCTION(this << tcpHeader);
+  m_ecnRecorder->NotifyReceived(tcpHeader);
+}
+
+void
 ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
 {
   NS_LOG_FUNCTION(this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
@@ -296,11 +303,9 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet, TcpHeader& tcpHeader)
     SetSegmentSize(c3Tag.GetSegmentSize());
   }
 
-  if ((m_ecnState & (TcpSocket::ECN_RX_ECHO | TcpSocket::ECN_SEND_CWR)) == TcpSocket::ECN_RX_ECHO)
+  if (m_ecnState & TcpSocket::ECN_SEND_CWR)
   {
-    NS_LOG_INFO ("Halving CWND duo to receiving ECN Echo.");
-    m_ecnState |= TcpSocket::ECN_SEND_CWR;
-    HalveCwnd ();
+    NS_LOG_INFO ("Sending CWR. We're reseting ECN Echo Received flag.");
     flags |= TcpHeader::CWR;
     m_ecnState &= ~(TcpSocket::ECN_SEND_CWR | TcpSocket::ECN_RX_ECHO);
     m_ecnEchoSeq = m_seqNumber;
@@ -379,6 +384,14 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, TcpHeader& tcpHeader)
       SetReceiveWindow(packet);
     }*/
     //if((tcpHeader.GetFlags() & TcpHeader::SYN) == 0)
+
+  if ((m_ecnState & (TcpSocket::ECN_RX_ECHO | TcpSocket::ECN_SEND_CWR)) == TcpSocket::ECN_RX_ECHO)
+  {
+    NS_LOG_INFO ("Halving CWND duo to receiving ECN Echo.");
+    m_ecnState |= TcpSocket::ECN_SEND_CWR;
+    HalveCwnd ();
+  }
+
     SetReceiveWindow(packet);
 }
 

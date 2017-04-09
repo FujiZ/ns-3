@@ -7,6 +7,7 @@
 #include "ns3/object.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv4-header.h"
+#include "ns3/tcp-header.h"
 
 #include "c3-type.h"
 
@@ -55,6 +56,7 @@ public:
    * called by receiver when a ip packet is received
    */
   void NotifyReceived (Ipv4Header const &header);
+  void NotifyReceived (TcpHeader const &tcpHeader);
 
   /**
    * @brief GetEcnRecorder

@@ -126,12 +126,13 @@ DctcpSocket::UpdateAlpha (const TcpHeader &tcpHeader)
    * check for barrier indicating its time to recalculate alpha.
    * this code basically updated alpha roughly once per RTT.
    */
+  double ratio = (double)m_ackedBytesEcn / (m_ackedBytesTotal ? m_ackedBytesTotal : 1);
+  NS_LOG_DEBUG ("Before alpha update: " << m_alpha.Get () << "ratio: " << ratio);
   if (tcpHeader.GetAckNumber () > m_alphaUpdateSeq)
     {
       m_alphaUpdateSeq = m_dctcpMaxSeq;
-      // NS_LOG_DEBUG ("Before alpha update: " << m_alpha.Get ());
-      m_alpha = (1 - m_g) * m_alpha + m_g * ((double)m_ackedBytesEcn / (m_ackedBytesTotal ? m_ackedBytesTotal : 1));
-      // NS_LOG_DEBUG ("After alpha update: " << m_alpha.Get ());
+      m_alpha = (1 - m_g) * m_alpha + m_g * ratio;
+      NS_LOG_DEBUG ("After alpha update: " << m_alpha.Get ());
       m_ackedBytesEcn = m_ackedBytesTotal = 0;
     }
 }
