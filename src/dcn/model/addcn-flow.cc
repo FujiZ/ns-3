@@ -159,7 +159,7 @@ ADDCNFlow::Initialize ()
   m_ecnState = TcpSocket::ECN_DISABLED;
   m_ecnRecorder->Reset ();
   m_ecnEchoSeq = 0;
-  m_ecnEnabled = false;
+  m_ecnEnabled = true;
   m_ceReceived = false;
 
   m_ackedBytesEcn = m_ackedBytesTotal = 0;
@@ -467,7 +467,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
       tos = ipTosTag.GetTos ();
     }
 
-  NS_LOG_LOGIC ("ECT bits should not be set on retransmitted packets");
+  //NS_LOG_LOGIC ("ECT bits should not be set on retransmitted packets");
   if ((m_ecnState & TcpSocket::ECN_CONN) && !isRetransmission)
     { 
       ipTosTag.SetTos (tos | 0x2);

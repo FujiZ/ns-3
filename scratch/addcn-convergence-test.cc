@@ -270,6 +270,7 @@ SetConfig (bool useEcn, bool useDctcp)
   Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (90));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
+  Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true)); // Should always be true
 
   // TCP params
   // Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1000 - 42));
@@ -277,13 +278,13 @@ SetConfig (bool useEcn, bool useDctcp)
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
   if (useDctcp)
     {
+      Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
       Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::dcn::DctcpSocket")));
       Config::SetDefault ("ns3::dcn::DctcpSocket::DctcpWeight", DoubleValue (1.0 / 16));
     }
   if (useEcn)
     {
       Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
-      Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
     }
 }
 
@@ -299,8 +300,8 @@ main (int argc, char *argv[])
   LogComponentEnable ("TcpSocketBase", LOG_LEVEL_DEBUG);
   LogComponentEnable ("TcpCongestionOps", LOG_LEVEL_ALL);
   
-  bool useEcn = true;
-  bool useDctcp = true;
+  bool useEcn = false;
+  bool useDctcp = false;
   std::string pathOut;
   bool writeForPlot = false;
   bool writePcap = false;
