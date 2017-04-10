@@ -459,6 +459,25 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
     m_retransOut ++;
   }
 
+  uint8_t tos = 0;
+  SocketIpTosTag ipTosTag;
+  bool found = packet->RemovePacketTag (ipTosTag);
+  if (found)
+    {
+      tos = ipTosTag.GetTos ();
+    }
+
+  NS_LOG_LOGIC ("ECT bits should not be set on retransmitted packets");
+  if ((m_ecnState & TcpSocket::ECN_CONN) && !isRetransmission)
+    { 
+      ipTosTag.SetTos (tos | 0x2);
+    }
+  else
+    {
+      ipTosTag.SetTos (tos);
+    }
+  packet->AddPacketTag (ipTosTag);
+
   UpdateRttHistory (m_seqNumber, sz, isRetransmission);
 
   m_tcb->m_nextTxSequence = std::max (m_tcb->m_nextTxSequence.Get (), m_seqNumber + sz);
