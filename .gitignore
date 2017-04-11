@@ -43,5 +43,5 @@ massif.*
 *.plt
 *.png
 *.dat
-*.DS_Store
+.DS_Store
 .directory

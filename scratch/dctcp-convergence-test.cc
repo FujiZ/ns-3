@@ -21,6 +21,7 @@ double avgQueueSize;
 // attributes
 std::string linkDataRate;
 std::string linkDelay;
+uint32_t packet_size;
 
 // The times
 double global_start_time;
@@ -86,7 +87,8 @@ RxTrace (Ptr<const Packet> packet, const Address &from)
 {
   NS_LOG_FUNCTION (packet << from);
   FlowIdTag flowIdTag;
-  NS_ASSERT (packet->FindFirstMatchingByteTag (flowIdTag));
+  bool retval = packet->FindFirstMatchingByteTag (flowIdTag);
+  NS_ASSERT (retval);
   if (totalRx.find (flowIdTag.GetFlowId ()) != totalRx.end ())
     {
       totalRx[flowIdTag.GetFlowId ()] += packet->GetSize ();
@@ -103,11 +105,11 @@ CalculateThroughput (void)
 {
   for (auto it = totalRx.begin (); it != totalRx.end (); ++it)
     {
-      double cur = (it->second - lastRx[it->first]) * (double) 8/1e5; /* Convert Application RX Packets to MBits. */
+      double cur = (it->second - lastRx[it->first]) * (double) 8/1e4; /* Convert Application RX Packets to MBits. */
       throughputResult[it->first].push_back (std::pair<double, double> (Simulator::Now ().GetSeconds (), cur));
       lastRx[it->first] = it->second;
     }
-  Simulator::Schedule (MilliSeconds (100), &CalculateThroughput);
+  Simulator::Schedule (MilliSeconds (10), &CalculateThroughput);
 }
 
 void
@@ -155,12 +157,10 @@ BuildTopo (uint32_t clientNo, uint32_t serverNo)
 
 
   TrafficControlHelper tchPfifo;
-  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc", "Limit", UintegerValue (90));
-  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxPackets", UintegerValue (90));
+  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc", "Limit", UintegerValue (250));
+  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxPackets", UintegerValue (250));
 
   TrafficControlHelper tchRed;
-  //tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "Threshold", UintegerValue(25),
-  //                         "Limit", UintegerValue (200));
   tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", StringValue (linkDataRate),
                            "LinkDelay", StringValue (linkDelay));
 
@@ -218,12 +218,12 @@ BuildAppsTest (void)
    * Create the OnOff applications to send TCP to the server
    * onoffhelper is a client that send data to TCP destination
    */
-  
+
   OnOffHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (0), port));
   clientHelper.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
   clientHelper.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
   clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate (linkDataRate)));
-  // clientHelper.SetAttribute ("PacketSize", UintegerValue (1000));
+  clientHelper.SetAttribute ("PacketSize", UintegerValue (packet_size));
 
   ApplicationContainer clientApps = clientHelper.Install (clients);
 
@@ -250,23 +250,22 @@ SetConfig (bool useEcn, bool useDctcp)
   // RED params
   NS_LOG_INFO ("Set RED params");
   Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
-  Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (500));
-  Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (true));
-  Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (true));
-  // Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
-  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (10));
-  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (20));
-  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (90));
+  Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (packet_size));
+  Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
+  Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
+  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (20));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
+  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (20));
+  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (250));
 
   // TCP params
-  // Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1000 - 42));
-  // Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
+  // Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
   if (useDctcp)
     {
-      Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::L2dctSocket")));
+      Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::DctcpSocket")));
       Config::SetDefault ("ns3::DctcpSocket::DctcpWeight", DoubleValue (1.0 / 16));
     }
   if (useEcn)
@@ -292,15 +291,16 @@ main (int argc, char *argv[])
   bool printRedStats = true;
 
   global_start_time = 0.0;
-  global_stop_time = 100.0;
+  global_stop_time = 10.0;
   sink_start_time = global_start_time;
   sink_stop_time = global_stop_time + 3.0;
   client_start_time = sink_start_time + 0.2;
-  client_stop_time = global_stop_time - 1.0;
-  client_interval_time = 20.0;
+  client_stop_time = global_stop_time;
+  client_interval_time = 2.0;
 
-  linkDataRate = "100Mbps";
-  linkDelay = "2ms";
+  linkDataRate = "1000Mbps";
+  linkDelay = "0.15ms";
+  packet_size = 500;
 
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory

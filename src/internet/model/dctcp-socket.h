@@ -42,10 +42,11 @@ protected:
   virtual void EstimateRtt (const TcpHeader& tcpHeader);
   virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                  bool isRetransmission);
-  virtual void Retransmit (void);
+  virtual void DoRetransmit (void);
   virtual Ptr<TcpSocketBase> Fork (void);
   virtual void UpdateEcnState (const TcpHeader &tcpHeader);
   virtual void DecreaseWindow (void);
+  virtual bool MarkEmptyPacket (void) const;
 
   void UpdateAlpha (const TcpHeader &tcpHeader);
 

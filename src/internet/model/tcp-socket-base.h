@@ -989,6 +989,12 @@ protected:
   virtual void IncreaseWindow (uint32_t segmentAcked);
 
   /**
+   * @brief determining whether empty packet like pure ACK or control packet should be marked ECT
+   * @return true if mark is needed
+   */
+  virtual bool MarkEmptyPacket (void) const;
+
+  /**
    * \brief Performs a safe subtraction between a and b (a-b)
    *
    * Safe is used to indicate that, if b>a, the results returned is 0.

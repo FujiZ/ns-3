@@ -1250,8 +1250,8 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
   if (m_ecnState & ECN_CONN)
     {
       UpdateEcnState (tcpHeader);
-      m_ceReceived = false;
     }
+  m_ceReceived = false;
 
   if (packet->GetSize () > 0 && OutOfRange (seq, seq + packet->GetSize ()))
     {
@@ -1372,11 +1372,11 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
           if (m_ecnState & ECN_CONN)
             {
               SocketIpTosTag ipTosTag;
-              ipTosTag.SetTos (0x02);
+              ipTosTag.SetTos (Ipv4Header::ECN_ECT0);
               p->AddPacketTag (ipTosTag);
 
               SocketIpv6TclassTag ipTclassTag;
-              ipTclassTag.SetTclass (0x02);
+              ipTclassTag.SetTclass (Ipv6Header::ECN_ECT0);
               p->AddPacketTag (ipTclassTag);
             }
           h.SetFlags (TcpHeader::RST);
@@ -2299,17 +2299,27 @@ TcpSocketBase::SendEmptyPacket (uint8_t flags)
    * if both options are set. Once the packet got to layer three, only
    * the corresponding tags will be read.
    */
-  if (GetIpTos ())
+  if (GetIpTos () || MarkEmptyPacket ())
     {
+      uint8_t tos = GetIpTos ();
+      if (MarkEmptyPacket ())
+        {
+          tos |= Ipv4Header::ECN_ECT0;
+        }
       SocketIpTosTag ipTosTag;
-      ipTosTag.SetTos (GetIpTos ());
+      ipTosTag.SetTos (tos);
       p->AddPacketTag (ipTosTag);
     }
 
-  if (IsManualIpv6Tclass ())
+  if (IsManualIpv6Tclass () || MarkEmptyPacket ())
     {
+      uint8_t tclass = IsManualIpv6Tclass () ? GetIpv6Tclass () : 0;
+      if (MarkEmptyPacket ())
+        {
+          tclass |= Ipv6Header::ECN_ECT0;
+        }
       SocketIpv6TclassTag ipTclassTag;
-      ipTclassTag.SetTclass (GetIpv6Tclass ());
+      ipTclassTag.SetTclass (tclass);
       p->AddPacketTag (ipTclassTag);
     }
 
@@ -2636,51 +2646,31 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
    * if both options are set. Once the packet got to layer three, only
    * the corresponding tags will be read.
    */
-  if (GetIpTos ())
+  if (GetIpTos () || (m_ecnState & ECN_CONN))
     {
-      SocketIpTosTag ipTosTag;
-      NS_LOG_LOGIC ("ECT bits should not be set on retransmitted packets");
-      if ((m_ecnState & ECN_CONN) && !isRetransmission)
-        { 
-          ipTosTag.SetTos (GetIpTos () | 0x2);
-        }
-      else
+      uint8_t tos = GetIpTos ();
+      // NS_LOG_LOGIC ("ECT bits should not be set on retransmitted packets");
+      // if ((m_ecnState & ECN_CONN) && !isRetransmission)
+      NS_LOG_LOGIC ("try to set ECT in retransmitted packets");
+      if (m_ecnState & ECN_CONN)
         {
-          ipTosTag.SetTos (GetIpTos ());
+          tos |= Ipv4Header::ECN_ECT0;
         }
+      SocketIpTosTag ipTosTag;
+      ipTosTag.SetTos (tos);
       p->AddPacketTag (ipTosTag);
     }
-  else
-    {
-      if ((m_ecnState & ECN_CONN) && !isRetransmission)
-        {
-          SocketIpTosTag ipTosTag;
-          ipTosTag.SetTos (0x02);
-          p->AddPacketTag (ipTosTag);
-        }
-    }
 
-  if (IsManualIpv6Tclass ())
+  if (IsManualIpv6Tclass () || (m_ecnState & ECN_CONN))
     {
+      uint8_t tclass = IsManualIpv6Tclass () ? GetIpv6Tclass () : 0;
+      if (m_ecnState & ECN_CONN)
+        {
+          tclass |= Ipv6Header::ECN_ECT0;
+        }
       SocketIpv6TclassTag ipTclassTag;
-      if ((m_ecnState & ECN_CONN) && !isRetransmission)
-        {
-          ipTclassTag.SetTclass (GetIpv6Tclass () | 0x2);
-        }
-      else
-        {
-          ipTclassTag.SetTclass (GetIpv6Tclass ());
-        }
+      ipTclassTag.SetTclass (tclass);
       p->AddPacketTag (ipTclassTag);
-    }
-  else
-    {
-      if ((m_ecnState & ECN_CONN) && !isRetransmission)
-        {
-          SocketIpv6TclassTag ipTclassTag;
-          ipTclassTag.SetTclass (0x02);
-          p->AddPacketTag (ipTclassTag);
-        }
     }
 
   if (IsManualIpTtl ())
@@ -3188,11 +3178,11 @@ TcpSocketBase::PersistTimeout ()
   if (m_ecnState & ECN_CONN)
     {
       SocketIpTosTag ipTosTag;
-      ipTosTag.SetTos (0x02);
+      ipTosTag.SetTos (Ipv4Header::ECN_ECT0);
       p->AddPacketTag (ipTosTag);
  
       SocketIpv6TclassTag ipTclassTag;
-      ipTclassTag.SetTclass (0x02);
+      ipTclassTag.SetTclass (Ipv6Header::ECN_ECT0);
       p->AddPacketTag (ipTclassTag);
     }
   m_txTrace (p, tcpHeader, this);
@@ -3801,6 +3791,14 @@ TcpSocketBase::IncreaseWindow (uint32_t segmentAcked)
   NS_LOG_LOGIC ("Congestion control called: " <<
                 " cWnd: " << m_tcb->m_cWnd <<
                 " ssTh: " << m_tcb->m_ssThresh);
+}
+
+bool
+TcpSocketBase::MarkEmptyPacket (void) const
+{
+  NS_LOG_FUNCTION (this);
+  // always not mark in traditional TCP & TCP with ECN
+  return false;
 }
 
 uint32_t

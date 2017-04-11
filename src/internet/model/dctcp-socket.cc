@@ -87,7 +87,10 @@ DctcpSocket::SendAckPacket (void)
 void
 DctcpSocket::EstimateRtt (const TcpHeader &tcpHeader)
 {
-  UpdateAlpha (tcpHeader);
+  if (!(tcpHeader.GetFlags () & TcpHeader::SYN))
+    {
+      UpdateAlpha (tcpHeader);
+    }
   TcpSocketBase::EstimateRtt (tcpHeader);
 }
 
@@ -123,73 +126,18 @@ DctcpSocket::UpdateAlpha (const TcpHeader &tcpHeader)
       // NS_LOG_DEBUG ("Before alpha update: " << m_alpha.Get ());
       m_alpha = (1 - m_g) * m_alpha + m_g * ((double)m_ackedBytesEcn / (m_ackedBytesTotal ? m_ackedBytesTotal : 1));
       // NS_LOG_DEBUG ("After alpha update: " << m_alpha.Get ());
-      NS_LOG_DEBUG("[ALPHA] " << Simulator::Now ().GetSeconds () << " " << m_alpha.Get ());
+      NS_LOG_DEBUG ("[ALPHA] " << Simulator::Now ().GetSeconds () << " " << m_alpha.Get ());
       m_ackedBytesEcn = m_ackedBytesTotal = 0;
     }
 }
 
 void
-DctcpSocket::Retransmit (void)
+DctcpSocket::DoRetransmit (void)
 {
-  // If erroneous timeout in closed/timed-wait state, just return
-  if (m_state == CLOSED || m_state == TIME_WAIT)
-    {
-      return;
-    }
-  // If all data are received (non-closing socket and nothing to send), just return
-  if (m_state <= ESTABLISHED && m_txBuffer->HeadSequence () >= m_tcb->m_highTxMark)
-    {
-      return;
-    }
-
-  /*
-   * When a TCP sender detects segment loss using the retransmission timer
-   * and the given segment has not yet been resent by way of the
-   * retransmission timer, the value of ssthresh MUST be set to no more
-   * than the value given in equation (4):
-   *
-   *   ssthresh = max (FlightSize / 2, 2*SMSS)            (4)
-   *
-   * where, as discussed above, FlightSize is the amount of outstanding
-   * data in the network.
-   *
-   * On the other hand, when a TCP sender detects segment loss using the
-   * retransmission timer and the given segment has already been
-   * retransmitted by way of the retransmission timer at least once, the
-   * value of ssthresh is held constant.
-   *
-   * Conditions to decrement slow - start threshold are as follows:
-   *
-   * *) The TCP state should be less than disorder, which is nothing but open.
-   * If we are entering into the loss state from the open state, we have not yet
-   * reduced the slow - start threshold for the window of data. (Nat: Recovery?)
-   * *) If we have entered the loss state with all the data pointed to by high_seq
-   * acknowledged. Once again it means that in whatever state we are (other than
-   * open state), all the data from the window that got us into the state, prior to
-   * retransmission timer expiry, has been acknowledged. (Nat: How this can happen?)
-   * *) If the above two conditions fail, we still have one more condition that can
-   * demand reducing the slow - start threshold: If we are already in the loss state
-   * and have not yet retransmitted anything. The condition may arise in case we
-   * are not able to retransmit anything because of local congestion.
-   */
-
-  if (m_tcb->m_congState != TcpSocketState::CA_LOSS)
-    {
-      m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_LOSS);
-      m_tcb->m_congState = TcpSocketState::CA_LOSS;
-      m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
-      m_tcb->m_cWnd = m_tcb->m_segmentSize;
-    }
-
-  m_tcb->m_nextTxSequence = m_txBuffer->HeadSequence (); // Restart from highest Ack
-  m_dupAckCount = 0;
-
+  NS_LOG_FUNCTION (this);
   // set dctcp seq value if retransmit (why?)
   m_alphaUpdateSeq = m_dctcpMaxSeq = m_tcb->m_nextTxSequence;
-
-  NS_LOG_DEBUG ("RTO. Reset cwnd to " <<  m_tcb->m_cWnd << ", ssthresh to " <<
-                m_tcb->m_ssThresh << ", restart from seqnum " << m_tcb->m_nextTxSequence);
-  DoRetransmit ();                          // Retransmit the packet
+  TcpSocketBase::DoRetransmit ();
 }
 
 Ptr<TcpSocketBase>
@@ -226,6 +174,14 @@ DctcpSocket::DecreaseWindow (void)
   uint32_t newCwnd = (1 - m_alpha / 2.0) * m_tcb->m_cWnd;
   m_tcb->m_ssThresh = std::max (newCwnd, 2 * GetSegSize ());
   m_tcb->m_cWnd = std::max (newCwnd, GetSegSize ());
+}
+
+bool
+DctcpSocket::MarkEmptyPacket (void) const
+{
+  NS_LOG_FUNCTION (this);
+  // mark empty packet if we use DCTCP && ecn is established
+  return m_ecnState & ECN_CONN;
 }
 
 } // namespace ns3
