@@ -282,6 +282,8 @@ def build(bld):
     privateheaders = bld(features='ns3privateheader')
     privateheaders.module = 'internet'
     privateheaders.source = [
+        'model/tcp-option-winscale.h',
+        'model/tcp-option-ts.h',
         'model/tcp-option-rfc793.h',
         ]
     headers = bld(features='ns3header')
@@ -290,8 +292,6 @@ def build(bld):
         'model/udp-header.h',
         'model/tcp-header.h',
         'model/tcp-option.h',
-        'model/tcp-option-ts.h',
-        'model/tcp-option-winscale.h',
         'model/icmpv4.h',
         'model/icmpv6-header.h',
         # used by routing
