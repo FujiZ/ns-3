@@ -86,7 +86,8 @@ RxTrace (Ptr<const Packet> packet, const Address &from)
 {
   NS_LOG_FUNCTION (packet << from);
   FlowIdTag flowIdTag;
-  NS_ASSERT (packet->FindFirstMatchingByteTag (flowIdTag));
+  bool retval = packet->FindFirstMatchingByteTag (flowIdTag);
+  NS_ASSERT (retval);
   if (totalRx.find (flowIdTag.GetFlowId ()) != totalRx.end ())
     {
       totalRx[flowIdTag.GetFlowId ()] += packet->GetSize ();
@@ -162,8 +163,8 @@ BuildTopo (uint32_t clientNo, uint32_t serverNo)
 
 
   TrafficControlHelper tchPfifo;
-  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc", "Limit", UintegerValue (90));
-  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxPackets", UintegerValue (90));
+  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc");//, "Limit", UintegerValue (90));
+  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue");//, "MaxPackets", UintegerValue (90));
 
   TrafficControlHelper tchRed;
   //tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "Threshold", UintegerValue(25),
@@ -262,12 +263,12 @@ SetConfig (bool useEcn, bool useDctcp)
   NS_LOG_INFO ("Set RED params");
   Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
   Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (500));
-  Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (true));
-  Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (true));
+  Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (false));
+  Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
   Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
-  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (10));
+  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (20));
   Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (20));
-  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (90));
+  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (100));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
   Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true)); // Should always be true
@@ -292,34 +293,34 @@ int
 main (int argc, char *argv[])
 {
 
-  LogComponentEnable ("DctcpSocket", LOG_LEVEL_FUNCTION);
+  //LogComponentEnable ("DctcpSocket", LOG_LEVEL_FUNCTION);
   // LogComponentEnable ("ADDCNExample", LOG_LEVEL_ALL);
-  LogComponentEnable ("ADDCNL3_5Protocol", LOG_LEVEL_ALL);
-  LogComponentEnable ("ADDCNSlice", LOG_LEVEL_ALL);
-  LogComponentEnable ("ADDCNFlow", LOG_LEVEL_ALL);
-  LogComponentEnable ("TcpSocketBase", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("TcpCongestionOps", LOG_LEVEL_ALL);
+  //LogComponentEnable ("ADDCNL3_5Protocol", LOG_LEVEL_ALL);
+  //LogComponentEnable ("ADDCNSlice", LOG_LEVEL_ALL);
+  //LogComponentEnable ("ADDCNFlow", LOG_LEVEL_ALL);
+  //LogComponentEnable ("TcpSocketBase", LOG_LEVEL_DEBUG);
+  //LogComponentEnable ("TcpCongestionOps", LOG_LEVEL_ALL);
   
   bool useEcn = false;
-  bool useDctcp = false;
+  bool useDctcp = false; 
   std::string pathOut;
   bool writeForPlot = false;
   bool writePcap = false;
   bool flowMonitor = false;
   bool writeThroughput = true;
 
-  bool printRedStats = false;
+  bool printRedStats = true;
 
   global_start_time = 0.0;
-  global_stop_time = 10.0;
+  global_stop_time = 88.0;
   sink_start_time = global_start_time;
   sink_stop_time = global_stop_time + 3.0;
   client_start_time = sink_start_time + 0.2;
   client_stop_time = global_stop_time - 1.0;
-  client_interval_time = 2.0;
+  client_interval_time = 16.0;
 
-  linkDataRate = "100Mbps";
-  linkDelay = "2ms";
+  linkDataRate = "1000Mbps";
+  linkDelay = "100us";
 
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory
