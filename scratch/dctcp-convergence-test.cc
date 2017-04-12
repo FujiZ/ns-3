@@ -19,9 +19,11 @@ uint32_t checkTimes;
 double avgQueueSize;
 
 // attributes
-std::string linkDataRate;
-std::string linkDelay;
+std::string link_data_rate;
+std::string link_delay;
 uint32_t packet_size;
+uint32_t queue_size;
+uint32_t threhold;
 
 // The times
 double global_start_time;
@@ -105,11 +107,11 @@ CalculateThroughput (void)
 {
   for (auto it = totalRx.begin (); it != totalRx.end (); ++it)
     {
-      double cur = (it->second - lastRx[it->first]) * (double) 8/1e4; /* Convert Application RX Packets to MBits. */
+      double cur = (it->second - lastRx[it->first]) * (double) 8/1e5; /* Convert Application RX Packets to MBits. */
       throughputResult[it->first].push_back (std::pair<double, double> (Simulator::Now ().GetSeconds (), cur));
       lastRx[it->first] = it->second;
     }
-  Simulator::Schedule (MilliSeconds (10), &CalculateThroughput);
+  Simulator::Schedule (MilliSeconds (100), &CalculateThroughput);
 }
 
 void
@@ -157,19 +159,20 @@ BuildTopo (uint32_t clientNo, uint32_t serverNo)
 
 
   TrafficControlHelper tchPfifo;
-  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc", "Limit", UintegerValue (250));
-  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxPackets", UintegerValue (250));
+  // use default limit for pfifo (1000)
+  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc");
+  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue");
 
   TrafficControlHelper tchRed;
-  tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", StringValue (linkDataRate),
-                           "LinkDelay", StringValue (linkDelay));
+  tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", StringValue (link_data_rate),
+                           "LinkDelay", StringValue (link_delay));
 
   NS_LOG_INFO ("Create channels");
   PointToPointHelper p2p;
 
   p2p.SetQueue ("ns3::DropTailQueue");
-  p2p.SetDeviceAttribute ("DataRate", StringValue (linkDataRate));
-  p2p.SetChannelAttribute ("Delay", StringValue (linkDelay));
+  p2p.SetDeviceAttribute ("DataRate", StringValue (link_data_rate));
+  p2p.SetChannelAttribute ("Delay", StringValue (link_delay));
 
   Ipv4AddressHelper ipv4;
   ipv4.SetBase ("10.1.1.0", "255.255.255.0");
@@ -189,8 +192,8 @@ BuildTopo (uint32_t clientNo, uint32_t serverNo)
     }
   {
     p2p.SetQueue ("ns3::DropTailQueue");
-    p2p.SetDeviceAttribute ("DataRate", StringValue (linkDataRate));
-    p2p.SetChannelAttribute ("Delay", StringValue (linkDelay));
+    p2p.SetDeviceAttribute ("DataRate", StringValue (link_data_rate));
+    p2p.SetChannelAttribute ("Delay", StringValue (link_delay));
     NetDeviceContainer devs = p2p.Install (switchs);
     // only backbone link has RED queue disc
     queueDiscs = tchRed.Install (devs);
@@ -222,7 +225,7 @@ BuildAppsTest (void)
   OnOffHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (0), port));
   clientHelper.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
   clientHelper.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-  clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate (linkDataRate)));
+  clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate (link_data_rate)));
   clientHelper.SetAttribute ("PacketSize", UintegerValue (packet_size));
 
   ApplicationContainer clientApps = clientHelper.Install (clients);
@@ -251,27 +254,27 @@ SetConfig (bool useEcn, bool useDctcp)
   NS_LOG_INFO ("Set RED params");
   Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
   Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (packet_size));
-  Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
+  // Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
   Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
-  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (20));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
-  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (20));
-  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (250));
+  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (threhold));
+  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (threhold));
+  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (queue_size));
 
   // TCP params
-  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
+  // Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
   // Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
-  if (useDctcp)
-    {
-      Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::DctcpSocket")));
-      Config::SetDefault ("ns3::DctcpSocket::DctcpWeight", DoubleValue (1.0 / 16));
-    }
   if (useEcn)
     {
       Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
       Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
+      if (useDctcp)
+        {
+          Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::DctcpSocket")));
+          Config::SetDefault ("ns3::DctcpSocket::DctcpWeight", DoubleValue (1.0 / 16));
+        }
     }
 }
 
@@ -298,9 +301,11 @@ main (int argc, char *argv[])
   client_stop_time = global_stop_time;
   client_interval_time = 2.0;
 
-  linkDataRate = "1000Mbps";
-  linkDelay = "0.15ms";
+  link_data_rate = "1000Mbps";
+  link_delay = "100us";
   packet_size = 500;
+  queue_size = 250;
+  threhold = 20;
 
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory
