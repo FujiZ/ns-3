@@ -263,11 +263,11 @@ SetConfig (bool useEcn, bool useDctcp)
   NS_LOG_INFO ("Set RED params");
   Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
   Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (500));
-  Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (false));
-  Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
+  Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (true));
+  Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
   Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (20));
-  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (20));
+  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (50));
   Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (100));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
@@ -319,8 +319,8 @@ main (int argc, char *argv[])
   client_stop_time = global_stop_time - 1.0;
   client_interval_time = 16.0;
 
-  linkDataRate = "1000Mbps";
-  linkDelay = "100us";
+  linkDataRate = "200Mbps";
+  linkDelay = "1ms";
 
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory

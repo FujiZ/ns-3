@@ -130,6 +130,7 @@ public:
    */
   double GetWeight (void) const;
 
+  double GetScaledWeight (void) const;
   /**
    * @brief Update scale factor, called by corresponding slice
    * @param s

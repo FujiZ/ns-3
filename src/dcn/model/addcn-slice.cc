@@ -74,6 +74,7 @@ ADDCNSlice::GetSliceFromTuple (const ADDCNFlow::FiveTuple &tuple)
   NS_ASSERT(iter != m_tupleSliceList.end ());
   return iter->second;
 }
+
 Ptr<ADDCNSlice>
 ADDCNSlice::GetSlice (uint32_t tenantId, C3Type type)
 {

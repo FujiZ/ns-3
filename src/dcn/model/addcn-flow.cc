@@ -134,7 +134,7 @@ ADDCNFlow::Initialize ()
   m_weight = 1.0;
   m_winScalingEnabled = true;
   m_timestampEnabled = true;
-  m_segSize = 0;
+  m_segSize = 536;
   m_weightScaled = 1.0;
   m_seqNumber = 0;
   m_updateRwndSeq = 0;
@@ -306,11 +306,12 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
   if((flags & TcpHeader::SYN) == 0)
     m_shift = m_sndWindShift;
 
-  uint32_t w = m_tcb->m_cWnd >> m_shift;
+  // Proportional to scaled weight of current flow
+  uint32_t w = std::max(((uint32_t)(m_tcb->m_cWnd.Get() * m_weightScaled)) >> m_shift , m_segSize >> m_shift);
 
+  m_rWnd = tcpHeader.GetWindowSize() << m_shift;
   if(w < tcpHeader.GetWindowSize())
     tcpHeader.SetWindowSize(w);
-  m_rWnd = tcpHeader.GetWindowSize() << m_shift;
   if (!m_ecnEnabled)
   {
     NS_LOG_DEBUG ("ECN not supported by upper layer, purging out flags");
@@ -669,6 +670,12 @@ double
 ADDCNFlow::GetWeight (void) const
 {
   return m_weight;
+}
+
+double
+ADDCNFlow::GetScaledWeight (void) const
+{
+  return m_weightScaled;
 }
 
 void

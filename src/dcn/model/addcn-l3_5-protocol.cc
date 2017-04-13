@@ -84,6 +84,16 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
     if(packet->RemovePacketTag (c3Tag))
     { // From Sender side, even EMPTY packets like ACK, SYN. Done through socket level send trace
       Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
+      double scale = ((double)(c3Tag.GetTenantId() + 1)) / 4.0; 
+      flow->UpdateScale(scale);
+      /*
+      double scaledWeight = flow->GetWeight() * ((double)(c3Tag.GetTenantId())) / 4.0; 
+      double fs_weight = flow->GetScaledWeight();
+      if(fabs(scaledWeight - fs_weight) > 0.01)
+        {
+          printf("Updating scale for tenant %d to %.2f", c3Tag.GetTenantId(), scale);
+        }
+      */
       //if((tcpHeader.GetFlags() & (TcpHeader::SYN | TcpHeader::ACK)) == TcpHeader::SYN)
       //{
       //  flow->Initialize(); // New connection
