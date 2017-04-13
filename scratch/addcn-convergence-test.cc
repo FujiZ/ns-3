@@ -104,7 +104,7 @@ CalculateThroughput (void)
 {
   for (auto it = totalRx.begin (); it != totalRx.end (); ++it)
     {
-      double cur = (it->second - lastRx[it->first]) * (double) 8/1e5; /* Convert Application RX Packets to MBits. */
+      double cur = (it->second - lastRx[it->first]) * (double) 8/1e8; /* Convert Application RX Packets to GBits. */
       throughputResult[it->first].push_back (std::pair<double, double> (Simulator::Now ().GetSeconds (), cur));
       lastRx[it->first] = it->second;
     }
@@ -266,9 +266,9 @@ SetConfig (bool useEcn, bool useDctcp)
   Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (false));
   Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
   Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
-  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (20));
-  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (20));
-  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (100));
+  Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (65));
+  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (65));
+  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (400));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
   Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true)); // Should always be true
@@ -319,8 +319,8 @@ main (int argc, char *argv[])
   client_stop_time = global_stop_time - 1.0;
   client_interval_time = 16.0;
 
-  linkDataRate = "1000Mbps";
-  linkDelay = "100us";
+  linkDataRate = "10000Mbps";
+  linkDelay = "10us";
 
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory
