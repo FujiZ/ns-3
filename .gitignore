@@ -2,6 +2,9 @@
 *.orig
 *.o
 /build
+/debug
+/release
+/optimized
 /doc/html
 /doc/latex
 /doc/ns3-object.txt

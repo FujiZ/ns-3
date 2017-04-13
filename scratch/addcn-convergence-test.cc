@@ -104,7 +104,7 @@ CalculateThroughput (void)
 {
   for (auto it = totalRx.begin (); it != totalRx.end (); ++it)
     {
-      double cur = (it->second - lastRx[it->first]) * (double) 8/1e5; /* Convert Application RX Packets to MBits. */
+      double cur = (it->second - lastRx[it->first]) * (double) 8/1e8; /* Convert Application RX Packets to GBits. */
       throughputResult[it->first].push_back (std::pair<double, double> (Simulator::Now ().GetSeconds (), cur));
       lastRx[it->first] = it->second;
     }
