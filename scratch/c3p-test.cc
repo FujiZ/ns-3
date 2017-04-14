@@ -222,10 +222,10 @@ SetupApp (bool enableLS, bool enableDS, bool enableCS)
       uint64_t MB = 1024 * 1024;
       SetupDsServer (dsts.Get (0), port);
       InetSocketAddress serverAddr (dst_interfaces.GetAddress (0), port);
-      SetupDsClient (srcs.Get (0), serverAddr, client_start_time, 150 * MB, Time ("10000ms"));
-      SetupDsClient (srcs.Get (1), serverAddr, client_start_time, 220 * MB, Time ("15000ms"));
-      SetupDsClient (srcs.Get (2), serverAddr, client_start_time, 350 * MB, Time ("25000ms"));
-      SetupDsClient (srcs.Get (3), serverAddr, client_start_time, 500 * MB, Time ("40000ms"));
+      SetupDsClient (srcs.Get (0), serverAddr, client_start_time, 150 * MB, Time ("5000ms"));
+      SetupDsClient (srcs.Get (1), serverAddr, client_start_time, 220 * MB, Time ("7500ms"));
+      SetupDsClient (srcs.Get (2), serverAddr, client_start_time, 350 * MB, Time ("12500ms"));
+      SetupDsClient (srcs.Get (3), serverAddr, client_start_time, 500 * MB, Time ("20000ms"));
     }
   if (enableCS)
     {
