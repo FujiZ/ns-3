@@ -219,13 +219,13 @@ SetupApp (bool enableLS, bool enableDS, bool enableCS)
   if (enableDS)
     {
       uint16_t port = 50000;
-      uint64_t MB = 1024 * 1024 * 8;
+      uint64_t MB = 1024 * 1024;
       SetupDsServer (dsts.Get (0), port);
       InetSocketAddress serverAddr (dst_interfaces.GetAddress (0), port);
-      SetupDsClient (srcs.Get (0), serverAddr, client_start_time, 15 * MB, Time ("1000ms"));
-      SetupDsClient (srcs.Get (1), serverAddr, client_start_time, 22 * MB, Time ("1500ms"));
-      SetupDsClient (srcs.Get (2), serverAddr, client_start_time, 35 * MB, Time ("2500ms"));
-      SetupDsClient (srcs.Get (3), serverAddr, client_start_time, 50 * MB, Time ("4000ms"));
+      SetupDsClient (srcs.Get (0), serverAddr, client_start_time, 150 * MB, Time ("10000ms"));
+      SetupDsClient (srcs.Get (1), serverAddr, client_start_time, 220 * MB, Time ("15000ms"));
+      SetupDsClient (srcs.Get (2), serverAddr, client_start_time, 350 * MB, Time ("25000ms"));
+      SetupDsClient (srcs.Get (3), serverAddr, client_start_time, 500 * MB, Time ("40000ms"));
     }
   if (enableCS)
     {
