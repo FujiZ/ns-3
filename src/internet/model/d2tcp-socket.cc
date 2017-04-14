@@ -138,8 +138,9 @@ D2tcpSocket::Connect (const Address &address)
 void
 D2tcpSocket::SendEmptyPacket (uint8_t flags)
 {
-  if (CheckDeadline ())
+  if (CheckDeadline () || (flags & (TcpHeader::RST | TcpHeader::FIN)))
     {
+      // send packet when deadline not exceeded or flags contains RST or FIN
       DctcpSocket::SendEmptyPacket (flags);
     }
   else
@@ -229,7 +230,7 @@ D2tcpSocket::DecreaseWindow (void)
 bool
 D2tcpSocket::CheckDeadline (void) const
 {
-  return m_deadline == Time (0) || m_finishTime < Simulator::Now ();
+  return m_deadline == Time (0) || Simulator::Now () <= m_finishTime;
 }
 
 } // namespace ns3

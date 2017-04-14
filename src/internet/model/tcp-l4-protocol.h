@@ -116,6 +116,21 @@ public:
   Ptr<Socket> CreateSocket (TypeId congestionTypeId);
 
   /**
+   * \brief Create a TCP socket using the specified congestion control algorithm TypeId
+   * and specified socket base TypeId
+   *
+   * \return A smart Socket pointer to a TcpSocket allocated by this instance
+   * of the TCP protocol
+   *
+   * \warning using a congestionTypeId other than TCP is a bad idea.
+   *
+   * \param congestionTypeId the congestion control algorithm TypeId
+   *
+   * \param socketBaseTypeId the socket base TypeId
+   */
+  Ptr<Socket> CreateSocket (TypeId congestionTypeId, TypeId socketBaseTypeId);
+
+  /**
    * \brief Allocate an IPv4 Endpoint
    * \return the Endpoint
    */

@@ -182,13 +182,25 @@ TcpL4Protocol::DoDispose (void)
 Ptr<Socket>
 TcpL4Protocol::CreateSocket (TypeId congestionTypeId)
 {
-  NS_LOG_FUNCTION (this << congestionTypeId.GetName ());
+  return CreateSocket (congestionTypeId, m_socketBaseTypeId);
+}
+
+Ptr<Socket>
+TcpL4Protocol::CreateSocket (void)
+{
+  return CreateSocket (m_congestionTypeId);
+}
+
+Ptr<Socket>
+TcpL4Protocol::CreateSocket (TypeId congestionTypeId, TypeId socketBaseTypeId)
+{
+  NS_LOG_FUNCTION (this << congestionTypeId.GetName () << socketBaseTypeId.GetName ());
   ObjectFactory rttFactory;
   ObjectFactory congestionAlgorithmFactory;
   ObjectFactory socketFactory;
   rttFactory.SetTypeId (m_rttTypeId);
   congestionAlgorithmFactory.SetTypeId (congestionTypeId);
-  socketFactory.SetTypeId (m_socketBaseTypeId);
+  socketFactory.SetTypeId (socketBaseTypeId);
 
   Ptr<RttEstimator> rtt = rttFactory.Create<RttEstimator> ();
   Ptr<TcpSocketBase> socket = socketFactory.Create<TcpSocketBase> ();
@@ -201,12 +213,6 @@ TcpL4Protocol::CreateSocket (TypeId congestionTypeId)
 
   m_sockets.push_back (socket);
   return socket;
-}
-
-Ptr<Socket>
-TcpL4Protocol::CreateSocket (void)
-{
-  return CreateSocket (m_congestionTypeId);
 }
 
 Ipv4EndPoint *

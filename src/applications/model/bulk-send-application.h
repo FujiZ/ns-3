@@ -99,6 +99,13 @@ public:
    */
   Ptr<Socket> GetSocket (void) const;
 
+  /**
+   * TracedCallback signature for socket creation
+   *
+   * \param [in] socket The newly created socket
+   */
+  typedef void (* SocketCreateTracedCallback) (Ptr<Socket> socket);
+
 protected:
   virtual void DoDispose (void);
 private:
@@ -121,6 +128,8 @@ private:
 
   /// Traced Callback: sent packets
   TracedCallback<Ptr<const Packet> > m_txTrace;
+  /// Traced Callback: create socket
+  TracedCallback<Ptr<Socket> > m_socketCreateTrace;
 
 private:
   /**
