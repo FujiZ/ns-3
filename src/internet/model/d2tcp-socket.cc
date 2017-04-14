@@ -138,12 +138,8 @@ D2tcpSocket::Connect (const Address &address)
 void
 D2tcpSocket::SendEmptyPacket (uint8_t flags)
 {
-  if (CheckDeadline () || (flags & (TcpHeader::RST | TcpHeader::FIN)))
-    {
-      // send packet when deadline not exceeded or flags contains RST or FIN
-      DctcpSocket::SendEmptyPacket (flags);
-    }
-  else
+  DctcpSocket::SendEmptyPacket (flags);
+  if (!(CheckDeadline () || (flags & (TcpHeader::RST | TcpHeader::FIN))))
     {
       DoClose ();
     }
