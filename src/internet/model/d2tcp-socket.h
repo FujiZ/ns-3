@@ -37,7 +37,6 @@ public:
 
 protected:
 
-  virtual void SendEmptyPacket (uint8_t flags);
   virtual uint32_t SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck);
 
   // update sentBytes in UpdateRttHistory

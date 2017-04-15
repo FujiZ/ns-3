@@ -135,16 +135,6 @@ D2tcpSocket::Connect (const Address &address)
   return DoConnect ();
 }
 
-void
-D2tcpSocket::SendEmptyPacket (uint8_t flags)
-{
-  DctcpSocket::SendEmptyPacket (flags);
-  if (!(CheckDeadline () || (flags & (TcpHeader::RST | TcpHeader::FIN))))
-    {
-      DoClose ();
-    }
-}
-
 uint32_t
 D2tcpSocket::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck)
 {
