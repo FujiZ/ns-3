@@ -49,17 +49,10 @@ std::map<uint32_t, uint64_t> lastRx;
 std::map<uint32_t, std::vector<std::pair<double, double> > > throughputResult; //fId -> list<time, throughput>
 
 void
-SentBytesUpdate (uint64_t oldVal, uint64_t newVal)
-{
-  std::cout << oldVal << ", " << newVal << std::endl;
-}
-
-void
 SocketCreateTrace (uint64_t flowSize, Time deadline, Ptr<Socket> socket)
 {
   socket->SetAttribute ("TotalBytes", UintegerValue (flowSize));
   socket->SetAttribute ("Deadline", TimeValue (deadline));
-  socket->TraceConnectWithoutContext ("SentBytes", MakeCallback (&SentBytesUpdate));
 }
 
 void
