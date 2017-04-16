@@ -67,7 +67,6 @@ void
 RxTrace (Ptr<const Packet> packet, const Address &from)
 {
   NS_LOG_FUNCTION (packet << from);
-  // std::cout << packet << from << std::endl;
   FlowIdTag flowIdTag;
   bool retval = packet->FindFirstMatchingByteTag (flowIdTag);
   NS_ASSERT (retval);
@@ -80,6 +79,7 @@ RxTrace (Ptr<const Packet> packet, const Address &from)
       totalRx[flowIdTag.GetFlowId ()] = packet->GetSize ();
       lastRx[flowIdTag.GetFlowId ()] = 0;
     }
+  NS_LOG_DEBUG (Simulator::Now () << ", " << flowIdTag.GetFlowId () << ", " << totalRx[flowIdTag.GetFlowId ()]);
 }
 
 void
@@ -222,10 +222,10 @@ SetupApp (bool enableLS, bool enableDS, bool enableCS)
       uint64_t MB = 1024 * 1024;
       SetupDsServer (dsts.Get (0), port);
       InetSocketAddress serverAddr (dst_interfaces.GetAddress (0), port);
-      SetupDsClient (srcs.Get (0), serverAddr, client_start_time, 150 * MB, Time ("5000ms"));
-      SetupDsClient (srcs.Get (1), serverAddr, client_start_time, 220 * MB, Time ("10000ms"));
-      SetupDsClient (srcs.Get (2), serverAddr, client_start_time, 350 * MB, Time ("15000ms"));
-      SetupDsClient (srcs.Get (3), serverAddr, client_start_time, 500 * MB, Time ("30000ms"));
+      SetupDsClient (srcs.Get (0), serverAddr, client_start_time, 150 * MB, Time ("3000ms"));
+      SetupDsClient (srcs.Get (1), serverAddr, client_start_time, 220 * MB, Time ("8000ms"));
+      SetupDsClient (srcs.Get (2), serverAddr, client_start_time, 350 * MB, Time ("50000ms"));
+      SetupDsClient (srcs.Get (3), serverAddr, client_start_time, 500 * MB, Time ("60000ms"));
     }
   if (enableCS)
     {
@@ -250,7 +250,7 @@ SetupConfig (void)
   Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (queue_size));
 
   // TCP params
-  // Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
   // Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
 
@@ -273,19 +273,21 @@ SetupConfig (void)
 int
 main (int argc, char *argv[])
 {
+  LogComponentEnable ("D2tcpSocket", LOG_LEVEL_DEBUG);
+  // LogComponentEnable ("C3pTest", LOG_LEVEL_DEBUG);
   bool writeThroughput = false;
   std::string pathOut ("."); // Current directory
 
   global_start_time = MilliSeconds (0);
-  global_stop_time = Seconds (10);
+  global_stop_time = Seconds (15);
   server_start_time = global_start_time;
   server_stop_time = global_stop_time + Seconds (3);
   client_start_time = server_start_time + Seconds (0.2);
   client_stop_time = global_stop_time;
 
-  link_data_rate = DataRate ("1Gbps");
+  link_data_rate = DataRate ("1000Mbps");
   link_delay = Time ("50us");
-  packet_size = 512;
+  packet_size = 1024;
   queue_size = 250;
   threhold = 20;
 
@@ -299,7 +301,7 @@ main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
   SetupConfig ();
-  SetupTopo (4, 1, link_data_rate, link_delay);
+  SetupTopo (10, 1, link_data_rate, link_delay);
   SetupApp (false, true, false);
 
   if (writeThroughput)

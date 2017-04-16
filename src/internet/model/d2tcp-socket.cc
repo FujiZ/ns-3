@@ -144,6 +144,7 @@ D2tcpSocket::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAc
     }
   else
     {
+      NS_LOG_DEBUG (this << "Deadline exceeded");
       DoClose ();
       return 0;
     }
@@ -203,7 +204,7 @@ D2tcpSocket::DecreaseWindow (void)
         {
           double Tc = B * m_rtt->GetEstimate ().GetSeconds () / (3.0 * m_tcb->m_cWnd.Get () / 4.0);
           double D = m_finishTime.GetSeconds () - Simulator::Now ().GetSeconds ();
-          d = D <= 0 ? 2.0 : std::max (std::min (Tc / D, 2.0), 0.5);
+          d = D <= 0 ? 0.5 : std::max (std::min (Tc / D, 2.0), 0.5);
         }
     }
   double p = std::pow (m_alpha, d);
