@@ -144,7 +144,7 @@ D2tcpSocket::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAc
     }
   else
     {
-      NS_LOG_DEBUG (this << "Deadline exceeded");
+      NS_LOG_DEBUG (this << " Deadline exceeded");
       DoClose ();
       return 0;
     }

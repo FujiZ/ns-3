@@ -14,7 +14,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("C3pTest");
+NS_LOG_COMPONENT_DEFINE ("D2tcpTest");
 
 // attributes
 DataRate link_data_rate;

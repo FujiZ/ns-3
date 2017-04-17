@@ -108,9 +108,9 @@ L2dctSocket::DecreaseWindow (void)
   double b = std::pow (m_alpha, m_weightC);
   uint32_t newCwnd = (1 - b / 2) * m_tcb->m_cWnd;
   ///\todo cut ssThresh to cwnd or (1-alpha/2)?
-  m_tcb->m_ssThresh = std::max (newCwnd, 2 * m_tcb->m_segmentSize);
+  m_tcb->m_ssThresh = std::max (newCwnd, 2 * GetSegSize ());
   // cutdown cwnd according to D2TCP algo
-  m_tcb->m_cWnd = std::max (newCwnd, m_tcb->m_segmentSize);
+  m_tcb->m_cWnd = std::max (newCwnd, GetSegSize ());
 }
 
 void
