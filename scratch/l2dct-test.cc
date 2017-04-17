@@ -219,7 +219,7 @@ SetupApp (bool enableLS, bool enableDS, bool enableCS)
       uint16_t port = 50000;
       int MB = 1024 * 1024;
       int KB = 1024;
-      SetupCsServer (dsts.Get (1), port);
+      SetupCsServer (dsts.Get (0), port);
       InetSocketAddress serverAddr (dst_interfaces.GetAddress (0), port);
       // 1 long flow
       int id = 1;
@@ -227,7 +227,7 @@ SetupApp (bool enableLS, bool enableDS, bool enableCS)
       // 50 short flows, flowId as 2
       for (int i = 1; i <= 50; ++i)
         {
-          SetupCsClient (srcs.Get (i), serverAddr, id, Seconds (3), 50 * KB);
+          SetupCsClient (srcs.Get (1), serverAddr, id, Seconds (3), 50 * KB);
         }
     }
 }
@@ -292,8 +292,8 @@ main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
   SetupConfig ();
-  SetupTopo (51, 1, link_data_rate, link_delay);
-  SetupApp (false, true, false);
+  SetupTopo (2, 1, link_data_rate, link_delay);
+  SetupApp (false, false, true);
 
   if (writeThroughput)
     {

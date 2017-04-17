@@ -140,7 +140,7 @@ L2dctSocket::CongestionAvoidance (uint32_t segmentsAcked)
       UpdateWeightC ();
 
       double k = m_weightC / m_weightMax;
-      m_tcb->m_cWnd += static_cast<uint32_t> (k * GetSegSize ());
+      m_tcb->m_cWnd += static_cast<uint32_t> (k * GetSegSize () * GetSegSize () / m_tcb->m_cWnd);
 
       NS_LOG_INFO ("In CongAvoid, updated to cwnd " << m_tcb->m_cWnd <<
                    " ssthresh " << m_tcb->m_ssThresh);
