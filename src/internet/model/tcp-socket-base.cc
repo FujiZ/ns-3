@@ -1762,7 +1762,8 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
             }
         }
 
-      if (callCongestionControl)
+      // increase window iff tcpHeader doesn't contain ECE flag
+      if (callCongestionControl && !(tcpHeader.GetFlags () & TcpHeader::ECE))
         {
           IncreaseWindow (newSegsAcked);
         }

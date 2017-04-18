@@ -125,6 +125,7 @@ L2dctSocket::IncreaseWindow (uint32_t segmentAcked)
     }
   else
     {
+      ///\todo 需要进一步修改，感觉有些问题
       // congestion avoidance
       CongestionAvoidance (segmentAcked);
     }
@@ -140,8 +141,8 @@ L2dctSocket::CongestionAvoidance (uint32_t segmentsAcked)
       UpdateWeightC ();
 
       double k = m_weightC / m_weightMax;
-      m_tcb->m_cWnd += static_cast<uint32_t> (k * GetSegSize () * GetSegSize () / m_tcb->m_cWnd);
-
+      double adder = k * GetSegSize () * GetSegSize () / m_tcb->m_cWnd;
+      m_tcb->m_cWnd += static_cast<uint32_t> (std::max (1.0, adder));
       NS_LOG_INFO ("In CongAvoid, updated to cwnd " << m_tcb->m_cWnd <<
                    " ssthresh " << m_tcb->m_ssThresh);
     }
