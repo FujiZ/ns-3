@@ -120,15 +120,26 @@ L2dctSocket::IncreaseWindow (uint32_t segmentAcked)
 
   if (m_tcb->m_cWnd < m_tcb->m_ssThresh)
     {
-      // slow start
-      m_congestionControl->IncreaseWindow (m_tcb, segmentAcked);
+      segmentAcked = SlowStart (segmentAcked);
     }
-  else
+
+  if (m_tcb->m_cWnd >= m_tcb->m_ssThresh)
     {
-      ///\todo 需要进一步修改，感觉有些问题
-      // congestion avoidance
       CongestionAvoidance (segmentAcked);
     }
+}
+
+uint32_t
+L2dctSocket::SlowStart (uint32_t segmentsAcked)
+{
+  NS_LOG_FUNCTION (this << segmentsAcked);
+  if (segmentsAcked >= 1)
+    {
+      m_tcb->m_cWnd += GetSegSize ();
+      NS_LOG_INFO ("In SlowStart, updated to cwnd " << m_tcb->m_cWnd << " ssthresh " << m_tcb->m_ssThresh);
+      return segmentsAcked - 1;
+    }
+  return 0;
 }
 
 void

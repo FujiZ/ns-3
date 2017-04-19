@@ -42,6 +42,7 @@ protected:
   virtual void DecreaseWindow (void);
   virtual void IncreaseWindow (uint32_t segmentAcked);
 
+  uint32_t SlowStart (uint32_t segmentsAcked);
   void CongestionAvoidance (uint32_t segmentsAcked);
   void UpdateWeightC (void);
 
