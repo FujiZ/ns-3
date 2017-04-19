@@ -83,6 +83,12 @@ RxTrace (Ptr<const Packet> packet, const Address &from)
 }
 
 void
+WeightTrace (double oldVal, double newVal)
+{
+  std::cout << oldVal << ", " << newVal << std::endl;
+}
+
+void
 CalculateThroughput (void)
 {
   for (auto it = totalRx.begin (); it != totalRx.end (); ++it)
@@ -199,6 +205,10 @@ SetupCsClient (NodeContainer nodes, const Address &serverAddr,
   for(auto it = clientApps.Begin (); it != clientApps.End (); ++it)
     {
       (*it)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId));
+      if (flowId == 1)
+        {
+          (*it)->TraceConnectWithoutContext ("WeightC", MakeCallback (&WeightTrace));
+        }
     }
 }
 
@@ -218,17 +228,20 @@ SetupApp (bool enableLS, bool enableDS, bool enableCS)
       ///\todo cs setup
       uint16_t port = 50000;
       int MB = 1024 * 1024;
-      int KB = 1024;
       SetupCsServer (dsts.Get (0), port);
       InetSocketAddress serverAddr (dst_interfaces.GetAddress (0), port);
       // 1 long flow
       int id = 1;
       SetupCsClient (srcs.Get (0), serverAddr, id++, client_start_time, 1000 * MB);
+      SetupCsClient (srcs.Get (1), serverAddr, id++, client_start_time, 1000 * MB);
       // 50 short flows, flowId as 2
+      /*
+      int KB = 1024;
       for (int i = 1; i <= 50; ++i)
         {
-          SetupCsClient (srcs.Get (1), serverAddr, id, Seconds (3), 50 * KB);
+          SetupCsClient (srcs.Get (1), serverAddr, id, client_start_time + Seconds (0.1), 50 * KB);
         }
+        */
     }
 }
 
@@ -264,8 +277,6 @@ SetupConfig (void)
 int
 main (int argc, char *argv[])
 {
-  LogComponentEnable ("D2tcpSocket", LOG_LEVEL_DEBUG);
-  // LogComponentEnable ("C3pTest", LOG_LEVEL_DEBUG);
   bool writeThroughput = false;
   std::string pathOut ("."); // Current directory
 
