@@ -49,10 +49,15 @@ std::map<uint32_t, uint64_t> lastRx;
 std::map<uint32_t, std::vector<std::pair<double, double> > > throughputResult; //fId -> list<time, throughput>
 
 void
-SocketCreateTrace (uint64_t flowSize, Time deadline, Ptr<Socket> socket)
+WeightTrace (double oldVal, double newVal)
 {
-  socket->SetAttribute ("TotalBytes", UintegerValue (flowSize));
-  socket->SetAttribute ("Deadline", TimeValue (deadline));
+  std::cout << oldVal << ", " << newVal << std::endl;
+}
+
+void
+SocketCreateTrace (Ptr<Socket> socket)
+{
+  socket->TraceConnectWithoutContext ("WeightC", MakeCallback (&WeightTrace));
 }
 
 void
@@ -80,12 +85,6 @@ RxTrace (Ptr<const Packet> packet, const Address &from)
       lastRx[flowIdTag.GetFlowId ()] = 0;
     }
   NS_LOG_DEBUG (Simulator::Now () << ", " << flowIdTag.GetFlowId () << ", " << totalRx[flowIdTag.GetFlowId ()]);
-}
-
-void
-WeightTrace (double oldVal, double newVal)
-{
-  std::cout << oldVal << ", " << newVal << std::endl;
 }
 
 void
@@ -207,7 +206,7 @@ SetupCsClient (NodeContainer nodes, const Address &serverAddr,
       (*it)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId));
       if (flowId == 1)
         {
-          (*it)->TraceConnectWithoutContext ("WeightC", MakeCallback (&WeightTrace));
+          (*it)->TraceConnectWithoutContext ("SocketCreate", MakeCallback (&SocketCreateTrace));
         }
     }
 }
