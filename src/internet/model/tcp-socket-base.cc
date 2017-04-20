@@ -1264,7 +1264,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
       // Acknowledgement should be sent for all unacceptable packets (RFC793, p.69)
       if (m_state == ESTABLISHED && !(tcpHeader.GetFlags () & TcpHeader::RST))
         {
-          SendAckPacket ();
+          SendACK ();
         }
       return;
     }
@@ -1459,7 +1459,7 @@ TcpSocketBase::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeade
                         " HighTxMark = " << m_tcb->m_highTxMark);
 
           // Receiver sets ECE flags when it receives a packet with CE bit on or sender hasn’t responded to ECN echo sent by receiver
-          SendAckPacket ();
+          SendACK ();
         }
       else
         {
@@ -2971,13 +2971,13 @@ TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
   SequenceNumber32 expectedSeq = m_rxBuffer->NextRxSequence ();
   if (!m_rxBuffer->Add (p, tcpHeader))
     { // Insert failed: No data or RX buffer full
-      SendAckPacket ();
+      SendACK ();
       return;
     }
   // Now send a new ACK packet acknowledging all received and delivered data
   if (m_rxBuffer->Size () > m_rxBuffer->Available () || m_rxBuffer->NextRxSequence () > expectedSeq + p->GetSize ())
     { // A gap exists in the buffer, or we filled a gap: Always ACK
-      SendAckPacket ();
+      SendACK ();
     }
   else
     { // In-sequence packet: ACK if delayed ack count allows
@@ -2985,7 +2985,7 @@ TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
         {
           m_delAckEvent.Cancel ();
           m_delAckCount = 0;
-          SendAckPacket ();
+          SendACK ();
         }
       else if (m_delAckEvent.IsExpired ())
         {
@@ -3139,7 +3139,7 @@ void
 TcpSocketBase::DelAckTimeout (void)
 {
   m_delAckCount = 0;
-  SendAckPacket ();
+  SendACK ();
 }
 
 void
@@ -3383,7 +3383,7 @@ TcpSocketBase::SetRcvBufSize (uint32_t size)
    */
   if (oldSize < size && m_connected)
     {
-      SendAckPacket ();
+      SendACK ();
     }
 }
 
@@ -3750,7 +3750,7 @@ TcpSocketBase::Fork (void)
 }
 
 void
-TcpSocketBase::SendAckPacket (void)
+TcpSocketBase::SendACK (void)
 {
   NS_LOG_FUNCTION (this);
 
@@ -3805,8 +3805,8 @@ bool
 TcpSocketBase::MarkEmptyPacket (void) const
 {
   NS_LOG_FUNCTION (this);
-  // always not mark in traditional TCP & TCP with ECN
-  return false;
+  // mark empty packet if ECN connection is established
+  return m_ecnState & ECN_CONN;
 }
 
 uint32_t

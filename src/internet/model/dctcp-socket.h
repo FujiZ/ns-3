@@ -38,7 +38,7 @@ public:
 protected:
 
   // inherited from TcpSocketBase
-  virtual void SendAckPacket (void);
+  virtual void SendACK (void);
   virtual void EstimateRtt (const TcpHeader& tcpHeader);
   virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                  bool isRetransmission);

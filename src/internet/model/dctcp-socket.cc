@@ -58,7 +58,7 @@ DctcpSocket::DctcpSocket (const DctcpSocket &sock)
 }
 
 void
-DctcpSocket::SendAckPacket (void)
+DctcpSocket::SendACK (void)
 {
   NS_LOG_FUNCTION (this);
 
@@ -135,7 +135,7 @@ void
 DctcpSocket::DoRetransmit (void)
 {
   NS_LOG_FUNCTION (this);
-  // set dctcp seq value if retransmit (why?)
+  // reset dctcp seq value to  if retransmit (why?)
   m_alphaUpdateSeq = m_dctcpMaxSeq = m_tcb->m_nextTxSequence;
   TcpSocketBase::DoRetransmit ();
 }
@@ -180,8 +180,8 @@ bool
 DctcpSocket::MarkEmptyPacket (void) const
 {
   NS_LOG_FUNCTION (this);
-  // mark empty packet if we use DCTCP && ecn is established
-  return m_ecnState & ECN_CONN;
+  // mark empty packet if we use DCTCP && ECN is enabled
+  return m_ecn;
 }
 
 } // namespace ns3

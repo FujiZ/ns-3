@@ -966,7 +966,7 @@ protected:
   /**
    * @brief Send Ack packet; add ecn mark if needed
    */
-  virtual void SendAckPacket (void);
+  virtual void SendACK (void);
 
   /**
    * @brief UpdateEcnState
