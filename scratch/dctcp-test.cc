@@ -124,7 +124,7 @@ ConfigTcp (void)
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
   // Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
   // Dctcp params
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::dcn::DctcpSocket")));
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketBaseType", TypeIdValue(TypeId::LookupByName ("ns3::DctcpSocket")));
   Config::SetDefault ("ns3::dcn::DctcpSocket::DctcpWeight", DoubleValue (1.0 / 16));
 }
 
