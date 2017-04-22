@@ -171,7 +171,7 @@ DctcpSocket::DecreaseWindow (void)
 {
   NS_LOG_FUNCTION (this);
   // halve cwnd according to DCTCP algo
-  uint32_t newCwnd = (1 - m_alpha / 2.0) * m_tcb->m_cWnd;
+  uint32_t newCwnd = (1 - m_alpha / 2.0) * Window ();
   m_tcb->m_ssThresh = std::max (newCwnd, 2 * GetSegSize ());
   m_tcb->m_cWnd = std::max (newCwnd, GetSegSize ());
 }

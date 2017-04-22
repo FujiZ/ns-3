@@ -18,7 +18,6 @@ NS_LOG_COMPONENT_DEFINE ("L2dctTest");
 // attributes
 DataRate link_data_rate;
 Time link_delay;
-bool use_d2tcp;
 
 // queue params
 uint32_t packet_size;
@@ -48,18 +47,6 @@ std::map<uint32_t, uint64_t> lastRx;
 std::map<uint32_t, std::vector<std::pair<double, double> > > throughputResult; //fId -> list<time, throughput>
 
 void
-WeightTrace (double oldVal, double newVal)
-{
-  std::cout << oldVal << ", " << newVal << std::endl;
-}
-
-void
-SocketCreateTrace (Ptr<Socket> socket)
-{
-  socket->TraceConnectWithoutContext ("WeightC", MakeCallback (&WeightTrace));
-}
-
-void
 TxTrace (uint32_t flowId, Ptr<const Packet> p)
 {
   FlowIdTag flowIdTag;
@@ -83,7 +70,7 @@ RxTrace (Ptr<const Packet> packet, const Address &from)
       totalRx[flowIdTag.GetFlowId ()] = packet->GetSize ();
       lastRx[flowIdTag.GetFlowId ()] = 0;
     }
-  NS_LOG_DEBUG (Simulator::Now () << ", " << flowIdTag.GetFlowId () << ", " << totalRx[flowIdTag.GetFlowId ()]);
+  NS_LOG_DEBUG (Simulator::Now () << ": " << flowIdTag.GetFlowId () << ", " << totalRx[flowIdTag.GetFlowId ()]);
 }
 
 void
@@ -97,6 +84,7 @@ CalculateThroughput (void)
     }
   Simulator::Schedule (MilliSeconds (10), &CalculateThroughput);
 }
+
 void
 SetupName (const NodeContainer& nodes, const std::string& prefix)
 {
@@ -203,10 +191,6 @@ SetupCsClient (NodeContainer nodes, const Address &serverAddr,
   for(auto it = clientApps.Begin (); it != clientApps.End (); ++it)
     {
       (*it)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId));
-      if (flowId == 1)
-        {
-          (*it)->TraceConnectWithoutContext ("SocketCreate", MakeCallback (&SocketCreateTrace));
-        }
     }
 }
 
@@ -231,15 +215,11 @@ SetupApp (bool enableLS, bool enableDS, bool enableCS)
       // 1 long flow
       int id = 1;
       SetupCsClient (srcs.Get (0), serverAddr, id++, client_start_time, 1000 * MB);
-      SetupCsClient (srcs.Get (1), serverAddr, id++, client_start_time, 1000 * MB);
-      // 50 short flows, flowId as 2
-      /*
-      int KB = 1024;
-      for (int i = 1; i <= 50; ++i)
+      // 20 short flows, flowId as 2
+      for (int i = 1; i <= 20; ++i)
         {
-          SetupCsClient (srcs.Get (1), serverAddr, id, client_start_time + Seconds (0.1), 50 * KB);
+          SetupCsClient (srcs.Get (i), serverAddr, id, client_start_time, 1 * MB);
         }
-        */
     }
 }
 
@@ -252,7 +232,7 @@ SetupConfig (void)
   Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
   Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (packet_size));
   // Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
-  Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
+  // Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
   Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (threhold));
@@ -291,17 +271,15 @@ main (int argc, char *argv[])
   queue_size = 250;
   threhold = 20;
 
-  use_d2tcp = false;
 
   CommandLine cmd;
-  // cmd.AddValue ("useD2tcp", "<0/1> to use d2tcp in test", use_d2tcp);
   cmd.AddValue ("pathOut", "Path to save results from --writeForPlot/--writePcap/--writeFlowMonitor", pathOut);
   cmd.AddValue ("writeThroughput", "<0/1> to write throughtput results", writeThroughput);
 
   cmd.Parse (argc, argv);
 
   SetupConfig ();
-  SetupTopo (2, 1, link_data_rate, link_delay);
+  SetupTopo (51, 1, link_data_rate, link_delay);
   SetupApp (false, false, true);
 
   if (writeThroughput)
