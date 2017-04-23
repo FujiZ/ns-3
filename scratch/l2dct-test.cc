@@ -18,6 +18,8 @@ NS_LOG_COMPONENT_DEFINE ("L2dctTest");
 // attributes
 DataRate link_data_rate;
 Time link_delay;
+uint32_t short_flow_num = 20;
+uint32_t short_flow_size = 50;
 
 // queue params
 uint32_t packet_size;
@@ -216,9 +218,10 @@ SetupApp (bool enableLS, bool enableDS, bool enableCS)
       int id = 1;
       SetupCsClient (srcs.Get (0), serverAddr, id++, client_start_time, 1000 * MB);
       // 20 short flows, flowId as 2
-      for (int i = 1; i <= 20; ++i)
+      int KB = 1024;
+      for (uint32_t i = 1; i <= short_flow_num; ++i)
         {
-          SetupCsClient (srcs.Get (i), serverAddr, id, client_start_time, 1 * MB);
+          SetupCsClient (srcs.Get (i), serverAddr, id, client_start_time + Seconds(3), short_flow_size * KB);
         }
     }
 }
@@ -273,13 +276,15 @@ main (int argc, char *argv[])
 
 
   CommandLine cmd;
+  cmd.AddValue ("shortFlowNum", "Number of short flows", short_flow_num);
+  cmd.AddValue ("shortFlowSize", "Size of short flows", short_flow_size);
   cmd.AddValue ("pathOut", "Path to save results from --writeForPlot/--writePcap/--writeFlowMonitor", pathOut);
   cmd.AddValue ("writeThroughput", "<0/1> to write throughtput results", writeThroughput);
 
   cmd.Parse (argc, argv);
 
   SetupConfig ();
-  SetupTopo (51, 1, link_data_rate, link_delay);
+  SetupTopo (short_flow_num + 1, 1, link_data_rate, link_delay);
   SetupApp (false, false, true);
 
   if (writeThroughput)
