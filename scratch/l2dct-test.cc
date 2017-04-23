@@ -42,6 +42,8 @@ NodeContainer dsts;
 // dst interfaces
 Ipv4InterfaceContainer dst_interfaces;
 
+QueueDiscContainer red_queue_discs;
+
 // receive status
 std::map<uint32_t, uint64_t> totalRx;   //fId->receivedBytes
 std::map<uint32_t, uint64_t> lastRx;
@@ -160,7 +162,7 @@ SetupTopo (uint32_t srcCount, uint32_t dstCount, const DataRate& bandwidth, cons
     redHelper.SetRootQueueDisc ("ns3::RedQueueDisc",
                                 "LinkBandwidth", DataRateValue (bandwidth),
                                 "LinkDelay", TimeValue (delay));
-    redHelper.Install (devs);
+    red_queue_discs = redHelper.Install (devs);
     ipv4AddrHelper.Assign (devs);
   }
   // Set up the routing
@@ -244,8 +246,9 @@ SetupConfig (void)
 
   // TCP params
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
+  Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (10)));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
-  // Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
+  Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
 
   // enable ECN
   Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
@@ -259,6 +262,7 @@ int
 main (int argc, char *argv[])
 {
   bool writeThroughput = false;
+  bool printRedStats = true;
   std::string pathOut ("."); // Current directory
 
   global_start_time = MilliSeconds (0);
@@ -294,6 +298,23 @@ main (int argc, char *argv[])
 
   Simulator::Stop (server_stop_time);
   Simulator::Run ();
+
+  if (printRedStats)
+    {
+      RedQueueDisc::Stats st = StaticCast<RedQueueDisc> (red_queue_discs.Get (0))->GetStats ();
+      std::cout << "*** RED stats from Node 2 queue ***" << std::endl;
+      std::cout << "\t " << st.unforcedDrop << " drops due prob mark" << std::endl;
+      std::cout << "\t " << st.unforcedMark << " marks due prob mark" << std::endl;
+      std::cout << "\t " << st.forcedDrop << " drops due hard mark" << std::endl;
+      std::cout << "\t " << st.qLimDrop << " drops due queue full" << std::endl;
+
+      st = StaticCast<RedQueueDisc> (red_queue_discs.Get (1))->GetStats ();
+      std::cout << "*** RED stats from Node 3 queue ***" << std::endl;
+      std::cout << "\t " << st.unforcedDrop << " drops due prob mark" << std::endl;
+      std::cout << "\t " << st.unforcedMark << " marks due prob mark" << std::endl;
+      std::cout << "\t " << st.forcedDrop << " drops due hard mark" << std::endl;
+      std::cout << "\t " << st.qLimDrop << " drops due queue full" << std::endl;
+    }
 
   if (writeThroughput)
     {
