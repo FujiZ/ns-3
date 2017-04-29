@@ -41,8 +41,10 @@ void
 C3CsTunnel::Send (Ptr<Packet> packet, uint8_t protocol)
 {
   NS_LOG_FUNCTION (this << packet << (uint32_t)protocol);
+
   FlowIdTag flowIdTag;
-  NS_ASSERT (packet->PeekPacketTag (flowIdTag));
+  bool retval = packet->PeekPacketTag (flowIdTag);
+  NS_ASSERT (retval);
   uint32_t flowId = flowIdTag.GetFlowId ();
 
   Ptr<C3Flow> flow = GetFlow (flowId, protocol);

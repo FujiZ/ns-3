@@ -239,7 +239,14 @@ TcpRxBuffer::Extract (uint32_t maxSize)
       uint32_t pktSize = i->second->GetSize ();
       if (pktSize <= extractSize)
         { // Whole packet is extracted
-          outPkt->AddAtEnd (i->second);
+          if (outPkt->GetSize ())
+            {
+              outPkt->AddAtEnd (i->second);
+            }
+          else
+            {
+              outPkt = i->second;
+            }
           m_data.erase (i);
           m_size -= pktSize;
           m_availBytes -= pktSize;
@@ -247,7 +254,14 @@ TcpRxBuffer::Extract (uint32_t maxSize)
         }
       else
         { // Partial is extracted and done
-          outPkt->AddAtEnd (i->second->CreateFragment (0, extractSize));
+          if (outPkt->GetSize ())
+            {
+              outPkt->AddAtEnd (i->second->CreateFragment (0, extractSize));
+            }
+          else
+            {
+              outPkt = i->second->CreateFragment (0, extractSize);
+            }
           m_data[i->first + SequenceNumber32 (extractSize)] = i->second->CreateFragment (extractSize, pktSize - extractSize);
           m_data.erase (i);
           m_size -= extractSize;

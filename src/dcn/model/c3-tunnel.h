@@ -84,7 +84,10 @@ public:
 
 protected:
 
+  virtual void DoInitialize (void);
+
   virtual void DoDispose (void);
+
 
   /**
    * \brief forward a packet to dest

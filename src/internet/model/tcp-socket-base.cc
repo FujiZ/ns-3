@@ -3787,7 +3787,7 @@ TcpSocketBase::DecreaseWindow (void)
 {
   NS_LOG_FUNCTION (this);
   m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
-  m_tcb->m_cWnd = std::max (m_tcb->m_cWnd.Get () / 2, GetSegSize ());
+  m_tcb->m_cWnd = std::max (Window () / 2, GetSegSize ());
 }
 
 void

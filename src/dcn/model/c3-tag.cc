@@ -26,7 +26,8 @@ C3Tag::C3Tag ()
     m_type (C3Type::NONE),
     m_tenantId (0),
     m_flowSize (0),
-    m_packetSize (0)
+    m_packetSize (0),
+    m_deadline ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -41,6 +42,7 @@ C3Tag::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
+
 uint32_t
 C3Tag::GetSerializedSize (void) const
 {
@@ -52,6 +54,7 @@ C3Tag::GetSerializedSize (void) const
       + sizeof (m_packetSize)
       + sizeof (double);
 }
+
 void
 C3Tag::Serialize (TagBuffer buf) const
 {
@@ -60,8 +63,9 @@ C3Tag::Serialize (TagBuffer buf) const
   buf.WriteU32 (m_tenantId);
   buf.WriteU32 (m_flowSize);
   buf.WriteU32 (m_packetSize);
-  buf.WriteDouble (m_deadline.ToDouble (Time::S));  ///time resolution in second
+  buf.WriteDouble (m_deadline.GetSeconds ());  ///time resolution in second
 }
+
 void
 C3Tag::Deserialize (TagBuffer buf)
 {
@@ -72,6 +76,7 @@ C3Tag::Deserialize (TagBuffer buf)
   m_packetSize = buf.ReadU32 ();
   m_deadline = Time::FromDouble (buf.ReadDouble (), Time::S);
 }
+
 void
 C3Tag::Print (std::ostream &os) const
 {
@@ -145,6 +150,22 @@ Time
 C3Tag::GetDeadline (void) const
 {
   return m_deadline;
+}
+
+bool
+C3Tag::operator == (const C3Tag &other) const
+{
+  return m_type == other.m_type
+      && m_tenantId == other.m_tenantId
+      && m_flowSize == other.m_flowSize
+      && m_packetSize == other.m_packetSize
+      && m_deadline == other.m_deadline;
+}
+
+bool
+C3Tag::operator != (const C3Tag &other) const
+{
+  return !operator == (other);
 }
 
 } //namespace dcn

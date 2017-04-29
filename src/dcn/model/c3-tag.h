@@ -46,6 +46,9 @@ public:
   void SetDeadline (Time deadline);
   Time GetDeadline (void) const;
 
+  bool operator == (const C3Tag &other) const;
+  bool operator != (const C3Tag &other) const;
+
 private:
   C3Type m_type;        //!< objective type of current flow
   uint32_t m_tenantId;  //!< tenant id of current flow

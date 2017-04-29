@@ -3,6 +3,7 @@
 #include "ns3/log.h"
 #include "ns3/tcp-header.h"
 #include "ns3/udp-header.h"
+#include "ns3/flow-id-tag.h"
 
 #include "c3-division.h"
 #include "c3-ecn-recorder.h"

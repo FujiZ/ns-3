@@ -27,21 +27,31 @@ TokenBucketFilter::GetTypeId (void)
                                            &TokenBucketFilter::SetRate),
                      MakeDataRateChecker ())
       .AddAttribute ("Bucket",
-                     "The default bucket for TBF",
+                     "The initial bucket for TBF",
                      UintegerValue (2048),
                      MakeUintegerAccessor (&TokenBucketFilter::m_bucket),
+                     MakeUintegerChecker<uint64_t> ())
+      .AddAttribute ("QueueLimit",
+                     "Queue limit for tbf",
+                     UintegerValue (250),
+                     MakeUintegerAccessor (&TokenBucketFilter::SetQueueLimit,
+                                           &TokenBucketFilter::GetQueueLimit),
                      MakeUintegerChecker<uint64_t> ())
   ;
   return tid;
 }
 
-TokenBucketFilter::TokenBucketFilter ():
-  m_queue (CreateObject<DropTailQueue> ()),
-  m_timer (Timer::CANCEL_ON_DESTROY)
+TokenBucketFilter::TokenBucketFilter ()
+  : m_rate (0),
+    m_bucket (0),
+    m_tokens (0),
+    m_init (true),
+    m_timer (Timer::CANCEL_ON_DESTROY)
 {
   NS_LOG_FUNCTION (this);
-  m_tokens = m_bucket;
   m_lastUpdateTime = Simulator::Now ();
+  m_queue = CreateObject<DropTailQueue> ();
+  m_queue->SetMode (Queue::QUEUE_MODE_PACKETS);
   m_queue->SetDropCallback (MakeCallback (&TokenBucketFilter::Drop, this));
   m_timer.SetFunction (&TokenBucketFilter::Transmit, this);
 }
@@ -69,6 +79,14 @@ TokenBucketFilter::Send (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p);
 
+  // start with a full bucket
+  if (m_init)
+    {
+      m_tokens = static_cast<double> (m_bucket);
+      m_lastUpdateTime = Simulator::Now ();
+      m_init = false;
+    }
+
   //enque packets appropriately if a non-zero queue already exists
   if (!m_queue->IsEmpty ())
     {
@@ -79,7 +97,7 @@ TokenBucketFilter::Send (Ptr<Packet> p)
   else
     {
       UpdateTokens ();
-      uint64_t packetSize =  (uint64_t)p->GetSize ()<<3; //packet size in bits
+      uint64_t packetSize = static_cast<uint64_t> (p->GetSize ()) << 3; //packet size in bits
       NS_LOG_DEBUG ("tokens: "<< m_tokens << " size: " << packetSize);
       if (m_tokens >= packetSize)
         {
@@ -115,6 +133,18 @@ TokenBucketFilter::SetRate (DataRate rate)
     }
 }
 
+uint32_t
+TokenBucketFilter::GetQueueLimit (void) const
+{
+  return m_queue->GetMaxPackets ();
+}
+
+void
+TokenBucketFilter::SetQueueLimit (uint32_t limit)
+{
+  m_queue->SetMaxPackets (limit);
+}
+
 void
 TokenBucketFilter::Drop (Ptr<QueueItem> item)
 {
@@ -125,9 +155,8 @@ TokenBucketFilter::Drop (Ptr<QueueItem> item)
 void
 TokenBucketFilter::UpdateTokens (void)
 {
-  double now = Simulator::Now ().GetSeconds ();
-  m_tokens = std::min ((double)m_bucket,
-                       m_tokens+(now-m_lastUpdateTime.GetSeconds ())*m_rate.GetBitRate ());
+  m_tokens = std::min (static_cast<double> (m_bucket),
+                       m_tokens + (Simulator::Now ().GetSeconds () - m_lastUpdateTime.GetSeconds ()) * m_rate.GetBitRate ());
   m_lastUpdateTime = Simulator::Now ();
 }
 
@@ -138,7 +167,7 @@ TokenBucketFilter::Transmit (void)
   NS_ASSERT (!m_queue->IsEmpty ());
   Ptr<Packet> p = m_queue->Dequeue ()->GetPacket ();
   UpdateTokens ();
-  uint64_t packetSize = (uint64_t)p->GetSize () << 3; //packet size in bits
+  uint64_t packetSize = static_cast<uint64_t> (p->GetSize ()) << 3; //packet size in bits
 
   //We simply send the packet here without checking if we have enough tokens
   //since the timer is supposed to fire at the right time
@@ -154,8 +183,8 @@ TokenBucketFilter::Transmit (void)
 Time
 TokenBucketFilter::GetSendDelay (Ptr<const Packet> p) const
 {
-  uint64_t packetSize = (uint64_t)p->GetSize () << 3;
-  return Time::FromDouble ((packetSize-m_tokens) / m_rate.GetBitRate (), Time::S);
+  uint64_t packetSize = static_cast<uint64_t> (p->GetSize ()) << 3;
+  return Time::FromDouble (std::max (packetSize - m_tokens, 0.0) / m_rate.GetBitRate (), Time::S);
 }
 
 } //namespace dcn

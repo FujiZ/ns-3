@@ -16,8 +16,8 @@ C3Tunnel::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::dcn::C3Tunnel")
       .SetParent<Object> ()
       .SetGroupName ("DCN")
-      .AddAttribute ("G",
-                     "0 < G < 1 is the weight given to new samples"
+      .AddAttribute ("Gamma",
+                     "0 < Gamma < 1 is the weight given to new samples"
                      "against the past in the estimation of alpha.",
                      DoubleValue (0.625),
                      MakeDoubleAccessor (&C3Tunnel::m_g),
@@ -27,6 +27,11 @@ C3Tunnel::GetTypeId (void)
                      TimeValue (Time ("100us")),
                      MakeTimeAccessor (&C3Tunnel::m_interval),
                      MakeTimeChecker (Time (0)))
+      .AddAttribute ("DataRate",
+                     "data rate of current tunnel.",
+                     DataRateValue (DataRate ("10Mbps")),
+                     MakeDataRateAccessor (&C3Tunnel::m_rate),
+                     MakeDataRateChecker ())
       .AddTraceSource ("Alpha",
                        "an estimate of the fraction of packets that are marked",
                        MakeTraceSourceAccessor (&C3Tunnel::m_alpha),
@@ -47,16 +52,17 @@ C3Tunnel::C3Tunnel (uint32_t tenantId, C3Type type,
                     const Ipv4Address &src, const Ipv4Address &dst)
   : m_src (src),
     m_dst (dst),
-    m_alpha (0.0),
+    m_alpha (1.0),
     m_g (0.625),
     m_weight (0.0),
     m_weightRequest (0.0),
+    m_rate (0),
     m_timer (Timer::CANCEL_ON_DESTROY)
 {
   NS_LOG_FUNCTION (this);
   m_ecnRecorder = C3EcnRecorder::CreateEcnRecorder (tenantId, type, src, dst);
   // set a proper interval to call the first update
-  Simulator::ScheduleNow (&C3Tunnel::InitTimer, this);
+  Simulator::ScheduleNow (&C3Tunnel::Initialize, this);
 }
 
 C3Tunnel::~C3Tunnel ()
@@ -100,6 +106,16 @@ C3Tunnel::SetWeight (double weight)
 {
   NS_LOG_FUNCTION (this << weight);
   m_weight = weight;
+}
+
+void
+C3Tunnel::DoInitialize (void)
+{
+  NS_LOG_FUNCTION (this);
+  // initialize timer
+  m_timer.SetFunction (&C3Tunnel::Update, this);
+  m_timer.Schedule (m_interval);
+  Object::DoInitialize ();
 }
 
 void
@@ -165,8 +181,6 @@ C3Tunnel::UpdateRate (void)
 void
 C3Tunnel::InitTimer (void)
 {
-  m_timer.SetFunction (&C3Tunnel::Update, this);
-  m_timer.Schedule (m_interval);
 }
 
 } //namespace dcn

@@ -23,14 +23,14 @@ public:
    * people who want to install L3_5 protocol to nodes.
    */
   IpL3_5ProtocolHelper ();
-  IpL3_5ProtocolHelper (std::string tid);
+  IpL3_5ProtocolHelper (const std::string &tid);
   ~IpL3_5ProtocolHelper ();
 
   /**
    * Get a pointer to the requested aggregated Object.
    * \returns a newly-created L3_5 protocol
    */
-  Ptr<IpL3_5Protocol> Create() const;
+  Ptr<IpL3_5Protocol> Create(void) const;
 
   /**
    * This method creates an l3_5 protocol and install to
