@@ -135,6 +135,7 @@ D2tcpSocket::Connect (const Address &address)
   return DoConnect ();
 }
 
+/*
 uint32_t
 D2tcpSocket::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck)
 {
@@ -149,6 +150,7 @@ D2tcpSocket::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAc
       return 0;
     }
 }
+*/
 
 void
 D2tcpSocket::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool isRetransmission)
@@ -214,10 +216,12 @@ D2tcpSocket::DecreaseWindow (void)
   m_tcb->m_cWnd = std::max (newCwnd, GetSegSize ());
 }
 
+/*
 bool
 D2tcpSocket::CheckDeadline (void) const
 {
   return m_deadline == Time (0) || Simulator::Now () <= m_finishTime;
 }
+*/
 
 } // namespace ns3

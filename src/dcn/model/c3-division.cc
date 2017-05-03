@@ -48,7 +48,7 @@ C3Division::C3Division (C3Type type)
     m_timer (Timer::CANCEL_ON_DESTROY)
 {
   NS_LOG_FUNCTION (this);
-  Simulator::ScheduleNow (&C3Division::InitTimer, this);
+  Simulator::ScheduleNow (&C3Division::Initialize, this);
 }
 
 C3Division::~C3Division ()
@@ -113,11 +113,11 @@ C3Division::Update (void)
   // here to check if weight == 0.0
   if (std::fabs (weight) > 10e-7)
     {
-      double lambda =  m_weight / weight;    // lambda: scale factor
+      double factor =  m_weight / weight;    // lambda: scale factor
       for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
         {
           Ptr<C3Tunnel> tunnel = it->second;
-          tunnel->SetWeight (lambda * tunnel->GetWeightRequest ());
+          tunnel->SetWeight (factor * tunnel->GetWeightRequest ());
         }
     }
   else if (!m_tunnelList.empty ())
@@ -130,7 +130,17 @@ C3Division::Update (void)
           tunnel->SetWeight (weight);
         }
     }
+  // schedule next update
   m_timer.Schedule (m_interval);
+}
+
+void
+C3Division::DoInitialize (void)
+{
+  NS_LOG_FUNCTION (this);
+  m_timer.SetFunction (&C3Division::Update, this);
+  m_timer.Schedule (m_interval);
+  Object::DoInitialize ();
 }
 
 void
@@ -146,13 +156,6 @@ uint32_t
 C3Division::GetTenantId (void) const
 {
   return m_tenantId;
-}
-
-void
-C3Division::InitTimer (void)
-{
-  m_timer.SetFunction (&C3Division::Update, this);
-  m_timer.Schedule (m_interval);
 }
 
 } //namespace dcn

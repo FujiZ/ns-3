@@ -128,8 +128,6 @@ protected:
 
 private:
 
-  void InitTimer (void);
-
   Ipv4Address m_src;   //!< src address of tunnel
   Ipv4Address m_dst;  //!< dst address of tunnel
   Ptr<Ipv4Route> m_route; //!< route of connection

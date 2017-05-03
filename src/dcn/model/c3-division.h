@@ -80,6 +80,8 @@ public:
 
 protected:
 
+  virtual void DoInitialize (void);
+
   virtual void DoDispose (void);
 
   /**
@@ -95,15 +97,13 @@ protected:
 
 private:
 
-  void InitTimer (void);
-
   uint32_t m_tenantId;  //!< tenant id of divison
   C3Type m_type;    //!< objective type
   double m_weight;  //!< division weight
 
   // timer parameter
-  Timer m_timer;     //!< timer to call GlobalUpdate ()
-  Time m_interval;   //!< interval to call GlobalUpdate ()
+  Timer m_timer;     //!< timer to call Update ()
+  Time m_interval;   //!< interval to call Update ()
 
   typedef std::pair<uint32_t, C3Type> DivisionListKey_t;
   typedef std::map<DivisionListKey_t, Ptr<C3Division> > DivisionList_t;

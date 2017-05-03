@@ -37,7 +37,7 @@ public:
 
 protected:
 
-  virtual uint32_t SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck);
+  // virtual uint32_t SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck);
 
   // update sentBytes in UpdateRttHistory
   virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
@@ -48,8 +48,8 @@ protected:
   /**
    * @brief Check Deadline before sending a packet;
    * @return true if not exceeded
-   */
   bool CheckDeadline (void) const;
+   */
 
   // D2TCP related params
   Time                  m_deadline;         //!< deadline of current flow

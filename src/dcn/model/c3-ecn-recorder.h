@@ -41,13 +41,13 @@ public:
    * @brief GetRatio
    * @return marked/total ratio
    */
-  double GetRatio (void) const;
+  double GetMarkedRatio (void) const;
 
   /**
    * @brief GetMarkedCount
    * @return marked count
    */
-  uint32_t GetMarkedCount (void) const;
+  uint32_t GetMarkedBytes (void) const;
 
   /**
    * @brief NotifyReceived
@@ -80,8 +80,8 @@ public:
 
 private:
 
-  uint32_t m_markedAck;
-  uint32_t m_totalAck;
+  uint32_t m_markedBytes;
+  uint32_t m_totalBytes;
 
   class EcnRecorderListKey_t {
   public:

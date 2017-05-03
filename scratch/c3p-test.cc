@@ -17,7 +17,8 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("C3pTest");
 
 // attributes
-DataRate link_data_rate;    //!< bottleneck capacity
+DataRate link_data_rate;    //!< link capacity
+DataRate btnk_data_rate;    //!< bottleneck capacity
 Time link_delay;            //!< delay for each link (RTT = 6 * link_delay)
 uint32_t packet_size;       //!< packet size
 uint32_t queue_size;        //!< queue size for RED
@@ -44,6 +45,11 @@ QueueDiscContainer red_queue_discs;
 
 std::map<uint32_t, double> tx_time;   //!< time the first packet is sent
 std::map<uint32_t, double> rx_time;   //!< time the last packet is received
+std::map<uint32_t, uint32_t> rx_size;   //!< total rx bytes
+
+// throughput related
+std::map<uint32_t, uint32_t> last_rx_size;   //!< rx bytes in last slot
+std::map<uint32_t, std::vector<std::pair<double, double> > > throughput_list; //fId -> list<time, throughput>
 
 void
 SetupConfig (void)
@@ -70,7 +76,7 @@ SetupConfig (void)
   // C3 params
   Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (MilliSeconds (3)));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (MilliSeconds (1)));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (0.75));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (0.625));
   Config::SetDefault ("ns3::dcn::C3Tunnel::DataRate", DataRateValue (link_data_rate));
 
   // TBF params
@@ -106,7 +112,7 @@ SetupName (void)
 }
 
 void
-SetupTopo (uint32_t srcNum, uint32_t dstNum, const DataRate& bandwidth, const Time& delay)
+SetupTopo (uint32_t srcNum, uint32_t dstNum, const DataRate &linkBandwidth, const DataRate &btnkBandwidth, const Time &delay)
 {
   NS_LOG_INFO ("Create nodes");
   srcs.Create (srcNum);
@@ -127,7 +133,7 @@ SetupTopo (uint32_t srcNum, uint32_t dstNum, const DataRate& bandwidth, const Ti
 
   PointToPointHelper p2pHelper;
   p2pHelper.SetQueue ("ns3::DropTailQueue");
-  p2pHelper.SetDeviceAttribute ("DataRate", DataRateValue (bandwidth));
+  p2pHelper.SetDeviceAttribute ("DataRate", DataRateValue (linkBandwidth));
   p2pHelper.SetChannelAttribute ("Delay", TimeValue (delay));
 
   TrafficControlHelper pfifoHelper;
@@ -152,11 +158,12 @@ SetupTopo (uint32_t srcNum, uint32_t dstNum, const DataRate& bandwidth, const Ti
     }
   NS_LOG_INFO ("Setup router nodes");
   {
+    p2pHelper.SetDeviceAttribute ("DataRate", DataRateValue (btnkBandwidth));
     NetDeviceContainer devs = p2pHelper.Install (routers);
     // only backbone link has RED queue disc
     TrafficControlHelper redHelper;
     redHelper.SetRootQueueDisc ("ns3::RedQueueDisc",
-                                "LinkBandwidth", DataRateValue (bandwidth),
+                                "LinkBandwidth", DataRateValue (btnkBandwidth),
                                 "LinkDelay", TimeValue (delay));
     red_queue_discs = redHelper.Install (devs);
     ipv4AddrHelper.Assign (devs);
@@ -166,7 +173,7 @@ SetupTopo (uint32_t srcNum, uint32_t dstNum, const DataRate& bandwidth, const Ti
 }
 
 void
-CsTxTrace (uint32_t flowId, dcn::C3Tag c3Tag, Ptr<const Packet> p)
+TxTrace (uint32_t flowId, dcn::C3Tag c3Tag, Ptr<const Packet> p)
 {
   FlowIdTag flowIdTag;
   flowIdTag.SetFlowId (flowId);
@@ -179,16 +186,34 @@ CsTxTrace (uint32_t flowId, dcn::C3Tag c3Tag, Ptr<const Packet> p)
 }
 
 void
-CsRxTrace (Ptr<const Packet> packet, const Address &from)
+RxTrace (Ptr<const Packet> packet, const Address &from)
 {
   NS_LOG_FUNCTION (packet << from);
   FlowIdTag flowIdTag;
   bool retval = packet->PeekPacketTag (flowIdTag);
   NS_ASSERT (retval);
-  rx_time[flowIdTag.GetFlowId ()] = Simulator::Now ().GetSeconds ();
-  NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << ": " << flowIdTag.GetFlowId () << " received " << packet->GetSize ());
+  uint32_t fid = flowIdTag.GetFlowId ();
+  rx_time[fid] = Simulator::Now ().GetSeconds ();
+  rx_size[fid] += packet->GetSize ();
 }
 
+void
+ComputeThroughput (void)
+{
+  // todo compute total throughput && perflow throughput
+  double totalThroughput = 0.0;
+  for (auto it = rx_size.begin (); it != rx_size.end (); ++it)
+    {
+      double cur = (it->second - last_rx_size[it->first]) * (double) 8 / 1e4; /* Convert Application RX Packets to MBits. */
+      throughput_list[it->first].push_back (std::pair<double, double> (Simulator::Now ().GetSeconds (), cur));
+      last_rx_size[it->first] = it->second;
+      totalThroughput += cur;
+    }
+  throughput_list[10000].push_back (std::pair<double, double> (Simulator::Now ().GetSeconds (), totalThroughput));
+  Simulator::Schedule (MilliSeconds (10), &ComputeThroughput);
+}
+
+/// cs apps
 void
 SetupCsServer (NodeContainer nodes, uint16_t port)
 {
@@ -198,13 +223,13 @@ SetupCsServer (NodeContainer nodes, uint16_t port)
   serverApps.Stop (server_stop_time);
   for (auto it = serverApps.Begin (); it != serverApps.End (); ++it)
     {
-      (*it)->TraceConnectWithoutContext ("Rx", MakeCallback (&CsRxTrace));
+      (*it)->TraceConnectWithoutContext ("Rx", MakeCallback (&RxTrace));
     }
 }
 
 void
 SetupCsClient (Ptr<Node> node, const Address &serverAddr,
-               uint32_t flowId, const Time &startTime, uint64_t flowSize)
+               uint32_t flowId, uint64_t flowSize, const Time &startTime)
 {
   BulkSendHelper clientHelper ("ns3::L2dctSocketFactory", serverAddr);
   clientHelper.SetAttribute ("MaxBytes", UintegerValue (flowSize));
@@ -212,12 +237,54 @@ SetupCsClient (Ptr<Node> node, const Address &serverAddr,
   ApplicationContainer clientApp = clientHelper.Install (node);
   clientApp.Start (startTime);
   clientApp.Stop (client_stop_time);
+
   dcn::C3Tag c3Tag;
+  c3Tag.SetTenantId (0);    /// set all tenant id to 0
   c3Tag.SetType (dcn::C3Type::CS);
   c3Tag.SetFlowSize (flowSize);
-  c3Tag.SetTenantId (0);    /// set all tenant id to 0
-  clientApp.Get (0)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&CsTxTrace, flowId, c3Tag));
+  clientApp.Get (0)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId, c3Tag));
   // no need to set flow size in socket
+}
+
+/// DS apps
+void
+DsSocketTrace (uint64_t flowSize, Time deadline, Ptr<Socket> socket)
+{
+  socket->SetAttribute ("TotalBytes", UintegerValue (flowSize));
+  socket->SetAttribute ("Deadline", TimeValue (deadline));
+}
+
+void
+SetupDsServer (NodeContainer nodes, uint16_t port)
+{
+  PacketSinkHelper serverHelper ("ns3::D2tcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), port));
+  ApplicationContainer serverApps = serverHelper.Install (nodes);
+  serverApps.Start (server_start_time);
+  serverApps.Stop (server_stop_time);
+  for (auto it = serverApps.Begin (); it != serverApps.End (); ++it)
+    {
+      (*it)->TraceConnectWithoutContext ("Rx", MakeCallback (&RxTrace));
+    }
+}
+
+void
+SetupDsClient (Ptr<Node> node, const Address &serverAddr,
+               uint32_t flowId, uint64_t flowSize, const Time &deadline, const Time &startTime)
+{
+  BulkSendHelper clientHelper ("ns3::D2tcpSocketFactory", serverAddr);
+  clientHelper.SetAttribute ("MaxBytes", UintegerValue (flowSize));
+  clientHelper.SetAttribute ("SendSize", UintegerValue (packet_size));
+  ApplicationContainer clientApp = clientHelper.Install (node);
+  clientApp.Start (startTime);
+  clientApp.Stop (client_stop_time);
+
+  dcn::C3Tag c3Tag;
+  c3Tag.SetTenantId (0);    /// set all tenant id to 0
+  c3Tag.SetType (dcn::C3Type::DS);
+  c3Tag.SetFlowSize (flowSize);
+  c3Tag.SetDeadline (startTime + deadline);
+  clientApp.Get (0)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId, c3Tag));
+  clientApp.Get (0)->TraceConnectWithoutContext ("SocketCreate", MakeBoundCallback (&DsSocketTrace, flowSize, deadline));
 }
 
 void
@@ -230,15 +297,32 @@ SetupApp (bool enableCS, bool enableDS, bool enableLS)
       SetupCsServer (dsts.Get (0), port);
       InetSocketAddress serverAddr (dst_interfaces.GetAddress (0), port);
       int KB = 1000;
+      uint32_t flowId = 1000;
       for (int i = 0; i < 5; ++i)
         {
-          SetupCsClient (srcs.Get (0), serverAddr, FlowIdTag::AllocateFlowId (), client_start_time, 92 * KB);
-          SetupCsClient (srcs.Get (0), serverAddr, FlowIdTag::AllocateFlowId (), client_start_time, 138 * KB);
+          SetupCsClient (srcs.Get (0), serverAddr, flowId++, 920 * KB, client_start_time);
+        }
+      for (int i = 0; i < 5; ++i)
+        {
+          SetupCsClient (srcs.Get (0), serverAddr, flowId++, 1380 * KB, client_start_time);
         }
     }
   if (enableDS)
     {
-      ///\todo ds setup
+      // ds setup
+      uint16_t port = 50001;
+      SetupDsServer (dsts.Get (1), port);
+      InetSocketAddress serverAddr (dst_interfaces.GetAddress (1), port);
+      int KB = 1000;
+      uint32_t flowId = 2000;
+      for (int i = 0; i < 5; ++i)
+        {
+          SetupDsClient (srcs.Get (1), serverAddr, flowId++, 920 * KB, MilliSeconds (120), client_start_time);
+        }
+      for (int i = 0; i < 5; ++i)
+        {
+          SetupDsClient (srcs.Get (1), serverAddr, flowId++, 1380 * KB, MilliSeconds (150), client_start_time);
+        }
     }
   if (enableLS)
     {
@@ -271,12 +355,14 @@ main (int argc, char *argv[])
 {
   bool printStats = true;
   bool writeFct = false;
+  bool writeThroughput = false;
   bool enableCS = false;
   bool enableDS = false;
   bool enableLS = false;
   std::string pathOut ("."); // Current directory
 
-  link_data_rate = DataRate ("500Mbps");
+  link_data_rate = DataRate ("1000Mbps");
+  btnk_data_rate = DataRate ("1000Mbps");
   link_delay = Time ("50us");
   packet_size = 1024;
   queue_size = 250;
@@ -300,11 +386,12 @@ main (int argc, char *argv[])
   cmd.AddValue ("enableC3", "<0/1> enable C3 in test", enable_c3);
   cmd.AddValue ("pathOut", "Path to save results", pathOut);
   cmd.AddValue ("writeFct", "<0/1> to write FCT results", writeFct);
+  cmd.AddValue ("writeThroughput", "<0/1> to write throughput results", writeThroughput);
 
   cmd.Parse (argc, argv);
 
   SetupConfig ();
-  SetupTopo (3, 3, link_data_rate, link_delay);
+  SetupTopo (3, 3, link_data_rate, btnk_data_rate, link_delay);
 
   DctcpSocketFactoryHelper dctcpHelper;
 
@@ -322,11 +409,26 @@ main (int argc, char *argv[])
       l3_5Helper.Install(srcs);
       l3_5Helper.Install (dsts);
       dcn::C3Division::AddDivisionType (dcn::C3Type::CS, "ns3::dcn::C3CsDivision");
+      dcn::C3Division::AddDivisionType (dcn::C3Type::DS, "ns3::dcn::C3DsDivision");
       // create division : one division just for test
-      dcn::C3Division::CreateDivision (0, dcn::C3Type::CS);
+      if (enableCS)
+        {
+          Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::CS);
+          division->SetAttribute ("Weight", DoubleValue (0.4));
+        }
+      if (enableDS)
+        {
+          Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::DS);
+          division->SetAttribute ("Weight", DoubleValue (0.6));
+        }
     }
 
   SetupApp (enableCS, enableDS, enableLS);
+
+  if (writeThroughput)
+    {
+      Simulator::Schedule (server_start_time, &ComputeThroughput);
+    }
 
   Simulator::Stop (server_stop_time);
   Simulator::Run ();
@@ -335,16 +437,33 @@ main (int argc, char *argv[])
     {
       PrintStats ();
     }
-  ///\todo output cs result(FCT)
+  // output cs result(FCT)
   if (writeFct)
     {
       std::stringstream ss;
-      ss << pathOut << "/fct.txt";
+      ss << pathOut << "/result.txt";
       std::ofstream out (ss.str ());
       for (auto& entry : tx_time)
         {
-          out << entry.first << "," << entry.second
-              << "," << rx_time[entry.first] << std::endl;
+          out << entry.first
+              << "," << entry.second
+              << "," << rx_time[entry.first]
+              << "," << rx_size[entry.first]
+              << std::endl;
+        }
+    }
+
+  if (writeThroughput)
+    {
+      for (auto& resultList : throughput_list)
+        {
+          std::stringstream ss;
+          ss << pathOut << "/throughput-" << resultList.first << ".txt";
+          std::ofstream out (ss.str ());
+          for (auto& entry : resultList.second)
+            {
+              out << entry.first << "," << entry.second << std::endl;
+            }
         }
     }
 

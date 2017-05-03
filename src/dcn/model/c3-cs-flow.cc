@@ -47,7 +47,7 @@ void
 C3CsFlow::UpdateInfo (void)
 {
   NS_LOG_FUNCTION (this);
-  int32_t remainSize = std::max (m_flowSize - m_sentSize, m_bufferedSize);
+  int32_t remainSize = std::max (m_flowSize - m_sentBytes, m_bufferedBytes);
   m_weight = remainSize > 0 ? 1.0 / remainSize : 0;
 }
 
