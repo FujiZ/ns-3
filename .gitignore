@@ -43,5 +43,7 @@ massif.*
 *.plt
 *.png
 *.dat
+*.bak
+result.*
 .DS_Store
 .directory

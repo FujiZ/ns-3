@@ -1,0 +1,49 @@
+#!/bin/bash
+
+git_branch="master"
+if [ -f "./.git/HEAD" ]; then
+  head=$(< "./.git/HEAD")
+    if [[ $head = ref:\ refs/heads/* ]]; then
+      git_branch="${head#*/*/}"
+    fi  
+fi  
+#echo $git_branch
+
+
+NS3CONFIG="--enable-examples --enable-tests"
+#NS3DEBUG="--build-profile=debug --out=build/debug"
+#NS3RELEASE="--build-profile=release --out=build/release"
+#NS3OPT="--build-profile=optimized --out=build/optimized"
+NS3MODE="optimized"
+NS3BRANCH="addcn"
+
+#./waf configure $NS3CONFIG $NS3OPT
+#./waf configure $NS3CONFIG $NS3DEBUG
+#./waf configure $NS3CONFIG $NS3RELEASE
+#./waf build
+while getopts "dor" arg #选项后面的冒号表示该选项需要参数
+do
+  case $arg in
+  #b)
+  #  NS3BRANCH=$OPTARG      #参数存在$OPTARG中
+  #  ;;
+  d)
+    NS3MODE="debug"
+    ;;
+  o)
+    NS3MODE="optimized"
+    ;;
+  r)
+    NS3MODE="release"
+    ;;
+  ?)  #当有不认识的选项的时候arg为?
+    echo "unkonw argument"
+    exit 1
+    ;;
+  esac
+done
+
+NS3BUILD="--build-profile="${NS3MODE}" --out=build/"${git_branch}"/"${NS3MODE}
+#echo $NS3BUILD
+./waf.bak configure $NS3CONFIG $NS3BUILD
+./waf.bak build
