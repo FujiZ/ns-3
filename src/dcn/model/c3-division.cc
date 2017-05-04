@@ -134,6 +134,12 @@ C3Division::Update (void)
   m_timer.Schedule (m_interval);
 }
 
+C3Type
+C3Division::GetC3Type (void)
+{
+  return m_type;
+}
+
 void
 C3Division::DoInitialize (void)
 {

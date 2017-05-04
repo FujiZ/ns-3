@@ -78,6 +78,11 @@ public:
    */
   void Update (void);
 
+  /**
+   * @brief Get C3Type
+   * Ensures field m_type is used to avoid compile issues
+   */
+  C3Type GetC3Type (void);
 protected:
 
   virtual void DoInitialize (void);
