@@ -39,7 +39,8 @@ C3CsFlow::Send (Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION (this << packet);
   C3Tag c3Tag;
-  NS_ASSERT (packet->PeekPacketTag (c3Tag));
+  bool retval = packet->PeekPacketTag (c3Tag);
+  NS_ASSERT (retval);
   C3Flow::Send (packet);
 }
 

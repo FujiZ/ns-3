@@ -40,7 +40,7 @@ C3CsTunnel::~C3CsTunnel ()
 void
 C3CsTunnel::Send (Ptr<Packet> packet, uint8_t protocol)
 {
-  NS_LOG_FUNCTION (this << packet << (uint32_t)protocol);
+  NS_LOG_FUNCTION (this << packet << static_cast<uint32_t> (protocol));
 
   FlowIdTag flowIdTag;
   bool retval = packet->PeekPacketTag (flowIdTag);
