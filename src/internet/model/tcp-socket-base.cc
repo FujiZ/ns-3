@@ -2863,8 +2863,15 @@ TcpSocketBase::SendPendingData (bool withAck)
 
       uint32_t s = std::min (w, m_tcb->m_segmentSize);  // Send no more than window
       uint32_t sz = SendDataPacket (m_tcb->m_nextTxSequence, s, withAck);
-      nPacketsSent++;                             // Count sent this loop
-      m_tcb->m_nextTxSequence += sz;                     // Advance next tx sequence
+      if (sz > 0)
+        {
+          nPacketsSent++;                             // Count sent this loop
+          m_tcb->m_nextTxSequence += sz;                     // Advance next tx sequence
+        }
+      else
+        {
+          break;
+        }
     }
   if (nPacketsSent > 0)
     {
