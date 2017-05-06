@@ -176,9 +176,9 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
       rflow->NotifyReceive (packet, ipHeader);
 #else
       Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
-      if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
-        flow->UpdateEcnStatistics(tcpHeader); // TO closely track dctcp
-      else
+      //if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
+      //  flow->UpdateEcnStatistics(tcpHeader); // TO closely track dctcp
+      //else
         flow->UpdateEcnStatistics(ipHeader);
 #endif
     }

@@ -225,13 +225,6 @@ ADDCNFlow::UpdateEcnStatistics(const Ipv4Header &header)
 }
 
 void
-ADDCNFlow::UpdateEcnStatistics(const TcpHeader &tcpHeader)
-{
-  NS_LOG_FUNCTION (this << tcpHeader);
-  m_ecnRecorder->NotifyReceived(tcpHeader);
-}
-
-void
 ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
 {
 #ifdef DCTCPACK
@@ -259,15 +252,15 @@ ADDCNFlow::UpdateAlpha(const TcpHeader &tcpHeader)
       m_ackedBytesEcn = m_ackedBytesTotal = 0;
     }
 #else
-  NS_LOG_FUNCTION (this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
+  NS_LOG_FUNCTION (this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetMarkedRatio());
   // curSeq > m_updateAlphaSeq ensures updating alpha only one time every RTT
   if(tcpHeader.GetAckNumber () > m_updateAlphaSeq)
   {
     m_updateAlphaSeq = m_dctcpMaxSeq;
-    m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
+    m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetMarkedRatio ();
     m_ecnRecorder->Reset();
   }
-  NS_LOG_FUNCTION (this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetRatio());
+  NS_LOG_FUNCTION (this << tcpHeader << "m_updateAlphaSeq" << m_updateAlphaSeq << "m_alpha" << m_alpha << "Ratio" << m_ecnRecorder->GetMarkedRatio());
 #endif
 }
 
@@ -693,7 +686,7 @@ void
 ADDCNFlow::UpdateAlpha()
 {
   NS_LOG_FUNCTION (this);
-  m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetRatio ();
+  m_alpha = (1 - m_g) * m_alpha + m_g * m_ecnRecorder->GetMarkedRatio ();
 }
 
 SequenceNumber32 

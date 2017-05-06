@@ -1,7 +1,7 @@
 #ifndef ADDCN_FLOW_H
 #define ADDCN_FLOW_H
 
-#define DCTCPACK
+//#define DCTCPACK
 
 #include <stdint.h>
 
@@ -83,7 +83,6 @@ public:
    * \param header Ipv4Header where CE mark holds
    */
   void UpdateEcnStatistics(const Ipv4Header &header);
-  void UpdateEcnStatistics(const TcpHeader &tcpHeader);
 
   /**
    * \brief Called every time an ACK was received by the sender
