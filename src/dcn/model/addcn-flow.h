@@ -1,7 +1,7 @@
 #ifndef ADDCN_FLOW_H
 #define ADDCN_FLOW_H
 
-//#define DCTCPACK
+#define DCTCPACK
 
 #include <stdint.h>
 
