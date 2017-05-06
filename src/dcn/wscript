@@ -22,8 +22,15 @@ def build(bld):
         'model/c3-l3_5-protocol.cc',
         'model/c3-tag.cc',
         'model/c3-tunnel.cc',
+        'model/addcn-flow.cc',
+        'model/addcn-slice.cc',
+        'model/addcn-l3_5-protocol.cc',
         'model/ip-l3_5-protocol.cc',
         'model/token-bucket-filter.cc',
+        'model/addcn-bulk-send-application.cc',
+        'model/addcn-packet-sink.cc',
+        'helper/addcn-bulk-send-helper.cc',
+        'helper/addcn-packet-sink-helper.cc',
         'helper/ip-l3_5-protocol-helper.cc',
     ]
 
@@ -48,8 +55,15 @@ def build(bld):
         'model/c3-tag.h',
         'model/c3-tunnel.h',
         'model/c3-type.h',
+        'model/addcn-flow.h',
+        'model/addcn-slice.h',
+        'model/addcn-l3_5-protocol.h',
         'model/ip-l3_5-protocol.h',
         'model/token-bucket-filter.h',
+        'model/addcn-bulk-send-application.h',
+        'model/addcn-packet-sink.h',
+        'helper/addcn-bulk-send-helper.h',
+        'helper/addcn-packet-sink-helper.h',
         'helper/ip-l3_5-protocol-helper.h',
     ]
 

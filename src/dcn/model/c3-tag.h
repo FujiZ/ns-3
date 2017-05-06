@@ -43,6 +43,9 @@ public:
   void SetPacketSize (uint32_t packetSize);
   uint32_t GetPacketSize (void) const;
 
+  void SetSegmentSize (uint32_t segmentSize);
+  uint32_t GetSegmentSize (void) const;
+
   void SetDeadline (Time deadline);
   Time GetDeadline (void) const;
 
@@ -54,6 +57,7 @@ private:
   uint32_t m_tenantId;  //!< tenant id of current flow
   uint32_t m_flowSize;   //!< the size of current flow(in Byte)
   uint32_t m_packetSize; //!< the size of packet
+  uint32_t m_segmentSize; //!< the size of segment
   Time m_deadline;       //!< deadline of flow(used in DS flow)
 };
 
