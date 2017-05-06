@@ -219,15 +219,15 @@ SetupApp (bool enableLS, bool enableDS, bool enableCS)
       // 1 long flow
       int id = 1;
       SetupCsClient (srcs.Get (0), serverAddr, id++, client_start_time, 1000 * MB);
-      SetupCsClient (srcs.Get (0), serverAddr, id++, client_start_time, 1000 * MB);
+      //SetupCsClient (srcs.Get (0), serverAddr, id++, client_start_time, 1000 * MB);
       // 20 short flows, flowId as 2
-      /*
+      
       int KB = 1024;
       for (uint32_t i = 1; i <= short_flow_num; ++i)
         {
           SetupCsClient (srcs.Get (i), serverAddr, id, client_start_time + Seconds(3), short_flow_size * KB);
         }
-        */
+        
     }
 }
 
@@ -281,7 +281,8 @@ main (int argc, char *argv[])
   queue_size = 250;
   threhold = 20;
 
-  short_flow_num = 0;
+  short_flow_num = 20;
+  short_flow_size = 50;
 
   CommandLine cmd;
   cmd.AddValue ("shortFlowNum", "Number of short flows", short_flow_num);
