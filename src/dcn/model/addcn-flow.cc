@@ -1213,6 +1213,7 @@ ADDCNFlow::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
             }
         }
 
+      //if (callCongestionControl && !(tcpHeader.GetFlags () & TcpHeader::ECE))
       if (callCongestionControl)
         {
           IncreaseWindow (m_tcb, newSegsAcked);
