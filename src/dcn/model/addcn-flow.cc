@@ -813,7 +813,10 @@ ADDCNFlow::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool isRe
 void
 ADDCNFlow::EstimateRtt (const TcpHeader& tcpHeader)
 {
-  UpdateAlpha(tcpHeader);
+  if (!(tcpHeader.GetFlags () & TcpHeader::SYN))
+    {
+      UpdateAlpha(tcpHeader);
+    }
 
   SequenceNumber32 ackSeq = tcpHeader.GetAckNumber ();
   Time m = Time (0.0);
