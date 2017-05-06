@@ -219,6 +219,14 @@ def build(bld):
         'model/rip.cc',
         'model/rip-header.cc',
         'helper/rip-helper.cc',
+        'model/dctcp-socket.cc',
+        'model/d2tcp-socket.cc',
+        'model/l2dct-socket.cc',
+        'model/dctcp-socket-factory-base.cc',
+        'model/dctcp-socket-factory.cc',
+        'model/d2tcp-socket-factory.cc',
+        'model/l2dct-socket-factory.cc',
+        'helper/dctcp-socket-factory-helper.cc',
         ]
 
     internet_test = bld.create_ns3_module_test_library('internet')
@@ -386,6 +394,14 @@ def build(bld):
         'model/rip.h',
         'model/rip-header.h',
         'helper/rip-helper.h',
+        'model/dctcp-socket.h',
+        'model/d2tcp-socket.h',
+        'model/l2dct-socket.h',
+        'model/dctcp-socket-factory-base.h',
+        'model/dctcp-socket-factory.h',
+        'model/d2tcp-socket-factory.h',
+        'model/l2dct-socket-factory.h',
+        'helper/dctcp-socket-factory-helper.h',
        ]
 
     if bld.env['NSC_ENABLED']:

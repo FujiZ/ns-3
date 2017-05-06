@@ -40,17 +40,17 @@ C3DsTunnel::~C3DsTunnel ()
 void
 C3DsTunnel::Send (Ptr<Packet> packet, uint8_t protocol)
 {
-  NS_LOG_FUNCTION (this << packet << (uint32_t)protocol);
+  NS_LOG_FUNCTION (this << packet << static_cast<uint32_t> (protocol));
   FlowIdTag flowIdTag;
-  NS_ASSERT (packet->PeekPacketTag (flowIdTag));
+  bool retval = packet->PeekPacketTag (flowIdTag);
+  NS_ASSERT (retval);
   uint32_t flowId = flowIdTag.GetFlowId ();
 
-  Ptr<C3Flow> flow = GetFlow (flowId, protocol);
-  flow->Send (packet);
+  GetFlow (flowId, protocol)->Send (packet);
 }
 
 void
-C3DsTunnel::Schedule (void)
+C3DsTunnel::ScheduleFlow (void)
 {
   NS_LOG_FUNCTION (this);
   std::vector<Ptr<C3DsFlow> > flowList;
@@ -63,10 +63,10 @@ C3DsTunnel::Schedule (void)
     }
   if (DataRate (rateRequest) <= GetRate ())
     {
-      double scaleFactor = (double)(GetRate ().GetBitRate ()) / rateRequest;
+      double factor = static_cast<double> (GetRate ().GetBitRate ()) / rateRequest;
       for (auto flow : flowList)
         {
-          flow->SetRate (DataRate (scaleFactor * flow->GetRateRequest ().GetBitRate ()));
+          flow->SetRate (DataRate (factor * flow->GetRateRequest ().GetBitRate ()));
         }
     }
   else

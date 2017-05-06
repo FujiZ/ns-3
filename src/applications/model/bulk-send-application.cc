@@ -67,6 +67,9 @@ BulkSendApplication::GetTypeId (void)
     .AddTraceSource ("Tx", "A new packet is created and is sent",
                      MakeTraceSourceAccessor (&BulkSendApplication::m_txTrace),
                      "ns3::Packet::TracedCallback")
+    .AddTraceSource ("SocketCreate", "Socket is created.",
+                     MakeTraceSourceAccessor (&BulkSendApplication::m_socketCreateTrace),
+                     "ns3::BulkSendApplication::SocketCreateTracedCallback")
   ;
   return tid;
 }
@@ -127,6 +130,8 @@ void BulkSendApplication::StartApplication (void) // Called at time specified by
                           "BulkSend requires SOCK_STREAM or SOCK_SEQPACKET. "
                           "In other words, use TCP instead of UDP.");
         }
+
+      m_socketCreateTrace (m_socket);
 
       if (Inet6SocketAddress::IsMatchingType (m_peer))
         {

@@ -7,7 +7,6 @@
 #include "ns3/object.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv4-header.h"
-#include "ns3/tcp-header.h"
 
 #include "c3-type.h"
 
@@ -42,13 +41,13 @@ public:
    * @brief GetRatio
    * @return marked/total ratio
    */
-  double GetRatio (void) const;
+  double GetMarkedRatio (void) const;
 
   /**
    * @brief GetMarkedCount
    * @return marked count
    */
-  uint32_t GetMarkedCount (void) const;
+  uint32_t GetMarkedBytes (void) const;
 
   /**
    * @brief NotifyReceived
@@ -56,7 +55,6 @@ public:
    * called by receiver when a ip packet is received
    */
   void NotifyReceived (Ipv4Header const &header);
-  void NotifyReceived (TcpHeader const &tcpHeader);
 
   /**
    * @brief GetEcnRecorder
@@ -82,8 +80,8 @@ public:
 
 private:
 
-  uint32_t m_markedAck;
-  uint32_t m_totalAck;
+  uint32_t m_markedBytes;
+  uint32_t m_totalBytes;
 
   class EcnRecorderListKey_t {
   public:

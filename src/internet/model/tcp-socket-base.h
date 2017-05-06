@@ -966,7 +966,7 @@ protected:
   /**
    * @brief Send Ack packet; add ecn mark if needed
    */
-  virtual void SendAckPacket (void);
+  virtual void SendACK (void);
 
   /**
    * @brief UpdateEcnState
@@ -977,10 +977,22 @@ protected:
   virtual void UpdateEcnState (const TcpHeader &tcpHeader);
 
   /**
-   * @brief HalveCwnd when receive ECE ACK before send another data packet;
-   * called in sendDataPacket;
+   * @brief Decrease window when receive ECE ACK before send another data packet;
+   * called in sendDataPacket; cut down cwnd && ssthresh
    */
-  virtual void HalveCwnd (void);
+  virtual void DecreaseWindow (void);
+
+  /**
+   * @brief Congestion avoidance algorithm implementation
+   * @param segmentsAcked count of segments acked
+   */
+  virtual void IncreaseWindow (uint32_t segmentAcked);
+
+  /**
+   * @brief determining whether empty packet like pure ACK or control packet should be marked ECT
+   * @return true if mark is needed
+   */
+  virtual bool MarkEmptyPacket (void) const;
 
   /**
    * \brief Performs a safe subtraction between a and b (a-b)

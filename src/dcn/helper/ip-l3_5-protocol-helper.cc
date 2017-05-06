@@ -22,7 +22,7 @@ IpL3_5ProtocolHelper::IpL3_5ProtocolHelper()
   NS_LOG_FUNCTION (this);
 }
 
-IpL3_5ProtocolHelper::IpL3_5ProtocolHelper(std::string tid)
+IpL3_5ProtocolHelper::IpL3_5ProtocolHelper(const std::string &tid)
   : m_agentFactory (tid)
 {
   NS_LOG_FUNCTION (this);
@@ -52,6 +52,7 @@ IpL3_5ProtocolHelper::Install (Ptr<Node> node) const
   for (L4ListValue_t l4ProtoInfo : m_ipL4Protocols)
     {
       Ptr<IpL4Protocol> l4Protocol = node->GetObject<IpL4Protocol> (l4ProtoInfo.first);
+      NS_ASSERT (l4Protocol);
       agent->SetProtocolNumber (l4Protocol->GetProtocolNumber ());
       agent->SetDownTarget (l4Protocol->GetDownTarget ());
       agent->SetDownTarget6 (l4Protocol->GetDownTarget6 ());

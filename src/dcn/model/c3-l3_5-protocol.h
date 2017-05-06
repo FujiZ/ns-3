@@ -50,17 +50,6 @@ protected:
 
   virtual void DoDispose (void);
 
-private:
-
-  /**
-   * @brief GetPacketSize
-   * @param packet
-   * @param protocol the protocol number of packet
-   * @return packet size in bytes
-   * Get the data field size of a packet
-   */
-  uint32_t GetPacketSize (Ptr<Packet> packet, uint8_t protocol);
-
 };
 
 } //namespace dcn

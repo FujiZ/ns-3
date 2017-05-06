@@ -1,10 +1,11 @@
 #ifndef DCTCP_SOCKET_H
 #define DCTCP_SOCKET_H
 
-#include "ns3/tcp-socket-base.h"
+#include "tcp-socket-base.h"
+#include "tcp-congestion-ops.h"
+#include "tcp-l4-protocol.h"
 
 namespace ns3 {
-namespace dcn {
 
 class DctcpSocket : public TcpSocketBase
 {
@@ -25,7 +26,7 @@ public:
   /**
    * Create an unbound TCP socket
    */
-  DctcpSocket(void);
+  DctcpSocket (void);
 
   /**
    * Clone a TCP socket, for use upon receiving a connection request in LISTEN state
@@ -37,14 +38,15 @@ public:
 protected:
 
   // inherited from TcpSocketBase
-  virtual void SendAckPacket (void);
+  virtual void SendACK (void);
   virtual void EstimateRtt (const TcpHeader& tcpHeader);
   virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                  bool isRetransmission);
-  virtual void Retransmit (void);
+  virtual void DoRetransmit (void);
   virtual Ptr<TcpSocketBase> Fork (void);
   virtual void UpdateEcnState (const TcpHeader &tcpHeader);
-  virtual void HalveCwnd (void);
+  virtual void DecreaseWindow (void);
+  virtual bool MarkEmptyPacket (void) const;
 
   void UpdateAlpha (const TcpHeader &tcpHeader);
 
@@ -59,7 +61,6 @@ protected:
 
 };
 
-} // namespace dcn
 } // namespace ns3
 
 #endif // DCTCP_SOCKET_H

@@ -92,6 +92,7 @@ public:
 
 
 protected:
+
   virtual void DoDispose (void);
   /*
    * This function will notify other components connected to the node that a new stack member is now connected
@@ -136,6 +137,7 @@ protected:
   void ForwardDown (Ptr<Packet> p,
                     Ipv4Address src, Ipv4Address dst,
                     uint8_t protocol, Ptr<Ipv4Route> route);
+
   /**
    * @brief This function is called by subclass protocol when sending packets
    * @param p packet tobe send
@@ -147,7 +149,6 @@ protected:
   void ForwardDown6 (Ptr<Packet> p,
                      Ipv6Address src, Ipv6Address dst,
                      uint8_t protocol, Ptr<Ipv6Route> route);
-
 
 private:
   /**
@@ -165,7 +166,6 @@ private:
   Ptr<Node> m_node;   //!< the node this stack is associated with
   IpL4Protocol::DownTargetCallback m_downTarget;   //!< Callback to send packets over IPv4
   IpL4Protocol::DownTargetCallback6 m_downTarget6; //!< Callback to send packets over IPv6
-
 };
 
 } //namespace dcn

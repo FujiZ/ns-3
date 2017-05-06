@@ -39,7 +39,8 @@ C3CsFlow::Send (Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION (this << packet);
   C3Tag c3Tag;
-  NS_ASSERT (packet->PeekPacketTag (c3Tag));
+  bool retval = packet->PeekPacketTag (c3Tag);
+  NS_ASSERT (retval);
   C3Flow::Send (packet);
 }
 
@@ -47,7 +48,7 @@ void
 C3CsFlow::UpdateInfo (void)
 {
   NS_LOG_FUNCTION (this);
-  int32_t remainSize = std::max (m_flowSize - m_sendedSize, m_bufferedSize);
+  int32_t remainSize = std::max (m_flowSize - m_sentBytes, m_bufferedBytes);
   m_weight = remainSize > 0 ? 1.0 / remainSize : 0;
 }
 

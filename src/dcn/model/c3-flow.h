@@ -29,20 +29,24 @@ public:
   C3Flow ();
 
   virtual ~C3Flow ();
+
   /**
    * \brief callback to forward packets
    */
   typedef Callback<void, Ptr<Packet>, uint8_t> ForwardTargetCallback;
+
   /**
    * \brief set forward target
    * \param cb forward target
    */
   void SetForwardTarget (ForwardTargetCallback cb);
+
   /**
    * @brief Set Protocol number
    * @param protocol l4 protocol number
    */
   void SetProtocol (uint8_t protocol);
+
   /**
    * \brief This function is called by sender end when sending packets
    * \param p the packet for controller to receive
@@ -53,8 +57,8 @@ public:
 
   /**
    * @brief Update tunnel info (weight)
-   * called by upper division
-   * @todo maybe the update of weight and rate should seperate
+   * called by upper tunnel
+   * the update of weight and rate is seperate
    */
   virtual void UpdateInfo (void) = 0;
 
@@ -71,13 +75,16 @@ public:
   void SetRate (DataRate rate);
 
 protected:
+
   virtual void DoDispose (void);
+
   /**
    * @brief Forward callback to forward packets
    * @param packet the packet tobe sent out
    * usually used as callback
    */
   virtual void Forward (Ptr<Packet> packet);
+
   /**
    * @brief Drop callback to drop packet
    * @param packet the packet to drop
@@ -86,12 +93,23 @@ protected:
   virtual void Drop (Ptr<const Packet> packet);
 
 protected:
+
   int32_t m_flowSize;    //!< the total size of current flow
-  int32_t m_sendedSize;  //!< the sended size of current flow
-  int32_t m_bufferedSize;  //!< the size of current buffer
+  int32_t m_sentBytes;    //!< the sent size of current flow
+  int32_t m_bufferedBytes;  //!< the size of current buffer
   double m_weight;  //!< weight
 
 private:
+
+  /**
+   * @brief GetPacketSize
+   * @param packet
+   * @param protocol the protocol number of packet
+   * @return packet size in bytes
+   * Get the data field size of a packet
+   */
+  uint32_t GetPacketSize (Ptr<const Packet> packet) const;
+
   uint8_t m_protocol;    //!< the protocol number of current flow
   Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
   ForwardTargetCallback m_forwardTarget;    //!< callback to forward packet

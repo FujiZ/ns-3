@@ -1,6 +1,6 @@
 #include "c3-division.h"
 
-#include "cmath"
+#include <cmath>
 
 #include "ns3/log.h"
 #include "ns3/object-factory.h"
@@ -15,10 +15,6 @@ NS_OBJECT_ENSURE_REGISTERED (C3Division);
 
 C3Division::DivisionList_t C3Division::m_divisionList;
 C3Division::DivisionTypeList_t C3Division::m_divisionTypeList;
-Time C3Division::m_startTime;
-Time C3Division::m_stopTime;
-Time C3Division::m_interval;
-Timer C3Division::m_timer (Timer::CANCEL_ON_DESTROY);
 
 TypeId
 C3Division::GetTypeId (void)
@@ -31,6 +27,11 @@ C3Division::GetTypeId (void)
                      UintegerValue (0),
                      MakeUintegerAccessor (&C3Division::m_tenantId),
                      MakeUintegerChecker<uint32_t> ())
+      .AddAttribute ("Interval",
+                     "Interval to execute division update.",
+                     TimeValue (Time ("200us")),
+                     MakeTimeAccessor (&C3Division::m_interval),
+                     MakeTimeChecker (Time (0)))
       .AddAttribute ("Weight",
                      "The weight for Division",
                      DoubleValue (1.0),
@@ -42,10 +43,12 @@ C3Division::GetTypeId (void)
 
 C3Division::C3Division (C3Type type)
   : m_tenantId (0),
-    //m_type (type),
-    m_weight (0.0)
+    m_type (type),
+    m_weight (0.0),
+    m_timer (Timer::CANCEL_ON_DESTROY)
 {
   NS_LOG_FUNCTION (this);
+  Simulator::ScheduleNow (&C3Division::Initialize, this);
 }
 
 C3Division::~C3Division ()
@@ -98,51 +101,6 @@ C3Division::AddDivisionType (C3Type type, std::string tid)
 }
 
 void
-C3Division::Start (Time start)
-{
-  NS_LOG_FUNCTION (start);
-  m_startTime = start;
-  if (!m_timer.IsRunning ())
-    {
-      NS_LOG_DEBUG ("change start time");
-      m_timer.SetFunction (&C3Division::UpdateAll);
-      // reschedule start event
-      m_timer.Remove ();
-      m_timer.Schedule (m_startTime);
-    }
-}
-
-void
-C3Division::Stop (Time stop)
-{
-  NS_LOG_FUNCTION (stop);
-  m_stopTime = stop;
-}
-
-void
-C3Division::SetInterval (Time interval)
-{
-  NS_LOG_FUNCTION (interval);
-  m_interval = interval;
-}
-
-void
-C3Division::UpdateAll (void)
-{
-  NS_LOG_FUNCTION_NOARGS ();
-
-  for (auto it = m_divisionList.begin (); it != m_divisionList.end (); ++it)
-    {
-      Ptr<C3Division> division = it->second;
-      division->Update ();
-    }
-  if (Simulator::Now () + m_interval <= m_stopTime)
-    {
-      m_timer.Schedule (m_interval);
-    }
-}
-
-void
 C3Division::Update (void)
 {
   NS_LOG_FUNCTION (this);
@@ -150,30 +108,58 @@ C3Division::Update (void)
   for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
     {
       Ptr<C3Tunnel> tunnel = it->second;
-      tunnel->UpdateInfo ();
       weight += tunnel->GetWeightRequest ();
     }
   // here to check if weight == 0.0
-  double lambda = std::fabs (weight) > 10e-7 ? m_weight / weight : 0.0;    // lambda: scale factor
-  for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
+  if (std::fabs (weight) > 10e-7)
     {
-      Ptr<C3Tunnel> tunnel = it->second;
-      tunnel->SetWeight (lambda * tunnel->GetWeightRequest ());
-      tunnel->UpdateRate ();
-      tunnel->Schedule ();
+      double factor =  m_weight / weight;    // lambda: scale factor
+      for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
+        {
+          Ptr<C3Tunnel> tunnel = it->second;
+          tunnel->SetWeight (factor * tunnel->GetWeightRequest ());
+        }
     }
+  else if (!m_tunnelList.empty ())
+    {
+      // if weight == 0: divide weight equally
+      weight = m_weight / m_tunnelList.size ();
+      for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
+        {
+          Ptr<C3Tunnel> tunnel = it->second;
+          tunnel->SetWeight (weight);
+        }
+    }
+  // schedule next update
+  m_timer.Schedule (m_interval);
+}
+
+C3Type
+C3Division::GetC3Type (void)
+{
+  return m_type;
+}
+
+void
+C3Division::DoInitialize (void)
+{
+  NS_LOG_FUNCTION (this);
+  m_timer.SetFunction (&C3Division::Update, this);
+  m_timer.Schedule (m_interval);
+  Object::DoInitialize ();
 }
 
 void
 C3Division::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
+  m_timer.Cancel ();
   m_tunnelList.clear ();
   Object::DoDispose ();
 }
 
 uint32_t
-C3Division::GetTenantId (void)
+C3Division::GetTenantId (void) const
 {
   return m_tenantId;
 }

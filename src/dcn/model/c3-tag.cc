@@ -27,7 +27,8 @@ C3Tag::C3Tag ()
     m_tenantId (0),
     m_flowSize (0),
     m_packetSize (0),
-    m_segmentSize (1500)
+    m_segmentSize (1500),
+    m_deadline ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -42,6 +43,7 @@ C3Tag::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
+
 uint32_t
 C3Tag::GetSerializedSize (void) const
 {
@@ -54,28 +56,31 @@ C3Tag::GetSerializedSize (void) const
       + sizeof (m_segmentSize)
       + sizeof (double);
 }
+
 void
 C3Tag::Serialize (TagBuffer buf) const
 {
   NS_LOG_FUNCTION (this << &buf);
   buf.WriteU8 (static_cast<uint8_t> (m_type));
   buf.WriteU32 (m_tenantId);
-  buf.WriteU64 (m_flowSize);
+  buf.WriteU32 (m_flowSize);
   buf.WriteU32 (m_packetSize);
   buf.WriteU32 (m_segmentSize);
-  buf.WriteDouble (m_deadline.ToDouble (Time::S));  ///time resolution in second
+  buf.WriteDouble (m_deadline.GetSeconds ());  ///time resolution in second
 }
+
 void
 C3Tag::Deserialize (TagBuffer buf)
 {
   NS_LOG_FUNCTION (this << &buf);
   m_type = static_cast<C3Type> (buf.ReadU8 ());
   m_tenantId = buf.ReadU32 ();
-  m_flowSize = buf.ReadU64 ();
+  m_flowSize = buf.ReadU32 ();
   m_packetSize = buf.ReadU32 ();
   m_segmentSize = buf.ReadU32 ();
   m_deadline = Time::FromDouble (buf.ReadDouble (), Time::S);
 }
+
 void
 C3Tag::Print (std::ostream &os) const
 {
@@ -114,13 +119,13 @@ C3Tag::GetTenantId (void) const
 }
 
 void
-C3Tag::SetFlowSize (uint64_t flowSize)
+C3Tag::SetFlowSize (uint32_t flowSize)
 {
   NS_LOG_FUNCTION (this << flowSize);
   m_flowSize = flowSize;
 }
 
-uint64_t
+uint32_t
 C3Tag::GetFlowSize (void) const
 {
   return m_flowSize;
@@ -163,6 +168,23 @@ Time
 C3Tag::GetDeadline (void) const
 {
   return m_deadline;
+}
+
+bool
+C3Tag::operator == (const C3Tag &other) const
+{
+  return m_type == other.m_type
+      && m_tenantId == other.m_tenantId
+      && m_flowSize == other.m_flowSize
+      && m_packetSize == other.m_packetSize
+      && m_segmentSize == other.m_segmentSize
+      && m_deadline == other.m_deadline;
+}
+
+bool
+C3Tag::operator != (const C3Tag &other) const
+{
+  return !operator == (other);
 }
 
 } //namespace dcn

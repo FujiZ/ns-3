@@ -25,8 +25,8 @@ C3EcnRecorder::GetTypeId (void)
 }
 
 C3EcnRecorder::C3EcnRecorder ()
-  : m_markedAck (0),
-    m_totalAck (0)
+  : m_markedBytes (0),
+    m_totalBytes (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -40,45 +40,30 @@ void
 C3EcnRecorder::Reset (void)
 {
   NS_LOG_FUNCTION (this);
-  m_markedAck = m_totalAck = 0;
+  m_markedBytes = m_totalBytes = 0;
 }
 
 double
-C3EcnRecorder::GetRatio (void) const
+C3EcnRecorder::GetMarkedRatio (void) const
 {
-  return m_markedAck ? (double)m_markedAck / m_totalAck : 0;
+  return m_markedBytes ? static_cast<double> (m_markedBytes) / m_totalBytes : 0.0;
 }
 
 uint32_t
-C3EcnRecorder::GetMarkedCount (void) const
+C3EcnRecorder::GetMarkedBytes (void) const
 {
-  return m_markedAck;
+  return m_markedBytes;
 }
 
 void
 C3EcnRecorder::NotifyReceived (const Ipv4Header &header)
 {
   NS_LOG_FUNCTION (this << header);
-  NS_LOG_DEBUG("TotalAck " << m_totalAck);
-  ++ m_totalAck;
+  m_totalBytes += header.GetPayloadSize ();
   if (header.GetEcn () == Ipv4Header::ECN_CE)
     {
-      ++ m_markedAck;
+      m_markedBytes += header.GetPayloadSize ();
     }
-  NS_LOG_DEBUG("TotalEce " << m_markedAck);
-}
-
-void
-C3EcnRecorder::NotifyReceived (const TcpHeader &tcpHeader)
-{
-  NS_LOG_FUNCTION (this << tcpHeader);
-  NS_LOG_DEBUG("TotalAck " << m_totalAck);
-  ++ m_totalAck;
-  if (tcpHeader.GetFlags () & TcpHeader::ECE)
-    {
-      ++ m_markedAck;
-    }
-  NS_LOG_DEBUG("TotalEce " << m_markedAck);
 }
 
 Ptr<C3EcnRecorder>

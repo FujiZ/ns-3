@@ -3,6 +3,7 @@
 #include "ns3/log.h"
 #include "ns3/tcp-header.h"
 #include "ns3/udp-header.h"
+#include "ns3/flow-id-tag.h"
 
 #include "c3-division.h"
 #include "c3-ecn-recorder.h"
@@ -42,17 +43,14 @@ C3L3_5Protocol::Send (Ptr<Packet> packet,
                       Ipv4Address src, Ipv4Address dst,
                       uint8_t protocol, Ptr<Ipv4Route> route)
 {
-  NS_LOG_FUNCTION (this << packet << src << dst << (uint32_t)protocol);
+  NS_LOG_FUNCTION (this << packet << src << dst << static_cast<uint32_t> (protocol));
   NS_ASSERT (src == route->GetSource ());
   NS_LOG_DEBUG ("in c3p before forward down");
 
   C3Tag c3Tag;
   // check tag before send
-  if (packet->RemovePacketTag (c3Tag))
+  if (packet->PeekPacketTag (c3Tag))
     {
-      // set packet size before forward down
-      c3Tag.SetPacketSize (GetPacketSize (packet, protocol));
-      packet->AddPacketTag (c3Tag);
       Ptr<C3Tunnel> tunnel = C3Division::GetDivision (c3Tag.GetTenantId (), c3Tag.GetType ())->GetTunnel (src, dst);
       tunnel->SetForwardTarget (MakeCallback (&C3L3_5Protocol::ForwardDown, this));
       tunnel->SetRoute (route);
@@ -61,6 +59,7 @@ C3L3_5Protocol::Send (Ptr<Packet> packet,
   else
     {
       // not a data packet: ACK or sth else
+      ///\todo check if we can free tunnel
       ForwardDown (packet, src, dst, protocol, route);
     }
 }
@@ -70,7 +69,7 @@ C3L3_5Protocol::Send6 (Ptr<Packet> packet,
                        Ipv6Address src, Ipv6Address dst,
                        uint8_t protocol, Ptr<Ipv6Route> route)
 {
-  NS_LOG_FUNCTION (this << packet << src << dst << (uint32_t)protocol << route);
+  NS_LOG_FUNCTION (this << packet << src << dst << static_cast<uint32_t> (protocol) << route);
 
   Ptr<Packet> copy = packet->Copy ();
   ForwardDown6 (copy, src, dst, protocol, route);
@@ -106,36 +105,6 @@ C3L3_5Protocol::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
   IpL3_5Protocol::DoDispose ();
-}
-
-uint32_t
-C3L3_5Protocol::GetPacketSize (Ptr<Packet> packet, uint8_t protocol)
-{
-  /// \todo the calculation of packet size can be placed here
-  uint32_t size;
-  switch (protocol) {
-    case 6: //Tcp
-      {
-        TcpHeader tcpHeader;
-        packet->PeekHeader (tcpHeader);
-        size = packet->GetSize () - tcpHeader.GetSerializedSize ();
-        break;
-      }
-    case 17:    //udp
-      {
-        UdpHeader udpHeader;
-        packet->PeekHeader (udpHeader);
-        size = packet->GetSize () - udpHeader.GetSerializedSize ();
-        break;
-      }
-    default:
-      {
-        NS_ABORT_MSG ("Protocol " << (uint32_t)protocol << "not implemented");
-        break;
-      }
-    }
-  return size;
-
 }
 
 } //namespace dcn

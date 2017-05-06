@@ -38,7 +38,7 @@ public:
 
   /**
    * @brief GetRate
-   * @return
+   * @return rate for tbf
    */
   DataRate GetRate (void) const;
   /**
@@ -48,7 +48,20 @@ public:
    */
   void SetRate (DataRate rate);
 
+  /**
+   * @brief GetQueueLimit
+   * @return max queue length
+   */
+  uint32_t GetQueueLimit (void) const;
+
+  /**
+   * @brief SetQueueLimit
+   * @param limit
+   */
+  void SetQueueLimit (uint32_t limit);
+
 protected:
+
   virtual void DoDispose (void);
 
 private:
@@ -78,6 +91,7 @@ private:
   DataRate m_rate;
   uint64_t m_bucket;
   double m_tokens;
+  bool m_init;
   Time m_lastUpdateTime;
   Ptr<Queue> m_queue;
   Timer m_timer;

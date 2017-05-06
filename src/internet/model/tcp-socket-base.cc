@@ -193,22 +193,10 @@ TcpSocketBase::GetTypeId (void)
                      "Current ECN State of TCP Socket",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_ecnState),
                      "ns3::TracedValueCallback::Uint8")
-    //.AddTraceSource ("ECNReceiverState",
-    //                 "Current ECN Receiver State of TCP Socket",
-    //                 MakeTraceSourceAccessor (&TcpSocketBase::m_ecnReceiverState),
-    //                 "ns3::EcnStatesTracedValueCallback")
     .AddTraceSource ("ECNEchoSeq",
                      "Sequence of last received ECN Echo",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_ecnEchoSeq),
                      "ns3::SequenceNumber32TracedValueCallback")
-    //.AddTraceSource ("ECNCESeq",
-    //                 "Sequence of last received CE ",
-    //                 MakeTraceSourceAccessor (&TcpSocketBase::m_ecnCESeq),
-    //                 "ns3::SequenceNumber32TracedValueCallback")
-    //.AddTraceSource ("ECNCWRSeq",
-    //                 "Sequence of last received CWR",
-    //                 MakeTraceSourceAccessor (&TcpSocketBase::m_ecnCWRSeq),
-    //                 "ns3::SequenceNumber32TracedValueCallback")
   ;
   return tid;
 }
@@ -1262,8 +1250,8 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
   if (m_ecnState & ECN_CONN)
     {
       UpdateEcnState (tcpHeader);
-      m_ceReceived = false;
     }
+  m_ceReceived = false;
 
   if (packet->GetSize () > 0 && OutOfRange (seq, seq + packet->GetSize ()))
     {
@@ -1276,7 +1264,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
       // Acknowledgement should be sent for all unacceptable packets (RFC793, p.69)
       if (m_state == ESTABLISHED && !(tcpHeader.GetFlags () & TcpHeader::RST))
         {
-          SendAckPacket ();
+          SendACK ();
         }
       return;
     }
@@ -1384,11 +1372,11 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
           if (m_ecnState & ECN_CONN)
             {
               SocketIpTosTag ipTosTag;
-              ipTosTag.SetTos (0x02);
+              ipTosTag.SetTos (Ipv4Header::ECN_ECT0);
               p->AddPacketTag (ipTosTag);
 
               SocketIpv6TclassTag ipTclassTag;
-              ipTclassTag.SetTclass (0x02);
+              ipTclassTag.SetTclass (Ipv6Header::ECN_ECT0);
               p->AddPacketTag (ipTclassTag);
             }
           h.SetFlags (TcpHeader::RST);
@@ -1471,7 +1459,7 @@ TcpSocketBase::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeade
                         " HighTxMark = " << m_tcb->m_highTxMark);
 
           // Receiver sets ECE flags when it receives a packet with CE bit on or sender hasn’t responded to ECN echo sent by receiver
-          SendAckPacket ();
+          SendACK ();
         }
       else
         {
@@ -1774,13 +1762,10 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
             }
         }
 
-      if (callCongestionControl)
+      // increase window iff tcpHeader doesn't contain ECE flag
+      if (callCongestionControl && !(tcpHeader.GetFlags () & TcpHeader::ECE))
         {
-          m_congestionControl->IncreaseWindow (m_tcb, newSegsAcked);
-
-          NS_LOG_LOGIC ("Congestion control called: " <<
-                        " cWnd: " << m_tcb->m_cWnd <<
-                        " ssTh: " << m_tcb->m_ssThresh);
+          IncreaseWindow (newSegsAcked);
         }
 
       // Reset the data retransmission count. We got a new ACK!
@@ -2315,17 +2300,27 @@ TcpSocketBase::SendEmptyPacket (uint8_t flags)
    * if both options are set. Once the packet got to layer three, only
    * the corresponding tags will be read.
    */
-  if (GetIpTos ())
+  if (GetIpTos () || MarkEmptyPacket ())
     {
+      uint8_t tos = GetIpTos ();
+      if (MarkEmptyPacket ())
+        {
+          tos |= Ipv4Header::ECN_ECT0;
+        }
       SocketIpTosTag ipTosTag;
-      ipTosTag.SetTos (GetIpTos ());
+      ipTosTag.SetTos (tos);
       p->AddPacketTag (ipTosTag);
     }
 
-  if (IsManualIpv6Tclass ())
+  if (IsManualIpv6Tclass () || MarkEmptyPacket ())
     {
+      uint8_t tclass = IsManualIpv6Tclass () ? GetIpv6Tclass () : 0;
+      if (MarkEmptyPacket ())
+        {
+          tclass |= Ipv6Header::ECN_ECT0;
+        }
       SocketIpv6TclassTag ipTclassTag;
-      ipTclassTag.SetTclass (GetIpv6Tclass ());
+      ipTclassTag.SetTclass (tclass);
       p->AddPacketTag (ipTclassTag);
     }
 
@@ -2652,51 +2647,31 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
    * if both options are set. Once the packet got to layer three, only
    * the corresponding tags will be read.
    */
-  if (GetIpTos ())
+  if (GetIpTos () || (m_ecnState & ECN_CONN))
     {
-      SocketIpTosTag ipTosTag;
-      NS_LOG_LOGIC ("ECT bits should not be set on retransmitted packets");
-      if ((m_ecnState & ECN_CONN) && !isRetransmission)
-        { 
-          ipTosTag.SetTos (GetIpTos () | 0x2);
-        }
-      else
+      uint8_t tos = GetIpTos ();
+      // NS_LOG_LOGIC ("ECT bits should not be set on retransmitted packets");
+      // if ((m_ecnState & ECN_CONN) && !isRetransmission)
+      NS_LOG_LOGIC ("try to set ECT in retransmitted packets");
+      if (m_ecnState & ECN_CONN)
         {
-          ipTosTag.SetTos (GetIpTos ());
+          tos |= Ipv4Header::ECN_ECT0;
         }
+      SocketIpTosTag ipTosTag;
+      ipTosTag.SetTos (tos);
       p->AddPacketTag (ipTosTag);
     }
-  else
-    {
-      if ((m_ecnState & ECN_CONN) && !isRetransmission)
-        {
-          SocketIpTosTag ipTosTag;
-          ipTosTag.SetTos (0x02);
-          p->AddPacketTag (ipTosTag);
-        }
-    }
 
-  if (IsManualIpv6Tclass ())
+  if (IsManualIpv6Tclass () || (m_ecnState & ECN_CONN))
     {
+      uint8_t tclass = IsManualIpv6Tclass () ? GetIpv6Tclass () : 0;
+      if (m_ecnState & ECN_CONN)
+        {
+          tclass |= Ipv6Header::ECN_ECT0;
+        }
       SocketIpv6TclassTag ipTclassTag;
-      if ((m_ecnState & ECN_CONN) && !isRetransmission)
-        {
-          ipTclassTag.SetTclass (GetIpv6Tclass () | 0x2);
-        }
-      else
-        {
-          ipTclassTag.SetTclass (GetIpv6Tclass ());
-        }
+      ipTclassTag.SetTclass (tclass);
       p->AddPacketTag (ipTclassTag);
-    }
-  else
-    {
-      if ((m_ecnState & ECN_CONN) && !isRetransmission)
-        {
-          SocketIpv6TclassTag ipTclassTag;
-          ipTclassTag.SetTclass (0x02);
-          p->AddPacketTag (ipTclassTag);
-        }
     }
 
   if (IsManualIpTtl ())
@@ -2849,7 +2824,7 @@ TcpSocketBase::SendPendingData (bool withAck)
         {
           NS_LOG_INFO ("Halving CWND duo to receiving ECN Echo.");
           m_ecnState |= ECN_SEND_CWR;
-          HalveCwnd ();
+          DecreaseWindow ();
           /*
           if (m_tcb->m_congState == TcpSocketState::CA_OPEN)
             {
@@ -2883,7 +2858,6 @@ TcpSocketBase::SendPendingData (bool withAck)
                     " pd->SFS " << m_txBuffer->SizeFromSequence (m_tcb->m_nextTxSequence));
 
       NS_LOG_DEBUG ("Window: " << w <<
-                    " rxwin " << m_rWnd <<
                     " cWnd: " << m_tcb->m_cWnd <<
                     " unAck: " << UnAckDataCount ());
 
@@ -2990,13 +2964,13 @@ TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
   SequenceNumber32 expectedSeq = m_rxBuffer->NextRxSequence ();
   if (!m_rxBuffer->Add (p, tcpHeader))
     { // Insert failed: No data or RX buffer full
-      SendAckPacket ();
+      SendACK ();
       return;
     }
   // Now send a new ACK packet acknowledging all received and delivered data
   if (m_rxBuffer->Size () > m_rxBuffer->Available () || m_rxBuffer->NextRxSequence () > expectedSeq + p->GetSize ())
     { // A gap exists in the buffer, or we filled a gap: Always ACK
-      SendAckPacket ();
+      SendACK ();
     }
   else
     { // In-sequence packet: ACK if delayed ack count allows
@@ -3004,7 +2978,7 @@ TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
         {
           m_delAckEvent.Cancel ();
           m_delAckCount = 0;
-          SendAckPacket ();
+          SendACK ();
         }
       else if (m_delAckEvent.IsExpired ())
         {
@@ -3158,7 +3132,7 @@ void
 TcpSocketBase::DelAckTimeout (void)
 {
   m_delAckCount = 0;
-  SendAckPacket ();
+  SendACK ();
 }
 
 void
@@ -3205,11 +3179,11 @@ TcpSocketBase::PersistTimeout ()
   if (m_ecnState & ECN_CONN)
     {
       SocketIpTosTag ipTosTag;
-      ipTosTag.SetTos (0x02);
+      ipTosTag.SetTos (Ipv4Header::ECN_ECT0);
       p->AddPacketTag (ipTosTag);
  
       SocketIpv6TclassTag ipTclassTag;
-      ipTclassTag.SetTclass (0x02);
+      ipTclassTag.SetTclass (Ipv6Header::ECN_ECT0);
       p->AddPacketTag (ipTclassTag);
     }
   m_txTrace (p, tcpHeader, this);
@@ -3402,7 +3376,7 @@ TcpSocketBase::SetRcvBufSize (uint32_t size)
    */
   if (oldSize < size && m_connected)
     {
-      SendAckPacket ();
+      SendACK ();
     }
 }
 
@@ -3648,7 +3622,6 @@ void TcpSocketBase::UpdateWindowSize (const TcpHeader &header)
   uint32_t receivedWindow = header.GetWindowSize ();
   receivedWindow <<= m_sndWindShift;
   NS_LOG_INFO ("Received (scaled) window is " << receivedWindow << " bytes");
-  NS_LOG_DEBUG ("Received (scaled) window is " << receivedWindow << " bytes");
   if (m_state < ESTABLISHED)
     {
       m_rWnd = receivedWindow;
@@ -3770,7 +3743,7 @@ TcpSocketBase::Fork (void)
 }
 
 void
-TcpSocketBase::SendAckPacket (void)
+TcpSocketBase::SendACK (void)
 {
   NS_LOG_FUNCTION (this);
 
@@ -3803,11 +3776,30 @@ TcpSocketBase::UpdateEcnState (const TcpHeader &tcpHeader)
 }
 
 void
-TcpSocketBase::HalveCwnd (void)
+TcpSocketBase::DecreaseWindow (void)
 {
   NS_LOG_FUNCTION (this);
   m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
-  m_tcb->m_cWnd = std::max ((uint32_t)m_tcb->m_cWnd/2, m_tcb->m_segmentSize);
+  m_tcb->m_cWnd = std::max (Window () / 2, GetSegSize ());
+}
+
+void
+TcpSocketBase::IncreaseWindow (uint32_t segmentAcked)
+{
+  NS_LOG_FUNCTION (this << segmentAcked);
+  m_congestionControl->IncreaseWindow (m_tcb, segmentAcked);
+
+  NS_LOG_LOGIC ("Congestion control called: " <<
+                " cWnd: " << m_tcb->m_cWnd <<
+                " ssTh: " << m_tcb->m_ssThresh);
+}
+
+bool
+TcpSocketBase::MarkEmptyPacket (void) const
+{
+  NS_LOG_FUNCTION (this);
+  // mark empty packet if ECN connection is established
+  return m_ecnState & ECN_CONN;
 }
 
 uint32_t
