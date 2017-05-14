@@ -201,7 +201,11 @@ ADDCNSlice::UpdateAll (void)
   for (auto it = m_sliceList.begin (); it != m_sliceList.end (); ++it)
   {
       Ptr<ADDCNSlice> slice = it->second;
+      slice->m_totalWeight = total_weight;
+
+      /*
       slice->m_weight /= total_weight;
+      */
   }
 
   for (auto it = m_sliceList.begin (); it != m_sliceList.end (); ++it)
@@ -226,11 +230,13 @@ ADDCNSlice::Update (void)
      Ptr<ADDCNFlow> flow = it->second;
      weight += flow->GetWeight();
   }
-  m_scale = std::fabs(weight) > 10e-7 ? m_weight / weight : 0.0;
+  //m_scale = std::fabs(weight) > 10e-7 ? m_weight / (m_totalWeight / 1.5) / weight : 1.0;
+  m_scale = m_weight / (m_totalWeight / 1.5);
 
   for(auto it = m_flowList.begin(); it != m_flowList.end(); it++)
   {
      Ptr<ADDCNFlow> flow = it->second;
+     NS_LOG_DEBUG("[SCALE]" << m_scale);
      flow->UpdateScale(m_scale);
   }
   /*
@@ -250,6 +256,19 @@ ADDCNSlice::Update (void)
       tunnel->Schedule ();
     }
    */
+}
+
+void
+ADDCNSlice::SetWeight (double weight)
+{
+  NS_LOG_FUNCTION (this);
+  m_weight = weight;
+}
+
+int
+ADDCNSlice::GetSliceNumber (void)
+{
+  return m_sliceList.size();
 }
 
 void

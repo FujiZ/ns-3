@@ -111,6 +111,9 @@ public:
    */
   void Update (void);
 
+  void SetWeight (double weight);
+
+  static int GetSliceNumber (void);
 protected:
 
   virtual void DoDispose (void);
@@ -131,6 +134,7 @@ private:
   uint32_t m_tenantId;  //!< tenant id of slice
   C3Type m_type;    //!< objective type
   double m_weight;  //!< slice weight
+  double m_totalWeight;  //!< slice weight
   double m_scale;   //!< current scale factor for flows
 
   typedef std::pair<uint32_t, C3Type> SliceListKey_t;

@@ -253,7 +253,7 @@ BuildAppsTest (void)
       app->SetTenantId (i-1);
       app->SetSegSize (packet_size);
       clientStartTime += client_interval_time;
-      clientStopTime -=  client_interval_time;
+      //clientStopTime -=  client_interval_time;
       i++;
     }
 }
@@ -321,12 +321,12 @@ main (int argc, char *argv[])
   sink_stop_time = global_stop_time + 3.0;
   client_start_time = sink_start_time + 0.2;
   client_stop_time = global_stop_time - 1.0;
-  client_interval_time = 16.0;
+  client_interval_time = 25.0;
 
   link_data_rate = "200Mbps";
   link_delay = "1ms";
   queue_size = 100;
-  packet_size = 1024;
+  packet_size = 500;
   threshold = 20;
 
   // Will only save in the directory if enable opts below
@@ -345,6 +345,10 @@ main (int argc, char *argv[])
   SetConfig (useEcn, useDctcp);
   BuildTopo (3, 1);
   BuildAppsTest ();
+
+  //ns3::dcn::ADDCNSlice::SetInterval(MilliSeconds (100));
+  //ns3::dcn::ADDCNSlice::Start(Seconds(global_start_time));
+  //ns3::dcn::ADDCNSlice::Stop(Seconds(global_stop_time));
 
   if (writePcap)
     {
