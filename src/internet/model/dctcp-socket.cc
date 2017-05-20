@@ -1,6 +1,3 @@
-#define NS_LOG_APPEND_CONTEXT \
-  if (m_node) { std::clog << " [node " << m_node->GetId () << "] "; }
-
 #include "dctcp-socket.h"
 
 #include "ns3/log.h"
@@ -174,9 +171,9 @@ DctcpSocket::DecreaseWindow (void)
 {
   NS_LOG_FUNCTION (this);
   // halve cwnd according to DCTCP algo
-  uint32_t newCwnd = (1 - m_alpha / 2.0) * Window ();
-  m_tcb->m_ssThresh = std::max (newCwnd, 2 * GetSegSize ());
-  m_tcb->m_cWnd = std::max (newCwnd, GetSegSize ());
+  uint32_t newWnd = (1 - m_alpha / 2.0) * Window ();
+  m_tcb->m_ssThresh = std::max (newWnd, 2 * GetSegSize ());
+  m_tcb->m_cWnd = std::max (newWnd, GetSegSize ());
 }
 
 bool

@@ -24,7 +24,9 @@ D2tcpSocketFactory::CreateSocket (void)
 {
   TypeIdValue congestionTypeId;
   GetTcp ()->GetAttribute ("SocketType", congestionTypeId);
-  return GetTcp ()->CreateSocket (congestionTypeId.Get (), D2tcpSocket::GetTypeId ());
+  Ptr<Socket> socket = GetTcp ()->CreateSocket (congestionTypeId.Get (), D2tcpSocket::GetTypeId ());
+  socket->SetAttribute ("UseEcn", BooleanValue (true));
+  return socket;
 }
 
 } // namespace ns3

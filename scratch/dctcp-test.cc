@@ -221,11 +221,8 @@ BuildAppsTest (void)
    * onoffhelper is a client that send data to TCP destination
    */
 
-  OnOffHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (0), port));
-  clientHelper.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
-  clientHelper.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-  clientHelper.SetAttribute ("DataRate", DataRateValue (DataRate (link_data_rate)));
-  clientHelper.SetAttribute ("PacketSize", UintegerValue (packet_size));
+  BulkSendHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (0), port));
+  clientHelper.SetAttribute ("SendSize", UintegerValue (packet_size));
 
   ApplicationContainer clientApps = clientHelper.Install (clients);
 
@@ -254,7 +251,7 @@ SetConfig (bool useEcn, bool useDctcp)
   Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
   Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (packet_size));
   // Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
-  Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
+  // Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
   Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (threhold));
@@ -264,7 +261,7 @@ SetConfig (bool useEcn, bool useDctcp)
   // TCP params
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
-  // Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
+  Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
   if (useEcn)
     {
       Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));

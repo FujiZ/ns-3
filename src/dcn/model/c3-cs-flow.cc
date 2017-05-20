@@ -49,6 +49,7 @@ C3CsFlow::UpdateInfo (void)
 {
   NS_LOG_FUNCTION (this);
   int32_t remainSize = std::max (m_flowSize - m_sentBytes, m_bufferedBytes);
+  ///\todo paper中使用flow size 作为weight，而算法中又是remainsize
   m_weight = remainSize > 0 ? 1.0 / remainSize : 0;
 }
 
