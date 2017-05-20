@@ -26,6 +26,7 @@
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
 #include "ns3/traced-callback.h"
+#include "ns3/tcp-socket-base.h"
 
 #include "c3-type.h"
 

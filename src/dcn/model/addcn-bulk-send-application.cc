@@ -30,7 +30,6 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/tcp-socket-factory.h"
 
-#include "ns3/tcp-socket-base.h"
 #include "ns3/flow-id-tag.h"
 
 #include "addcn-bulk-send-application.h"
