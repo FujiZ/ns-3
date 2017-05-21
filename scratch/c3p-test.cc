@@ -287,7 +287,6 @@ main (int argc, char *argv[])
   std::string pathOut ("."); // Current directory
 
   CommandLine cmd;
-  cmd.Parse (argc, argv);
   cmd.AddValue ("enableCS", "<0/1> enable CS test", csEnable);
   cmd.AddValue ("enableDS", "<0/1> enable DS test", dsEnable);
   cmd.AddValue ("packetSize", "Size for every packet", packet_size);
@@ -297,6 +296,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("pathOut", "Path to save results", pathOut);
   cmd.AddValue ("writeResult", "<0/1> to write result", writeResult);
   cmd.AddValue ("writeFlowInfo", "<0/1> to write flow info", writeFlowInfo);
+  cmd.Parse (argc, argv);
 
   Time globalStartTime = Seconds (0);
   Time globalStopTime = globalStartTime + sim_time;
@@ -372,7 +372,7 @@ main (int argc, char *argv[])
           if (writeFlowInfo)
             {
               // output flow status
-              out << flowId << ", " << flowSize << ", " << clientStartTime << ", " << deadline << std::endl;
+              out << flowId << ", " << flowSize << ", " << clientStartTime.GetSeconds () << ", " << deadline.GetSeconds () << std::endl;
             }
         }
     }
@@ -395,7 +395,7 @@ main (int argc, char *argv[])
           if (writeFlowInfo)
             {
               // output flow status
-              out << flowId << ", " << flowSize << ", " << clientStartTime << ", " << deadline << std::endl;
+              out << flowId << ", " << flowSize << ", " << clientStartTime.GetSeconds () << ", " << deadline.GetSeconds () << std::endl;
             }
         }
     }
