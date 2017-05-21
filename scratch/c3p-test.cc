@@ -90,7 +90,9 @@ SetupConfig (void)
   Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (division_interval));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (tunnel_interval));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (0.625));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::DataRate", DataRateValue (btnk_bw));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (btnk_bw));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::MaxRate", DataRateValue (btnk_bw));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
 }
 
 Ipv4InterfaceContainer
@@ -324,7 +326,6 @@ main (int argc, char *argv[])
 
       dcn::C3Division::AddDivisionType (dcn::C3Type::CS, "ns3::dcn::C3CsDivision");
       dcn::C3Division::AddDivisionType (dcn::C3Type::DS, "ns3::dcn::C3DsDivision");
-      // create division : one division just for test
       if (csEnable)
         {
           Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::CS);

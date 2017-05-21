@@ -69,15 +69,18 @@ SetupConfig (void)
 
   // TCP params
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
+  Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));    //!< disable delayed ack
+  Config::SetDefault ("ns3::TcpSocketBase::ClockGranularity", TimeValue (MicroSeconds (100)));
   Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (10)));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
-  Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));    //!< disable delayed ack
 
   // C3 params
   Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (MilliSeconds (3)));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (MilliSeconds (1)));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (0.625));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::DataRate", DataRateValue (link_data_rate));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (link_data_rate));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::MaxRate", DataRateValue (link_data_rate));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
 
   // TBF params
   Config::SetDefault ("ns3::dcn::TokenBucketFilter::DataRate", DataRateValue (link_data_rate));
@@ -296,7 +299,7 @@ SetupApp (bool enableCS, bool enableDS, bool enableLS)
       uint16_t port = 50000;
       SetupCsServer (dsts.Get (0), port);
       InetSocketAddress serverAddr (dst_interfaces.GetAddress (0), port);
-      int KB = 1024;
+      int KB = 1000;
       uint32_t flowId = 1000;
       for (int i = 0; i < 5; ++i)
         {
@@ -313,7 +316,7 @@ SetupApp (bool enableCS, bool enableDS, bool enableLS)
       uint16_t port = 50001;
       SetupDsServer (dsts.Get (1), port);
       InetSocketAddress serverAddr (dst_interfaces.GetAddress (1), port);
-      int KB = 1024;
+      int KB = 1000;
       uint32_t flowId = 2000;
       for (int i = 0; i < 5; ++i)
         {
@@ -353,6 +356,7 @@ PrintStats (void)
 int
 main (int argc, char *argv[])
 {
+  // LogComponentEnable ("C3Flow", LOG_LEVEL_DEBUG);
   bool printStats = true;
   bool writeFct = false;
   bool writeThroughput = false;
@@ -364,8 +368,8 @@ main (int argc, char *argv[])
   link_data_rate = DataRate ("1000Mbps");
   btnk_data_rate = DataRate ("1000Mbps");
   link_delay = Time ("50us");
-  packet_size = 1024;
-  queue_size = 250;
+  packet_size = 1000;
+  queue_size = 100;
   threhold = 20;
   enable_c3 = false;
 
@@ -414,12 +418,12 @@ main (int argc, char *argv[])
       if (enableCS)
         {
           Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::CS);
-          division->SetAttribute ("Weight", DoubleValue (0.5));
+          division->SetAttribute ("Weight", DoubleValue (1.0));
         }
       if (enableDS)
         {
           Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::DS);
-          division->SetAttribute ("Weight", DoubleValue (0.5));
+          division->SetAttribute ("Weight", DoubleValue (1.0));
         }
     }
 

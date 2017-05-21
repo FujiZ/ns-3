@@ -111,7 +111,7 @@ C3Division::Update (void)
       weight += tunnel->GetWeightRequest ();
     }
   // here to check if weight == 0.0
-  if (std::fabs (weight) > 10e-7)
+  if (std::fabs (weight) > 1e-20)
     {
       double factor =  m_weight / weight;    // lambda: scale factor
       for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)

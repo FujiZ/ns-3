@@ -55,7 +55,7 @@ C3CsTunnel::ScheduleFlow (void)
 {
   NS_LOG_FUNCTION (this);
 
-  double weight = std::fabs (GetWeightRequest ()) > 10e-7 ? GetWeightRequest () : 1.0;
+  double weight = std::fabs (GetWeightRequest ()) > 1e-20 ? GetWeightRequest () : 1.0;
   for (auto it = m_flowList.begin (); it != m_flowList.end (); ++it)
     {
       Ptr<C3Flow> flow = it->second;

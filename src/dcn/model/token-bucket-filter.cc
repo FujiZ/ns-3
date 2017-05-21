@@ -124,6 +124,10 @@ void
 TokenBucketFilter::SetRate (DataRate rate)
 {
   NS_LOG_FUNCTION (this << rate);
+  if (rate == DataRate (0) && !m_queue->IsEmpty ())
+    {
+      NS_LOG_DEBUG (Simulator::Now () << this << " rate to 0");
+    }
   m_rate = rate;
   // 如果当前queue非空 && m_timer无调度任务 && rate非0
   if (m_timer.IsExpired () && !m_queue->IsEmpty () && m_rate.GetBitRate ())

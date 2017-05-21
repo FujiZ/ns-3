@@ -29,6 +29,9 @@ public:
   virtual void Send (Ptr<Packet> packet);
   virtual void UpdateInfo (void);
 
+private:
+  double m_weightMax;
+  double m_weightMin;
 };
 
 } //namespace dcn

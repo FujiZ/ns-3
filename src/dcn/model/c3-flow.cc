@@ -96,7 +96,7 @@ void
 C3Flow::Forward (Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION (this << packet);
-  NS_LOG_INFO ("Packet sent: " << packet);
+  NS_LOG_DEBUG (Simulator::Now () << " Packet sent: " << packet);
   C3Tag c3Tag;
   bool retval = packet->PeekPacketTag (c3Tag);
   NS_ASSERT (retval);
@@ -109,7 +109,7 @@ void
 C3Flow::Drop (Ptr<const Packet> packet)
 {
   NS_LOG_FUNCTION (this <<packet);
-  NS_LOG_INFO ("Packet drop: " << packet);
+  NS_LOG_DEBUG (Simulator::Now () << " Packet drop: " << packet);
   C3Tag c3Tag;
   bool retval = packet->PeekPacketTag (c3Tag);
   NS_ASSERT (retval);

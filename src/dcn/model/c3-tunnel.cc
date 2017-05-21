@@ -27,10 +27,20 @@ C3Tunnel::GetTypeId (void)
                      TimeValue (Time ("100us")),
                      MakeTimeAccessor (&C3Tunnel::m_interval),
                      MakeTimeChecker (Time (0)))
-      .AddAttribute ("DataRate",
+      .AddAttribute ("Rate",
                      "Initial data rate of current tunnel.",
                      DataRateValue (DataRate ("10Mbps")),
                      MakeDataRateAccessor (&C3Tunnel::m_rate),
+                     MakeDataRateChecker ())
+      .AddAttribute ("MaxRate",
+                     "Max data rate of current tunnel.",
+                     DataRateValue (DataRate ("1000Mbps")),
+                     MakeDataRateAccessor (&C3Tunnel::m_rateMax),
+                     MakeDataRateChecker ())
+      .AddAttribute ("MinRate",
+                     "Min data rate of current tunnel.",
+                     DataRateValue (DataRate ("1Mbps")),
+                     MakeDataRateAccessor (&C3Tunnel::m_rateMin),
                      MakeDataRateChecker ())
       .AddTraceSource ("Alpha",
                        "an estimate of the fraction of packets that are marked",
@@ -87,6 +97,7 @@ void
 C3Tunnel::Update (void)
 {
   NS_LOG_FUNCTION (this);
+  ///\todo set check point to debug
   UpdateInfo ();
   UpdateRate ();
   ScheduleFlow ();
@@ -165,17 +176,19 @@ void
 C3Tunnel::UpdateRate (void)
 {
   NS_LOG_FUNCTION (this);
+  DataRate rate;
   if (m_ecnRecorder->GetMarkedBytes ())
     {
       NS_LOG_DEBUG ("Congestion detected");
       ///\todo change congestion operations
-      m_rate = DataRate ((1 - std::pow (m_alpha.Get (), m_weight) / 2) * m_rate.GetBitRate ());
+      rate = DataRate ((1 - std::pow (m_alpha.Get (), m_weight) / 2) * m_rate.GetBitRate ());
     }
   else
     {
       NS_LOG_DEBUG ("No congestion");
-      m_rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
+      rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
     }
+  m_rate = std::max (std::min (rate, m_rateMax), m_rateMin);
   m_ecnRecorder->Reset ();
 }
 

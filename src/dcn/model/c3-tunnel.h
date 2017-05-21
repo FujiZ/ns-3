@@ -142,6 +142,9 @@ private:
   TracedValue<double> m_weight;  //!< real tunnel weight
   TracedValue<double> m_weightRequest;   //!< tunnel weight request
   DataRate m_rate;  //!< current tunnel rate
+  // tunnel rate bound
+  DataRate m_rateMax;   //!< max tunnel rate
+  DataRate m_rateMin;   //!< min tunnel rate
   // tunnel timer parameter
   Timer m_timer;
   Time m_interval;
