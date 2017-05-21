@@ -292,6 +292,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("packetSize", "Size for every packet", packet_size);
   cmd.AddValue ("queueSize", "Queue length for RED queue", queue_size);
   cmd.AddValue ("threhold", "Threhold for RED queue", threhold);
+  cmd.AddValue ("miceLoad", "network load factor", mice_load);
   cmd.AddValue ("enableC3P", "<0/1> enable C3 in test", c3pEnable);
   cmd.AddValue ("pathOut", "Path to save results", pathOut);
   cmd.AddValue ("writeResult", "<0/1> to write result", writeResult);
