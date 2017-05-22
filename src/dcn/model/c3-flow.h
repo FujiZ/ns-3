@@ -63,6 +63,12 @@ public:
   virtual void UpdateInfo (void) = 0;
 
   /**
+   * @brief check if the flow is finished
+   * @return true if flow is finished
+   */
+  virtual bool IsFinished (void) const;
+
+  /**
    * @brief GetWeight
    * @return flow weight
    */

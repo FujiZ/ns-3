@@ -166,8 +166,11 @@ C3Tunnel::UpdateInfo (void)
   for (auto it = m_flowList.begin (); it != m_flowList.end (); ++it)
     {
       Ptr<C3Flow> flow = it->second;
-      flow->UpdateInfo ();
-      weightRequest += flow->GetWeight ();
+      if (!flow->IsFinished ())
+        {
+          flow->UpdateInfo ();
+          weightRequest += flow->GetWeight ();
+        }
     }
   m_weightRequest = weightRequest;
 }

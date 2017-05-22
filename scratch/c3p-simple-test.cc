@@ -418,12 +418,12 @@ main (int argc, char *argv[])
       if (enableCS)
         {
           Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::CS);
-          division->SetAttribute ("Weight", DoubleValue (1.0));
+          division->SetAttribute ("Weight", DoubleValue (0.8));
         }
       if (enableDS)
         {
           Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::DS);
-          division->SetAttribute ("Weight", DoubleValue (1.0));
+          division->SetAttribute ("Weight", DoubleValue (0.8));
         }
     }
 

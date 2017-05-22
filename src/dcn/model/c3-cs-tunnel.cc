@@ -55,11 +55,14 @@ C3CsTunnel::ScheduleFlow (void)
 {
   NS_LOG_FUNCTION (this);
 
-  double weight = std::fabs (GetWeightRequest ()) > 1e-20 ? GetWeightRequest () : 1.0;
+  double weight = GetWeightRequest () > 0.0 ? GetWeightRequest () : 1.0;
   for (auto it = m_flowList.begin (); it != m_flowList.end (); ++it)
     {
       Ptr<C3Flow> flow = it->second;
-      flow->SetRate (DataRate (flow->GetWeight () / weight * GetRate ().GetBitRate ()));
+      if (!flow->IsFinished ())
+        {
+          flow->SetRate (DataRate (flow->GetWeight () / weight * GetRate ().GetBitRate ()));
+        }
     }
 }
 

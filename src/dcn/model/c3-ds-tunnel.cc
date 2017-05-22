@@ -58,8 +58,11 @@ C3DsTunnel::ScheduleFlow (void)
   for (auto it = m_flowList.begin (); it != m_flowList.end (); ++it)
     {
       Ptr<C3DsFlow> flow = StaticCast<C3DsFlow> (it->second);
-      rateRequest += flow->GetRateRequest ().GetBitRate ();
-      flowList.push_back (flow);
+      if (!flow->IsFinished ())
+        {
+          rateRequest += flow->GetRateRequest ().GetBitRate ();
+          flowList.push_back (flow);
+        }
     }
   if (DataRate (rateRequest) <= GetRate ())
     {

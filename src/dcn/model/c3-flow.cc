@@ -70,6 +70,12 @@ C3Flow::Send (Ptr<Packet> packet)
   m_tbf->Send (packet);
 }
 
+bool
+C3Flow::IsFinished (void) const
+{
+  return !(m_bufferedBytes > 0 || m_sentBytes < m_flowSize);
+}
+
 double
 C3Flow::GetWeight (void) const
 {
