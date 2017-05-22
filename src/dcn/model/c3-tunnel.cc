@@ -194,12 +194,14 @@ C3Tunnel::UpdateRate (void)
       // rate = DataRate (m_rate.GetBitRate () + m_weight * m_rateMax.GetBitRate ());
     }
   m_rate = std::max (std::min (rate, m_rateMax), m_rateMin);
+  /*
   if (Seconds (0.2) <= Simulator::Now () && Simulator::Now () <= Seconds (0.5))
     {
       std::cout << m_src << ", "
                 << Simulator::Now ().GetSeconds () << ", "
                 << m_rate.GetBitRate () << std::endl;
     }
+    */
   m_ecnRecorder->Reset ();
 }
 
