@@ -69,13 +69,14 @@ SetupConfig (void)
 
   // TCP params
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
+  Config::SetDefault ("ns3::TcpSocket::InitialCwnd", UintegerValue (10));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));    //!< disable delayed ack
   Config::SetDefault ("ns3::TcpSocketBase::ClockGranularity", TimeValue (MicroSeconds (100)));
   Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (10)));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
 
   // C3 params
-  Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (MilliSeconds (3)));
+  Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (MilliSeconds (1)));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (MilliSeconds (1)));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (0.625));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (link_data_rate));
@@ -85,6 +86,7 @@ SetupConfig (void)
   // TBF params
   Config::SetDefault ("ns3::dcn::TokenBucketFilter::DataRate", DataRateValue (link_data_rate));
   Config::SetDefault ("ns3::dcn::TokenBucketFilter::Bucket", UintegerValue (33500));
+  // Config::SetDefault ("ns3::dcn::TokenBucketFilter::Bucket", UintegerValue (83500));
   Config::SetDefault ("ns3::dcn::TokenBucketFilter::QueueLimit", UintegerValue (queue_size));
 
   // enable ECN
@@ -337,11 +339,11 @@ void
 PrintRedStats (Ptr<RedQueueDisc> redQueueDisc, int index)
 {
   RedQueueDisc::Stats st = redQueueDisc->GetStats ();
-  std::cout << "*** RED stats from queue " << index << " ***" << std::endl;
-  std::cout << "\t " << st.unforcedDrop << " drops due prob mark" << std::endl;
-  std::cout << "\t " << st.unforcedMark << " marks due prob mark" << std::endl;
-  std::cout << "\t " << st.forcedDrop << " drops due hard mark" << std::endl;
-  std::cout << "\t " << st.qLimDrop << " drops due queue full" << std::endl;
+  std::clog << "*** RED stats from queue " << index << " ***" << std::endl;
+  std::clog << "\t " << st.unforcedDrop << " drops due prob mark" << std::endl;
+  std::clog << "\t " << st.unforcedMark << " marks due prob mark" << std::endl;
+  std::clog << "\t " << st.forcedDrop << " drops due hard mark" << std::endl;
+  std::clog << "\t " << st.qLimDrop << " drops due queue full" << std::endl;
 }
 
 void
@@ -418,12 +420,12 @@ main (int argc, char *argv[])
       if (enableCS)
         {
           Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::CS);
-          division->SetAttribute ("Weight", DoubleValue (0.8));
+          division->SetAttribute ("Weight", DoubleValue (0.1));
         }
       if (enableDS)
         {
           Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::DS);
-          division->SetAttribute ("Weight", DoubleValue (0.8));
+          division->SetAttribute ("Weight", DoubleValue (0.1));
         }
     }
 
