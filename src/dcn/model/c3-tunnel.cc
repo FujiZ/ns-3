@@ -184,12 +184,14 @@ C3Tunnel::UpdateRate (void)
     {
       NS_LOG_DEBUG ("Congestion detected");
       ///\todo change congestion operations
+      // rate = DataRate ((1 - m_alpha / 2) * m_rate.GetBitRate ());
       rate = DataRate ((1 - std::pow (m_alpha.Get (), m_weight) / 2) * m_rate.GetBitRate ());
     }
   else
     {
       NS_LOG_DEBUG ("No congestion");
-      rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
+      // rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
+      rate = DataRate (m_rate.GetBitRate () + m_weight * m_rateMax.GetBitRate ());
     }
   m_rate = std::max (std::min (rate, m_rateMax), m_rateMin);
   m_ecnRecorder->Reset ();
