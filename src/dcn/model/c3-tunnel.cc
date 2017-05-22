@@ -97,7 +97,6 @@ void
 C3Tunnel::Update (void)
 {
   NS_LOG_FUNCTION (this);
-  ///\todo set check point to debug
   UpdateInfo ();
   UpdateRate ();
   ScheduleFlow ();
@@ -190,8 +189,8 @@ C3Tunnel::UpdateRate (void)
   else
     {
       NS_LOG_DEBUG ("No congestion");
-      // rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
-      rate = DataRate (m_rate.GetBitRate () + m_weight * m_rateMax.GetBitRate ());
+      rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
+      // rate = DataRate (m_rate.GetBitRate () + m_weight * m_rateMax.GetBitRate ());
     }
   m_rate = std::max (std::min (rate, m_rateMax), m_rateMin);
   m_ecnRecorder->Reset ();

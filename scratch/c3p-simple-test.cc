@@ -59,7 +59,7 @@ SetupConfig (void)
   // RED params
   Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
   Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (packet_size));
-  // Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
+  Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
   Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
