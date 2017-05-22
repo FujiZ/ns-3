@@ -33,7 +33,7 @@ Time tunnel_interval ("1ms");
 Time division_interval ("3ms");
 
 // time attributes
-Time sim_time ("15s");
+double sim_time = 15;
 
 // attributes
 double mice_load = 0.4;
@@ -69,12 +69,13 @@ SetupConfig (void)
 
   // TBF params
   Config::SetDefault ("ns3::dcn::TokenBucketFilter::DataRate", DataRateValue (btnk_bw));
-  Config::SetDefault ("ns3::dcn::TokenBucketFilter::Bucket", UintegerValue (33500));
+  Config::SetDefault ("ns3::dcn::TokenBucketFilter::Bucket", UintegerValue (83500));
   Config::SetDefault ("ns3::dcn::TokenBucketFilter::QueueLimit", UintegerValue (queue_size));
 
   // TCP params
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));    //!< disable delayed ack
+  Config::SetDefault ("ns3::TcpSocket::InitialCwnd", UintegerValue (10));
   Config::SetDefault ("ns3::TcpSocketBase::ClockGranularity", TimeValue (MicroSeconds (100)));
   Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (10)));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
@@ -89,7 +90,7 @@ SetupConfig (void)
   // C3 params
   Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (division_interval));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (tunnel_interval));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (0.625));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (1.0 / 16));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (btnk_bw));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MaxRate", DataRateValue (btnk_bw));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
@@ -295,6 +296,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("queueSize", "Queue length for RED queue", queue_size);
   cmd.AddValue ("threhold", "Threhold for RED queue", threhold);
   cmd.AddValue ("miceLoad", "network load factor", mice_load);
+  cmd.AddValue ("simTime", "simulation time", sim_time);
   cmd.AddValue ("enableC3P", "<0/1> enable C3 in test", c3pEnable);
   cmd.AddValue ("pathOut", "Path to save results", pathOut);
   cmd.AddValue ("writeResult", "<0/1> to write result", writeResult);
@@ -302,7 +304,7 @@ main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
   Time globalStartTime = Seconds (0);
-  Time globalStopTime = globalStartTime + sim_time;
+  Time globalStopTime = globalStartTime + Seconds (sim_time);
   Time sinkStartTime = globalStartTime;
   Time sinkStopTime = globalStopTime + Seconds (3);
   Time clientStopTime = globalStopTime;

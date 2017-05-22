@@ -78,7 +78,7 @@ SetupConfig (void)
   // C3 params
   Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (MilliSeconds (1)));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (MilliSeconds (1)));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (0.625));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (1.0 / 16));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (link_data_rate));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MaxRate", DataRateValue (link_data_rate));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
@@ -358,7 +358,7 @@ PrintStats (void)
 int
 main (int argc, char *argv[])
 {
-  // LogComponentEnable ("C3Flow", LOG_LEVEL_DEBUG);
+  LogComponentEnable ("C3Flow", LOG_LEVEL_DEBUG);
   bool printStats = true;
   bool writeFct = false;
   bool writeThroughput = false;
@@ -420,12 +420,12 @@ main (int argc, char *argv[])
       if (enableCS)
         {
           Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::CS);
-          division->SetAttribute ("Weight", DoubleValue (0.1));
+          division->SetAttribute ("Weight", DoubleValue (0.2));
         }
       if (enableDS)
         {
           Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::DS);
-          division->SetAttribute ("Weight", DoubleValue (0.1));
+          division->SetAttribute ("Weight", DoubleValue (0.2));
         }
     }
 
