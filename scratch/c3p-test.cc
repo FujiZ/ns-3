@@ -31,6 +31,7 @@ uint32_t threhold = 65;
 // c3 attributes
 Time tunnel_interval ("1ms");
 Time division_interval ("3ms");
+DataRate tunnel_bw ("250Mbps"); //!< initial tunnel bw
 
 // time attributes
 double sim_time = 15;
@@ -68,7 +69,7 @@ SetupConfig (void)
   Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (queue_size));
 
   // TBF params
-  Config::SetDefault ("ns3::dcn::TokenBucketFilter::DataRate", DataRateValue (btnk_bw));
+  Config::SetDefault ("ns3::dcn::TokenBucketFilter::DataRate", DataRateValue (tunnel_bw));
   Config::SetDefault ("ns3::dcn::TokenBucketFilter::Bucket", UintegerValue (83500));
   Config::SetDefault ("ns3::dcn::TokenBucketFilter::QueueLimit", UintegerValue (queue_size));
 
@@ -91,7 +92,7 @@ SetupConfig (void)
   Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (division_interval));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (tunnel_interval));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (1.0 / 16));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (DataRate ("250Mbps")));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (tunnel_bw));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MaxRate", DataRateValue (btnk_bw));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
 }
@@ -384,7 +385,7 @@ main (int argc, char *argv[])
 
   if (csEnable)
     {
-      uint32_t csFlowId = 20000;
+      uint32_t csFlowId = 30000;
       for (Time clientStartTime = globalStartTime + Seconds (0.3);
            clientStartTime < clientStopTime;
            clientStartTime += Seconds (interArrivalStream->GetValue ()))
