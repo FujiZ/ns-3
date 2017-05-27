@@ -91,7 +91,7 @@ SetupConfig (void)
   Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (division_interval));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (tunnel_interval));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (1.0 / 16));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (btnk_bw));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (DataRate ("250Mbps")));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MaxRate", DataRateValue (btnk_bw));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
 }
@@ -356,7 +356,8 @@ main (int argc, char *argv[])
   hostStream->SetAttribute ("Max", DoubleValue (hosts.GetN () - 1));
 
   std::stringstream ss;
-  ss << pathOut << "/flow-info.txt";
+  // ss << pathOut << "/flow-info.txt";
+  ss << pathOut << "/flow-info-" << mice_load << ".txt";
   std::ofstream out (ss.str ());
   if (dsEnable)
     {
@@ -411,7 +412,7 @@ main (int argc, char *argv[])
   if (writeResult)
     {
       std::stringstream ss;
-      ss << pathOut << "/flow-result.txt";
+      ss << pathOut << "/flow-result-" << mice_load << ".txt";
       std::ofstream out (ss.str ());
       for (auto& entry : tx_time)
         {
