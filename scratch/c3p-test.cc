@@ -31,19 +31,20 @@ uint32_t threhold = 65;
 // c3 attributes
 Time tunnel_interval ("1ms");
 Time division_interval ("3ms");
-DataRate tunnel_bw ("250Mbps"); //!< initial tunnel bw
+DataRate tunnel_bw ("1Gbps"); //!< initial tunnel bw
 
 // time attributes
 double sim_time = 15;
 
 // attributes
+uint32_t workload = 0;
 double mice_load = 0.4;
 uint32_t packet_size = 1000;
 uint32_t min_flow_size = 1;
 uint32_t max_flow_size = 666667;
 uint32_t av_flow_size = 5116;
 uint16_t sink_port = 50000;
-uint64_t random_seed = 2;
+int64_t random_seed = 2;
 
 NodeContainer hosts;    //!< all end hosts
 Ipv4InterfaceContainer hosts_interfaces;    //!< hosts interfaces include address
@@ -264,7 +265,7 @@ Ptr<RandomVariableStream>
 GetDataMiningStream (void)
 {
   Ptr<EmpiricalRandomVariable> stream = CreateObject<EmpiricalRandomVariable> ();
-  stream->SetStream (2);
+  stream->SetStream (random_seed);
   stream->CDF (1, 0.0);
   stream->CDF (1, 0.5);
   stream->CDF (2, 0.6);
@@ -277,6 +278,49 @@ GetDataMiningStream (void)
   min_flow_size = 1;
   max_flow_size = 666667;
   av_flow_size = 5116;
+  return stream;
+}
+
+Ptr<RandomVariableStream>
+GetHadoopStream (void)
+{
+  Ptr<EmpiricalRandomVariable> stream = CreateObject<EmpiricalRandomVariable> ();
+  stream->SetStream (random_seed);
+  stream->CDF (1, 0.0);
+  stream->CDF (1, 0.1);
+  stream->CDF (333, 0.2);
+  stream->CDF (666, 0.3);
+  stream->CDF (1000, 0.4);
+  stream->CDF (3000, 0.6);
+  stream->CDF (5000, 0.8);
+  stream->CDF (1000000, 0.95);
+  stream->CDF (6666667, 1.0);
+  min_flow_size = 1;
+  max_flow_size = 6666667;
+  av_flow_size = 268392;
+  return stream;
+}
+
+Ptr<RandomVariableStream>
+GetWebSearchStream (void)
+{
+  Ptr<EmpiricalRandomVariable> stream = CreateObject<EmpiricalRandomVariable> ();
+  stream->SetStream (random_seed);
+  stream->CDF (6, 0.0);
+  stream->CDF (6, 0.15);
+  stream->CDF (13, 0.2);
+  stream->CDF (19, 0.3);
+  stream->CDF (33, 0.4);
+  stream->CDF (53, 0.53);
+  stream->CDF (133, 0.6);
+  stream->CDF (667, 0.7);
+  stream->CDF (1333, 0.8);
+  stream->CDF (3333, 0.9);
+  stream->CDF (6667, 0.97);
+  stream->CDF (20000, 1.0);
+  min_flow_size = 6;
+  max_flow_size = 20000;
+  av_flow_size = 1138;
   return stream;
 }
 
@@ -296,6 +340,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("packetSize", "Size for every packet", packet_size);
   cmd.AddValue ("queueSize", "Queue length for RED queue", queue_size);
   cmd.AddValue ("threhold", "Threhold for RED queue", threhold);
+  cmd.AddValue ("workload", "workload type", workload);
   cmd.AddValue ("miceLoad", "network load factor", mice_load);
   cmd.AddValue ("simTime", "simulation time", sim_time);
   cmd.AddValue ("enableC3P", "<0/1> enable C3 in test", c3pEnable);
@@ -344,7 +389,20 @@ main (int argc, char *argv[])
   InstallSink (hosts, sink_port, sinkStartTime, sinkStopTime);
 
   // setup clients
-  Ptr<RandomVariableStream> flowSizeStream = GetDataMiningStream ();
+  Ptr<RandomVariableStream> flowSizeStream;
+  switch (workload) {
+    case 0:
+      flowSizeStream = GetDataMiningStream ();
+      break;
+    case 1:
+      flowSizeStream = GetWebSearchStream ();
+      break;
+    case 2:
+      flowSizeStream = GetHadoopStream ();
+      break;
+    default:
+      break;
+    }
 
   Time avInterArrival = Seconds ((av_flow_size * 1000 * 8)/ (mice_load * btnk_bw.GetBitRate () * hosts.GetN ()));
   auto interArrivalStream = CreateObject<ExponentialRandomVariable> ();

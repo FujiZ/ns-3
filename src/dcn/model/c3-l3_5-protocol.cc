@@ -71,8 +71,7 @@ C3L3_5Protocol::Send6 (Ptr<Packet> packet,
 {
   NS_LOG_FUNCTION (this << packet << src << dst << static_cast<uint32_t> (protocol) << route);
 
-  Ptr<Packet> copy = packet->Copy ();
-  ForwardDown6 (copy, src, dst, protocol, route);
+  ForwardDown6 (packet, src, dst, protocol, route);
 }
 
 enum IpL4Protocol::RxStatus
