@@ -420,7 +420,7 @@ main (int argc, char *argv[])
   std::ofstream out (ss.str ());
   if (dsEnable)
     {
-      uint32_t dsFlowId = 10000;
+      uint32_t dsFlowId = 100000;
       for (Time clientStartTime = globalStartTime + Seconds (0.3);
            clientStartTime < clientStopTime;
            clientStartTime += Seconds (interArrivalStream->GetValue ()))
@@ -443,7 +443,7 @@ main (int argc, char *argv[])
 
   if (csEnable)
     {
-      uint32_t csFlowId = 30000;
+      uint32_t csFlowId = 200000;
       for (Time clientStartTime = globalStartTime + Seconds (0.3);
            clientStartTime < clientStopTime;
            clientStartTime += Seconds (interArrivalStream->GetValue ()))
