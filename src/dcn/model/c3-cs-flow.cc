@@ -77,5 +77,17 @@ C3CsFlow::UpdateInfo (void)
     */
 }
 
+double
+C3CsFlow::GetWeightMax ()
+{
+  return m_weightMax;
+}
+
+double
+C3CsFlow::GetWeightMin ()
+{
+  return m_weightMin;
+}
+
 } //namespace dcn
 } //namespace ns3
