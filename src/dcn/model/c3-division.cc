@@ -37,6 +37,11 @@ C3Division::GetTypeId (void)
                      DoubleValue (1.0),
                      MakeDoubleAccessor (&C3Division::m_weight),
                      MakeDoubleChecker<double> (0.0))
+      .AddAttribute ("RateThresh",
+                     "Total rate thresh hold by division.",
+                     DataRateValue (DataRate ("1000Mbps")),
+                     MakeDataRateAccessor (&C3Division::m_rateThresh),
+                     MakeDataRateChecker ())
   ;
   return tid;
 }
@@ -111,23 +116,26 @@ C3Division::Update (void)
       weight += tunnel->GetWeightRequest ();
     }
   // here to check if weight == 0.0
-  if (std::fabs (weight) > 1e-20)
+  if (weight > 0.0)
     {
-      double factor =  m_weight / weight;    // lambda: scale factor
       for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
         {
           Ptr<C3Tunnel> tunnel = it->second;
-          tunnel->SetWeight (factor * tunnel->GetWeightRequest ());
+          double factor =  tunnel->GetWeightRequest () / weight;
+          tunnel->SetWeight (factor * m_weight);
+          tunnel->SetRateThresh (DataRate (factor * m_rateThresh.GetBitRate ()));
         }
     }
   else if (!m_tunnelList.empty ())
     {
       // if weight == 0: divide weight equally
       weight = m_weight / m_tunnelList.size ();
+      DataRate thresh (m_rateThresh.GetBitRate () / m_tunnelList.size ());
       for (auto it = m_tunnelList.begin (); it != m_tunnelList.end (); ++it)
         {
           Ptr<C3Tunnel> tunnel = it->second;
           tunnel->SetWeight (weight);
+          tunnel->SetRateThresh (thresh);
         }
     }
   // schedule next update

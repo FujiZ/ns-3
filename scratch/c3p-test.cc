@@ -31,7 +31,7 @@ uint32_t threhold = 65;
 // c3 attributes
 Time tunnel_interval ("1ms");
 Time division_interval ("3ms");
-DataRate tunnel_bw ("1Gbps"); //!< initial tunnel bw
+DataRate tunnel_bw ("500Mbps"); //!< initial tunnel bw
 
 // time attributes
 double sim_time = 15;
@@ -91,11 +91,14 @@ SetupConfig (void)
 
   // C3 params
   Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (division_interval));
+  Config::SetDefault ("ns3::dcn::C3Division::RateThresh", DataRateValue (btnk_bw));
+
   Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (tunnel_interval));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (1.0 / 16));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (tunnel_bw));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MaxRate", DataRateValue (btnk_bw));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
+  Config::SetDefault ("ns3::dcn::C3Tunnel::RateThresh", DataRateValue (tunnel_bw));
 }
 
 Ipv4InterfaceContainer

@@ -105,6 +105,7 @@ private:
   uint32_t m_tenantId;  //!< tenant id of divison
   C3Type m_type;    //!< objective type
   double m_weight;  //!< division weight
+  DataRate m_rateThresh;    //!< rate thresh
 
   // timer parameter
   Timer m_timer;     //!< timer to call Update ()

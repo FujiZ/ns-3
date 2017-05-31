@@ -20,7 +20,7 @@ C3Tunnel::GetTypeId (void)
       .AddAttribute ("Gamma",
                      "0 < Gamma < 1 is the weight given to new samples"
                      " against the past in the estimation of alpha.",
-                     DoubleValue (0.625),
+                     DoubleValue (1.0 / 16),
                      MakeDoubleAccessor (&C3Tunnel::m_g),
                      MakeDoubleChecker<double> (0.0, 1.0))
       .AddAttribute ("Interval",
@@ -42,6 +42,11 @@ C3Tunnel::GetTypeId (void)
                      "Min data rate of current tunnel.",
                      DataRateValue (DataRate ("1Mbps")),
                      MakeDataRateAccessor (&C3Tunnel::m_rateMin),
+                     MakeDataRateChecker ())
+      .AddAttribute ("RateThresh",
+                     "Rate thresh to determin when to start congestion avoidance.",
+                     DataRateValue (DataRate ("500Mbps")),
+                     MakeDataRateAccessor (&C3Tunnel::m_rateThresh),
                      MakeDataRateChecker ())
       .AddTraceSource ("Alpha",
                        "an estimate of the fraction of packets that are marked",
@@ -119,6 +124,13 @@ C3Tunnel::SetWeight (double weight)
 }
 
 void
+C3Tunnel::SetRateThresh (DataRate rate)
+{
+  NS_LOG_FUNCTION (this << rate);
+  m_rateThresh = rate;
+}
+
+void
 C3Tunnel::DoInitialize (void)
 {
   NS_LOG_FUNCTION (this);
@@ -182,17 +194,25 @@ C3Tunnel::UpdateRate (void)
   DataRate rate;
   if (m_ecnRecorder->GetMarkedBytes ())
     {
-      NS_LOG_DEBUG ("Congestion detected");
+      NS_LOG_DEBUG ("Congestion detected, decrease tunnel rate.");
       ///\todo change congestion operations
       // rate = DataRate ((1 - m_alpha / 2) * m_rate.GetBitRate ());
       // rate = DataRate ((1 - std::pow (m_alpha.Get (), m_weight) / 2) * m_rate.GetBitRate ());
-      rate = DataRate ((1 - m_weight * m_alpha) * m_rate.GetBitRate ());
+      rate = DataRate ((1 - m_alpha / 2) * m_rate.GetBitRate ());
     }
   else
     {
-      NS_LOG_DEBUG ("No congestion");
-      rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
-      // rate = DataRate (m_rate.GetBitRate () + m_weight * m_rateMax.GetBitRate ());
+      NS_LOG_DEBUG ("No congestion, increase tunnel rate.");
+      if (m_rate < m_rateThresh)
+        {
+          NS_LOG_LOGIC ("Slow start like behavior.");
+          rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
+        }
+      else
+        {
+          NS_LOG_LOGIC ("Congestion avoidance like behavior.");
+          rate = DataRate (m_rate.GetBitRate () + m_weight * DataRate ("10Mbps").GetBitRate ());
+        }
     }
   m_rate = std::max (std::min (rate, m_rateMax), m_rateMin);
   m_ecnRecorder->Reset ();

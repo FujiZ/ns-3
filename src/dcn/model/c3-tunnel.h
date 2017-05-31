@@ -82,6 +82,12 @@ public:
    */
   void SetWeight (double weight);
 
+  /**
+   * @brief SetRateThresh
+   * @param rate new rate thresh
+   */
+  void SetRateThresh (DataRate rate);
+
 protected:
 
   virtual void DoInitialize (void);
@@ -145,6 +151,7 @@ private:
   // tunnel rate bound
   DataRate m_rateMax;   //!< max tunnel rate
   DataRate m_rateMin;   //!< min tunnel rate
+  DataRate m_rateThresh; //!< rate thresh
   // tunnel timer parameter
   Timer m_timer;
   Time m_interval;
