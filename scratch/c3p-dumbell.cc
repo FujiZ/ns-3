@@ -122,8 +122,6 @@ MakeLink (const std::string &type, Ptr<Node> src, Ptr<Node> dst,
   p2pHelper.SetChannelAttribute ("Delay", TimeValue (delay));
   p2pHelper.SetDeviceAttribute ("DataRate", DataRateValue (bw));
   NetDeviceContainer devs = p2pHelper.Install (src, dst);
-  auto interfaces = ipv4AddrHelper.Assign (devs);
-  ipv4AddrHelper.NewNetwork ();
 
   TrafficControlHelper trafficHelper;
   if (type == "pfifo")
@@ -145,6 +143,8 @@ MakeLink (const std::string &type, Ptr<Node> src, Ptr<Node> dst,
       std::exit (-1);
     }
     trafficHelper.Install (devs);
+  auto interfaces = ipv4AddrHelper.Assign (devs);
+  ipv4AddrHelper.NewNetwork ();
     return interfaces;
 }
 

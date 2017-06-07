@@ -92,8 +92,6 @@ SetupConfig (void)
 {
   GlobalValue::Bind ("ChecksumEnabled", BooleanValue (false));
 
-  // ECMP params
-  Config::SetDefault ("ns3::Ipv4GlobalRouting::RandomEcmpRouting", BooleanValue (true));
 
   // RED params
   Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
@@ -147,8 +145,6 @@ MakeLink (const std::string &type, Ptr<Node> src, Ptr<Node> dst,
   p2pHelper.SetChannelAttribute ("Delay", TimeValue (delay));
   p2pHelper.SetDeviceAttribute ("DataRate", DataRateValue (bw));
   NetDeviceContainer devs = p2pHelper.Install (src, dst);
-  auto interfaces = ipv4AddrHelper.Assign (devs);
-  ipv4AddrHelper.NewNetwork ();
 
   TrafficControlHelper trafficHelper;
   if (type == "pfifo")
@@ -169,8 +165,12 @@ MakeLink (const std::string &type, Ptr<Node> src, Ptr<Node> dst,
       std::cerr << "Undefined QueueDisc: " << type << std::endl;
       std::exit (-1);
     }
-    trafficHelper.Install (devs);
-    return interfaces;
+  trafficHelper.Install (devs);
+
+  auto interfaces = ipv4AddrHelper.Assign (devs);
+  ipv4AddrHelper.NewNetwork ();
+
+  return interfaces;
 }
 
 void
@@ -192,7 +192,7 @@ SetupTopo (uint32_t srcNum, uint32_t dstNum, DataRate edgeBW, DataRate switchBW,
   for (uint32_t i = 0; i < srcNum; i++)
     {
       interfaces = MakeLink ("pfifo", srcs.Get (i), switchs.Get(2 * i), edgeBW, linkDelay, ipv4AddrHelper);
-      src_interfaces.Add (interfaces.Get (1));
+      src_interfaces.Add (interfaces.Get (0));
 
       MakeLink ("pfifo", switchs.Get (2 * i), routers.Get(2 * i), edgeBW, linkDelay, ipv4AddrHelper);
       MakeLink ("red", routers.Get (2 * i), routers.Get(2 * i + 1), switchBW, linkDelay, ipv4AddrHelper);
@@ -200,6 +200,12 @@ SetupTopo (uint32_t srcNum, uint32_t dstNum, DataRate edgeBW, DataRate switchBW,
 
       interfaces = MakeLink ("pfifo", switchs.Get(2 * i + 1), dsts.Get(i), edgeBW, linkDelay, ipv4AddrHelper);
       dst_interfaces.Add (interfaces.Get (1));
+      
+      if (i > 0)
+        {
+          MakeLink ("pfifo", switchs.Get (2 * i), routers.Get(2 * (i - 1)), edgeBW, linkDelay, ipv4AddrHelper);
+          MakeLink ("pfifo", routers.Get (2 * i - 1), switchs.Get(2 * i + 1), edgeBW, linkDelay, ipv4AddrHelper);
+        }
     }
 
   // Set up the routing
@@ -372,6 +378,7 @@ main (int argc, char *argv[])
   bool c3pEnable = false;
   bool dsEnable = false;
   bool csEnable = false;
+  bool ecmpEnable = false;
   bool writeResult = true;
   bool writeFlowInfo = true;
   bool writeThroughput = true;
@@ -380,6 +387,7 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.AddValue ("enableCS", "<0/1> enable CS test", csEnable);
   cmd.AddValue ("enableDS", "<0/1> enable DS test", dsEnable);
+  cmd.AddValue ("enableECMP", "<0/1> enable DS test", ecmpEnable);
   cmd.AddValue ("packetSize", "Size for every packet", packet_size);
   cmd.AddValue ("queueSize", "Queue length for RED queue", queue_size);
   cmd.AddValue ("threhold", "Threhold for RED queue", threhold);
@@ -398,6 +406,12 @@ main (int argc, char *argv[])
   Time sinkStartTime = globalStartTime;
   Time sinkStopTime = globalStopTime + Seconds (3);
   Time clientStopTime = globalStopTime;
+
+  // ECMP params
+  if(ecmpEnable)
+    {
+      Config::SetDefault("ns3::Ipv4GlobalRouting::RandomEcmpRouting", BooleanValue(true)); // enable multi-path routing
+    }
 
   SetupConfig ();
   SetupTopo (src_num, dst_num, edge_bw, btnk_bw, link_delay);
@@ -464,7 +478,7 @@ main (int argc, char *argv[])
   // ss << pathOut << "/flow-info.txt";
   ss << pathOut << "/flow-info-" << mice_load << ".txt";
   std::ofstream out (ss.str ());
-  if (true)
+  if (dsEnable)
     {
       uint32_t dsFlowId = ds_flowid_base; 
       for (Time clientStartTime = globalStartTime + Seconds (0.3);
@@ -487,7 +501,7 @@ main (int argc, char *argv[])
         }
     }
 
-  if (true)
+  if (csEnable)
     {
       uint32_t csFlowId = cs_flowid_base;
       for (Time clientStartTime = globalStartTime + Seconds (0.3);
