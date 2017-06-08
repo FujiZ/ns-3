@@ -518,11 +518,35 @@ main (int argc, char *argv[])
   ss << pathOut << "/flow-info-" << mice_load << ".txt";
   std::ofstream out (ss.str ());
   // Install background flow on s0
-  InstallOnOffClient (srcs.Get(0), InetSocketAddress(dst_interfaces.GetAddress(0), sink_port), 
-                      DataRate(0.8 * mice_load * btnk_bw.GetBitRate ()), 
-                      globalStartTime + Seconds (0.3), 
-                      clientStopTime);
+  //InstallOnOffClient (srcs.Get(0), InetSocketAddress(dst_interfaces.GetAddress(0), sink_port), 
+  //                    DataRate(0.8 * mice_load * btnk_bw.GetBitRate ()), 
+  //                    globalStartTime + Seconds (0.3), 
+  //                    clientStopTime);
 
+  if (dsEnable)
+   {
+     uint32_t dsFlowId = ds_flowid_base; 
+     for (Time clientStartTime = globalStartTime + Seconds (0.3);
+          clientStartTime < clientStopTime;
+          clientStartTime += Seconds (interArrivalStream->GetValue ()))
+       {
+         uint32_t srcIndex = 0; //hostStream->GetInteger ();
+         uint32_t dstIndex = 0; //hostStream->GetInteger ();
+         //for (;srcIndex == dstIndex; dstIndex = hostStream->GetInteger ());
+         uint32_t flowId = dsFlowId++;
+         uint32_t flowSize = flowSizeStream->GetInteger () * 1000;
+         Time deadline = Seconds (5.0 / 1000 + flowSize / 1e7);
+         InstallCsClient (srcs.Get (srcIndex), InetSocketAddress (dst_interfaces.GetAddress (dstIndex), sink_port), 0,
+                           flowId, flowSize, packet_size, clientStartTime, clientStopTime);
+         //InstallDsClient (srcs.Get (srcIndex), InetSocketAddress (dst_interfaces.GetAddress (dstIndex), sink_port), 0,
+         //                 flowId, flowSize, packet_size, deadline, clientStartTime, clientStopTime);
+         if (writeFlowInfo)
+           {
+             // output flow status
+             out << flowId << ", " << flowSize << ", " << clientStartTime.GetSeconds () << ", " << deadline.GetSeconds () << std::endl;
+          }
+       }
+   }
   // Install DCTCP flow on s1
   if (csEnable)
     {
