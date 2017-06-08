@@ -231,19 +231,25 @@ RxTrace (Ptr<const Packet> packet, const Address &from)
   NS_LOG_FUNCTION (packet << from);
   FlowIdTag flowIdTag;
   bool retval = packet->PeekPacketTag (flowIdTag);
-  NS_ASSERT (retval);
-  uint32_t fid = flowIdTag.GetFlowId ();
-  rx_time[fid] = Simulator::Now ().GetSeconds ();
+  if (retval)
+  {
+    uint32_t fid = flowIdTag.GetFlowId ();
+    rx_time[fid] = Simulator::Now ().GetSeconds ();
 
-  if (rx_size.find (fid) == rx_size.end())
-    rx_size[fid] = packet->GetSize ();
+    if (rx_size.find (fid) == rx_size.end())
+      rx_size[fid] = packet->GetSize ();
+    else
+      rx_size[fid] += packet->GetSize ();
+
+    if(fid >= ds_flowid_base && fid < cs_flowid_base)
+      rx_node[0] += packet->GetSize ();
+    else
+      rx_node[1] += packet->GetSize ();
+  }
   else
-    rx_size[fid] += packet->GetSize ();
-
-  if(fid >= ds_flowid_base && fid < cs_flowid_base)
+  {
     rx_node[0] += packet->GetSize ();
-  else
-    rx_node[1] += packet->GetSize ();
+  }
 }
 
 void
@@ -257,6 +263,37 @@ InstallSink (NodeContainer nodes, uint16_t port, const Time &startTime, const Ti
     {
       (*it)->TraceConnectWithoutContext ("Rx", MakeCallback (&RxTrace));
     }
+}
+
+void
+InstallOnOffClient (Ptr<Node> node, const Address &sinkAddr, DataRate rate, const Time startTime, const Time stopTime)
+{
+  OnOffHelper clientHelper("ns3::DctcpSocketFactory", sinkAddr);
+  clientHelper.SetConstantRate(rate, packet_size);
+  ApplicationContainer clientApp = clientHelper.Install (node);
+  clientApp.Start (startTime);
+  clientApp.Stop (stopTime);
+}
+
+// Ls App
+void
+InstallLSClient (Ptr<Node> node, const Address &sinkAddr, uint32_t tenantId,
+                 uint32_t flowId, uint64_t flowSize, uint64_t packetSize,
+                 const Time &startTime, const Time &stopTime)
+{
+  BulkSendHelper clientHelper ("ns3::DctcpSocketFactory", sinkAddr);
+  clientHelper.SetAttribute ("MaxBytes", UintegerValue (flowSize));
+  clientHelper.SetAttribute ("SendSize", UintegerValue (packetSize));
+  ApplicationContainer clientApp = clientHelper.Install (node);
+  clientApp.Start (startTime);
+  clientApp.Stop (stopTime);
+
+  dcn::C3Tag c3Tag;
+  c3Tag.SetTenantId (tenantId);
+  c3Tag.SetType (dcn::C3Type::CS); // TODO
+  c3Tag.SetFlowSize (flowSize);
+  clientApp.Get (0)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId, c3Tag));
+  // no need to set flow size in socket
 }
 
 // CS App
@@ -480,29 +517,13 @@ main (int argc, char *argv[])
   // ss << pathOut << "/flow-info.txt";
   ss << pathOut << "/flow-info-" << mice_load << ".txt";
   std::ofstream out (ss.str ());
-  if (dsEnable)
-    {
-      uint32_t dsFlowId = ds_flowid_base; 
-      for (Time clientStartTime = globalStartTime + Seconds (0.3);
-           clientStartTime < clientStopTime;
-           clientStartTime += Seconds (interArrivalStream->GetValue ()))
-        {
-          uint32_t srcIndex = 0; //hostStream->GetInteger ();
-          uint32_t dstIndex = 0; //hostStream->GetInteger ();
-          //for (;srcIndex == dstIndex; dstIndex = hostStream->GetInteger ());
-          uint32_t flowId = dsFlowId++;
-          uint32_t flowSize = flowSizeStream->GetInteger () * 1000;
-          Time deadline = Seconds (5.0 / 1000 + flowSize / 1e7);
-          InstallDsClient (srcs.Get (srcIndex), InetSocketAddress (dst_interfaces.GetAddress (dstIndex), sink_port), 0,
-                           flowId, flowSize, packet_size, deadline, clientStartTime, clientStopTime);
-          if (writeFlowInfo)
-            {
-              // output flow status
-              out << flowId << ", " << flowSize << ", " << clientStartTime.GetSeconds () << ", " << deadline.GetSeconds () << std::endl;
-            }
-        }
-    }
+  // Install background flow on s0
+  InstallOnOffClient (srcs.Get(0), InetSocketAddress(dst_interfaces.GetAddress(0), sink_port), 
+                      DataRate(0.8 * mice_load * btnk_bw.GetBitRate ()), 
+                      globalStartTime + Seconds (0.3), 
+                      clientStopTime);
 
+  // Install DCTCP flow on s1
   if (csEnable)
     {
       uint32_t csFlowId = cs_flowid_base;
