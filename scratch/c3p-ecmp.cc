@@ -410,7 +410,9 @@ main (int argc, char *argv[])
   // ECMP params
   if(ecmpEnable)
     {
-      Config::SetDefault("ns3::Ipv4GlobalRouting::RandomEcmpRouting", BooleanValue(true)); // enable multi-path routing
+      //Config::SetDefault("ns3::Ipv4GlobalRouting::RandomEcmpRouting", BooleanValue(true)); // enable multi-path routing
+      // Enable per-flow ECMP
+      Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_HASH"));
     }
 
   SetupConfig ();
