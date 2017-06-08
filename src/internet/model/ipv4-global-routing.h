@@ -40,6 +40,12 @@ class Ipv4RoutingTableEntry;
 class Ipv4MulticastRoutingTableEntry;
 class Node;
 
+typedef enum
+{
+  ECMP_NONE,
+  ECMP_HASH,   // per-flow hash, five tuple
+  ECMP_RANDOM  // per-packet random
+}EcmpMode_t;
 
 /**
  * \ingroup ipv4
@@ -228,12 +234,15 @@ public:
    */
   int64_t AssignStreams (int64_t stream);
 
+  uint64_t GetTupleValue (const Ipv4Header &header, Ptr<const Packet> ipPayload);
+
 protected:
   void DoDispose (void);
 
 private:
+  EcmpMode_t m_ecmpMode;
   /// Set to true if packets are randomly routed among ECMP; set to false for using only one route consistently
-  bool m_randomEcmpRouting;
+  // bool m_randomEcmpRouting;
   /// Set to true if this interface should respond to interface events by globallly recomputing routes 
   bool m_respondToInterfaceEvents;
   /// A uniform random number generator for randomly routing packets among ECMP 
@@ -266,8 +275,10 @@ private:
    * \param oif output interface if any (put 0 otherwise)
    * \return Ipv4Route to route the packet to reach dest address
    */
-  Ptr<Ipv4Route> LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif = 0);
+  // Ptr<Ipv4Route> LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif = 0);
+  Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<const Packet> ipPayload, Ptr<NetDevice> oif = 0, bool host = false);
 
+  Hasher hasher;                       //!< Used for hashing five tuple
   HostRoutes m_hostRoutes;             //!< Routes to hosts
   NetworkRoutes m_networkRoutes;       //!< Routes to networks
   ASExternalRoutes m_ASexternalRoutes; //!< External routes imported

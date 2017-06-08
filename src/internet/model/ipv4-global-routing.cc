@@ -28,8 +28,11 @@
 #include "ns3/ipv4-routing-table-entry.h"
 #include "ns3/boolean.h"
 #include "ns3/node.h"
+#include "ns3/enum.h"
 #include "ipv4-global-routing.h"
 #include "global-route-manager.h"
+#include "udp-header.h"
+#include "tcp-header.h"
 
 namespace ns3 {
 
@@ -37,17 +40,29 @@ NS_LOG_COMPONENT_DEFINE ("Ipv4GlobalRouting");
 
 NS_OBJECT_ENSURE_REGISTERED (Ipv4GlobalRouting);
 
+const uint8_t TCP_PROT_NUMBER = 6;
+const uint8_t UDP_PROT_NUMBER = 17;
+
 TypeId 
 Ipv4GlobalRouting::GetTypeId (void)
 { 
   static TypeId tid = TypeId ("ns3::Ipv4GlobalRouting")
     .SetParent<Object> ()
     .SetGroupName ("Internet")
+/*
     .AddAttribute ("RandomEcmpRouting",
                    "Set to true if packets are randomly routed among ECMP; set to false for using only one route consistently",
                    BooleanValue (false),
                    MakeBooleanAccessor (&Ipv4GlobalRouting::m_randomEcmpRouting),
                    MakeBooleanChecker ())
+*/
+    .AddAttribute ("EcmpMode",
+                   "Equal-Cost Multi-Path Routing mode",
+                   EnumValue(ECMP_NONE),
+                   MakeEnumAccessor(&Ipv4GlobalRouting::m_ecmpMode),
+                   MakeEnumChecker(ECMP_NONE, "ECMP_NONE",           // NO ECMP
+                                   ECMP_HASH, "ECMP_HASH",           // Per-Flow ECMP
+                                   ECMP_RANDOM, "ECMP_RANDOM"))      // Per-Packet ECMP
     .AddAttribute ("RespondToInterfaceEvents",
                    "Set to true if you want to dynamically recompute the global routes upon Interface notification events (up/down, or add/remove address)",
                    BooleanValue (false),
@@ -58,12 +73,13 @@ Ipv4GlobalRouting::GetTypeId (void)
 }
 
 Ipv4GlobalRouting::Ipv4GlobalRouting () 
-  : m_randomEcmpRouting (false),
+  : //m_randomEcmpRouting (false),
     m_respondToInterfaceEvents (false)
 {
   NS_LOG_FUNCTION (this);
 
   m_rand = CreateObject<UniformRandomVariable> ();
+  hasher = Hasher();
 }
 
 Ipv4GlobalRouting::~Ipv4GlobalRouting ()
@@ -135,12 +151,67 @@ Ipv4GlobalRouting::AddASExternalRouteTo (Ipv4Address network,
   m_ASexternalRoutes.push_back (route);
 }
 
+uint64_t
+Ipv4GlobalRouting::GetTupleValue(const Ipv4Header &header, Ptr<const Packet> ipPayload)
+{
+  NS_LOG_FUNCTION(this << header);
+
+  hasher.clear();
+  std::ostringstream oss;
+  oss << header.GetSource()
+      << header.GetDestination()
+      << header.GetProtocol();
+
+  switch (header.GetProtocol())
+  {
+    case UDP_PROT_NUMBER:
+    {
+      UdpHeader udpHeader;
+      ipPayload->PeekHeader(udpHeader);
+      NS_LOG_DEBUG ("FiveTuple() -> UDP: (src, dst, protN, sPort, dPort) - "
+          << header.GetSource() << ", "
+          << header.GetDestination() << ", "
+          << (int)header.GetProtocol() << ", "
+          << (int)udpHeader.GetSourcePort() << ", "
+          << (int)udpHeader.GetDestinationPort());
+
+      oss << udpHeader.GetSourcePort()
+          << udpHeader.GetDestinationPort();
+
+      break;
+    }
+    case TCP_PROT_NUMBER:
+    {
+      TcpHeader tcpHeader;
+      ipPayload->PeekHeader(tcpHeader);
+      NS_LOG_DEBUG ("FiveTuple() -> TCP: (src, dst, protN, sPort, dPort) - "
+          << header.GetSource() << ", "
+          << header.GetDestination() << ", "
+          << (int)header.GetProtocol() << ", "
+          << (int)tcpHeader.GetSourcePort() << ", "
+          << (int)tcpHeader.GetDestinationPort());
+      
+      oss << tcpHeader.GetSourcePort()
+          << tcpHeader.GetDestinationPort();
+
+      break;
+    }
+    default:
+      break;
+  }
+
+  std::string data = oss.str();
+  uint32_t hash = hasher.GetHash32(data);
+  oss.str("");
+  return hash;  
+}
 
 Ptr<Ipv4Route>
-Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
+//Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
+Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<const Packet> ipPayload, Ptr<NetDevice> oif, bool host)
 {
-  NS_LOG_FUNCTION (this << dest << oif);
-  NS_LOG_LOGIC ("Looking for route for destination " << dest);
+  NS_LOG_FUNCTION (this << header.GetDestination() << oif);
+  NS_LOG_LOGIC ("Looking for route for destination " << header.GetDestination());
   Ptr<Ipv4Route> rtentry = 0;
   // store all available routes that bring packets to their destination
   typedef std::vector<Ipv4RoutingTableEntry*> RouteVec_t;
@@ -152,7 +223,7 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
        i++) 
     {
       NS_ASSERT ((*i)->IsHost ());
-      if ((*i)->GetDest ().IsEqual (dest)) 
+      if ((*i)->GetDest ().IsEqual (header.GetDestination())) 
         {
           if (oif != 0)
             {
@@ -175,7 +246,7 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
         {
           Ipv4Mask mask = (*j)->GetDestNetworkMask ();
           Ipv4Address entry = (*j)->GetDestNetwork ();
-          if (mask.IsMatch (dest, entry)) 
+          if (mask.IsMatch (header.GetDestination(), entry)) 
             {
               if (oif != 0)
                 {
@@ -198,7 +269,7 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
         {
           Ipv4Mask mask = (*k)->GetDestNetworkMask ();
           Ipv4Address entry = (*k)->GetDestNetwork ();
-          if (mask.IsMatch (dest, entry))
+          if (mask.IsMatch (header.GetDestination(), entry))
             {
               NS_LOG_LOGIC ("Found external route" << *k);
               if (oif != 0)
@@ -220,6 +291,7 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
       // ECMP routing is enabled, or always select the first route
       // consistently if random ECMP routing is disabled
       uint32_t selectIndex;
+      /*
       if (m_randomEcmpRouting)
         {
           selectIndex = m_rand->GetInteger (0, allRoutes.size ()-1);
@@ -228,6 +300,22 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
         {
           selectIndex = 0;
         }
+      */
+      switch (m_ecmpMode)
+      {
+        case ECMP_NONE:
+          selectIndex = 0;
+          break;
+        case ECMP_HASH:
+          selectIndex = GetTupleValue(header,ipPayload) % (allRoutes.size());
+          break;
+        case ECMP_RANDOM:
+          selectIndex = m_rand->GetInteger (0, allRoutes.size()-1);
+          break;
+        default:
+          selectIndex = 0;
+          break;
+      }
       Ipv4RoutingTableEntry* route = allRoutes.at (selectIndex); 
       // create a Ipv4Route object from the selected routing table entry
       rtentry = Create<Ipv4Route> ();
@@ -468,7 +556,8 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Net
 // See if this is a unicast packet we have a route for.
 //
   NS_LOG_LOGIC ("Unicast destination- looking up");
-  Ptr<Ipv4Route> rtentry = LookupGlobal (header.GetDestination (), oif);
+  //Ptr<Ipv4Route> rtentry = LookupGlobal (header.GetDestination (), oif);
+  Ptr<Ipv4Route> rtentry = LookupGlobal (header, p, oif, true);
   if (rtentry)
     {
       sockerr = Socket::ERROR_NOTERROR;
@@ -517,7 +606,8 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
     }
   // Next, try to find a route
   NS_LOG_LOGIC ("Unicast destination- looking up global route");
-  Ptr<Ipv4Route> rtentry = LookupGlobal (header.GetDestination ());
+  //Ptr<Ipv4Route> rtentry = LookupGlobal (header.GetDestination ());
+  Ptr<Ipv4Route> rtentry = LookupGlobal (header, p);
   if (rtentry != 0)
     {
       NS_LOG_LOGIC ("Found unicast destination- calling unicast callback");

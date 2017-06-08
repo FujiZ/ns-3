@@ -40,6 +40,7 @@ int main(int argc, char *argv[])
     NodeContainer global(n0, n1, n2, n3, n4n5);
 
     //Config::SetDefault("ns3::Ipv4GlobalRouting::RandomEcmpRouting",     BooleanValue(true)); // enable multi-path routing
+    Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_HASH"));
 
     // create link
     PointToPointHelper p2p;
