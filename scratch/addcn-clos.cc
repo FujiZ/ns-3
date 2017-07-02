@@ -367,6 +367,7 @@ main (int argc, char *argv[])
   
   bool useEcn = false;
   bool useDctcp = false; 
+  bool useECMP = false;
   bool writeForPlot = false;
   bool writePcap = false;
   bool flowMonitor = false;
@@ -392,10 +393,11 @@ main (int argc, char *argv[])
   threshold = 20;
 
   // Will only save in the directory if enable opts below
-  pathOut = "./clos"; // Current directory
+  pathOut = "."; // Current directory
   CommandLine cmd;
   cmd.AddValue ("useEcn", "<0/1> to use ecn in test", useEcn);
   cmd.AddValue ("useDctcp", "<0/1> to use dctcp in test", useDctcp);
+  cmd.AddValue ("useECMP", "<0/1> to use ecmp in test", useECMP);
   cmd.AddValue ("pathOut", "Path to save results from --writeForPlot/--writePcap/--writeFlowMonitor", pathOut);
   cmd.AddValue ("writeForPlot", "<0/1> to write results for plot (gnuplot)", writeForPlot);
   cmd.AddValue ("writePcap", "<0/1> to write results in pcapfile", writePcap);
@@ -404,7 +406,11 @@ main (int argc, char *argv[])
 
   cmd.Parse (argc, argv);
 
-  //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_RANDOM"));
+  if (useECMP)
+    {
+      Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_RANDOM"));
+    }
+
   SetConfig (useEcn, useDctcp);
   BuildTopo (8, 4, 4, 2);
   BuildAppsTest ();
