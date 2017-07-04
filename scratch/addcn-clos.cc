@@ -302,7 +302,7 @@ BuildAppsTest (void)
   double clientStartTime = client_start_time;
   double clientStopTime = client_stop_time;
   //int i = 3;
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < 3; i++)
     {
       dcn::AddcnBulkSendHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (i + 4), port));
       ApplicationContainer clientApps = clientHelper.Install (servers.Get (i));
@@ -314,7 +314,7 @@ BuildAppsTest (void)
       app->SetFlowSize (0);
       app->SetTenantId (i);
       app->SetSegSize (packet_size);
-      clientStartTime += client_interval_time;
+      //clientStartTime += client_interval_time;
     }
 }
 
@@ -408,6 +408,7 @@ main (int argc, char *argv[])
 
   if (useECMP)
     {
+      //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_HASH"));
       Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_RANDOM"));
     }
 

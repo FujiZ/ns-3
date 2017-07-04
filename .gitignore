@@ -53,3 +53,4 @@ result.*
 *.swp
 temp*
 poster
+nohup.out
