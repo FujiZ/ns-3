@@ -60,9 +60,10 @@ Ipv4GlobalRouting::GetTypeId (void)
                    "Equal-Cost Multi-Path Routing mode",
                    EnumValue(ECMP_NONE),
                    MakeEnumAccessor(&Ipv4GlobalRouting::m_ecmpMode),
-                   MakeEnumChecker(ECMP_NONE, "ECMP_NONE",           // NO ECMP
-                                   ECMP_HASH, "ECMP_HASH",           // Per-Flow ECMP
-                                   ECMP_RANDOM, "ECMP_RANDOM"))      // Per-Packet ECMP
+                   MakeEnumChecker(ECMP_NONE, "ECMP_NONE",         // NO ECMP
+                                   ECMP_HASH, "ECMP_HASH",         // Per-Flow ECMP
+                                   ECMP_RANDOM, "ECMP_RANDOM",     // Per-Packet ECMP
+                                   ECMP_FLOWCELL, "ECMP_FLOWCELL"))// Per-Hop ECMP with flowcell
     .AddAttribute ("RespondToInterfaceEvents",
                    "Set to true if you want to dynamically recompute the global routes upon Interface notification events (up/down, or add/remove address)",
                    BooleanValue (false),
@@ -152,7 +153,7 @@ Ipv4GlobalRouting::AddASExternalRouteTo (Ipv4Address network,
 }
 
 uint64_t
-Ipv4GlobalRouting::GetTupleValue(const Ipv4Header &header, Ptr<const Packet> ipPayload)
+Ipv4GlobalRouting::GetTupleValue(const Ipv4Header &header, Ptr<const Packet> ipPayload, bool flowcell)
 {
   NS_LOG_FUNCTION(this << header);
 
@@ -194,6 +195,11 @@ Ipv4GlobalRouting::GetTupleValue(const Ipv4Header &header, Ptr<const Packet> ipP
       oss << tcpHeader.GetSourcePort()
           << tcpHeader.GetDestinationPort();
 
+      if (flowcell) // flowcell ecmp
+      {
+        SequenceNumber32 seq = tcpHeader.GetSequenceNumber();
+        oss << (seq.GetValue() >> 16);
+      }
       break;
     }
     default:
@@ -311,6 +317,9 @@ Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<const Packet> ipP
           break;
         case ECMP_RANDOM:
           selectIndex = m_rand->GetInteger (0, allRoutes.size()-1);
+          break;
+        case ECMP_FLOWCELL:
+          selectIndex = GetTupleValue(header,ipPayload, true) % (allRoutes.size());
           break;
         default:
           selectIndex = 0;

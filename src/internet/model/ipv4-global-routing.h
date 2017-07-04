@@ -44,7 +44,8 @@ typedef enum
 {
   ECMP_NONE,
   ECMP_HASH,   // per-flow hash, five tuple
-  ECMP_RANDOM  // per-packet random
+  ECMP_RANDOM,  // per-packet random
+  ECMP_FLOWCELL, // per-hop with flowcell 64KB each change
 }EcmpMode_t;
 
 /**
@@ -234,7 +235,7 @@ public:
    */
   int64_t AssignStreams (int64_t stream);
 
-  uint64_t GetTupleValue (const Ipv4Header &header, Ptr<const Packet> ipPayload);
+  uint64_t GetTupleValue (const Ipv4Header &header, Ptr<const Packet> ipPayload, bool flowcell = false);
 
 protected:
   void DoDispose (void);
