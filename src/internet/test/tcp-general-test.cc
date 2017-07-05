@@ -971,7 +971,7 @@ TcpSocketMsgBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 void
 TcpSocketMsgBase::Retransmit ()
 {
-  //TcpSocketBase::Retransmit ();
+  TcpSocketBase::Retransmit ();
 
   m_retrCallback (m_tcb, this);
 }
