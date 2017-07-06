@@ -341,6 +341,8 @@ SetConfig (bool useEcn, bool useDctcp)
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
+  //Config::SetDefault ("ns3::TcpSocketBase::ReTxThreshold", UintegerValue (8));
+
   if (useDctcp)
     {
       Config::SetDefault ("ns3::TcpSocketBase::UseEcn", BooleanValue (true));
@@ -409,8 +411,8 @@ main (int argc, char *argv[])
   if (useECMP)
     {
       //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_HASH"));
-      //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_RANDOM"));
-      Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_FLOWCELL"));
+      Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_RANDOM"));
+      //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_FLOWCELL"));
     }
 
   SetConfig (useEcn, useDctcp);
