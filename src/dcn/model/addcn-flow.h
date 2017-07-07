@@ -228,6 +228,7 @@ private:
   SequenceNumber32 m_updateAlphaSeq;        //!< last sequence number upon which alpha was updated
   SequenceNumber32 m_dctcpMaxSeq;           //!< 
   SequenceNumber32 m_highRxAckMark;
+  SequenceNumber32 m_nextRxSequence;       //!<
   uint8_t m_sndWindShift;                  //!< Window shift to apply to incoming segments
 
   SequenceNumber32 m_recover;
@@ -257,6 +258,7 @@ private:
   uint32_t              m_bytesAckedNotProcessed;
   bool                  m_isFirstPartialAck;
   bool                  m_ecnTransition;
+  bool                  m_disableReorder;
   Ptr<TcpSocketState>   m_tcb;
   Ptr<RttEstimator>     m_rtt;
   RttHistory_t          m_history;  

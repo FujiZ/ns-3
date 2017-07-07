@@ -139,10 +139,13 @@ ADDCNFlow::Initialize ()
   m_seqNumber = 0;
   m_updateRwndSeq = 0;
   m_updateAlphaSeq = 0;
+  m_nextRxSequence = 0;
   m_dctcpMaxSeq = 0;
   m_recover = 0;
   m_highRxAckMark = 0;
   m_sndWindShift = 0;
+
+  m_disableReorder = true;
 
   m_rto = Seconds(0.0);
   m_minRto = Seconds(1.0); // RFC 6298 says min RTO=1 sec, but Linux uses 200ms
@@ -293,6 +296,11 @@ ADDCNFlow::SetReceiveWindow(Ptr<Packet> &packet)
     NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
     return;
   }
+  // Change sequence as if reorder problem solved
+  if (m_disableReorder && !(tcpHeader.GetFlags () & TcpHeader::SYN))
+  {
+    tcpHeader.SetSequenceNumber(m_nextRxSequence);
+  }
 
   uint8_t flags = tcpHeader.GetFlags();
   uint32_t m_shift = 0;
@@ -352,6 +360,11 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
 
   uint8_t flags = tcpHeader.GetFlags();
   m_seqNumber = tcpHeader.GetSequenceNumber ();
+
+  if (m_disableReorder && (tcpHeader.GetFlags () & TcpHeader::ACK))
+  {
+    m_nextRxSequence = tcpHeader.GetAckNumber ();
+  }
 
   uint32_t sz = packet->GetSize ();
 
@@ -557,6 +570,7 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
      if (tcpHeader.GetAckNumber () > m_highRxAckMark)
        m_highRxAckMark = tcpHeader.GetAckNumber ();
    }
+
   /*
   else if (tcpHeader.GetFlags () & TcpHeader::ACK)
    {
