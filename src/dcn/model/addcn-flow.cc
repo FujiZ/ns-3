@@ -568,8 +568,10 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
   else if (tcpHeader.GetFlags () & TcpHeader::ACK)
    {
      EstimateRtt (tcpHeader);
-     if (tcpHeader.GetAckNumber () > m_highRxAckMark)
+     if (tcpHeader.GetAckNumber () >= m_highRxAckMark)
        m_highRxAckMark = tcpHeader.GetAckNumber ();
+     else if(m_disableReorder)
+       return false;
    }
 
   /*
