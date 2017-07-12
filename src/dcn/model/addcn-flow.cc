@@ -338,7 +338,7 @@ ADDCNFlow::SetFiveTuple (ADDCNFlow::FiveTuple tuple)
   m_tuple = tuple;
 }
 
-void
+bool
 ADDCNFlow::NotifySend (Ptr<Packet>& packet)
 {
   C3Tag c3Tag;
@@ -354,7 +354,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
   if(bytesRemoved == 0)
   {
     NS_LOG_ERROR("SetReceiveWindow bytes remoed invalid");
-    return;
+    return false;
   }
   NS_LOG_FUNCTION (this << tcpHeader);
 
@@ -497,10 +497,11 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
 
   tcpHeader.SetFlags(flags);
   packet->AddHeader(tcpHeader);
+  return true;
   //m_forwardTarget (packet, m_tuple.sourceAddress, m_tuple.destinationAddress, m_tuple.protocol, route);
 }
 
-void
+bool
 ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
 {
   NS_LOG_FUNCTION (this << header);
@@ -511,7 +512,7 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
   if (bytesRemoved == 0 || bytesRemoved > 60)
     {
       NS_LOG_ERROR ("Bytes removed: " << bytesRemoved << " invalid");
-      return; // Discard invalid packet
+      return false; // Discard invalid packet
     }
   NS_LOG_FUNCTION (this << tcpHeader);
 
@@ -671,6 +672,7 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
       HalveCwnd ();
     }
     SetReceiveWindow(packet);
+    return true;
 }
 
 double

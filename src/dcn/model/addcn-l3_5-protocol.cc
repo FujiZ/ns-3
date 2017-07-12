@@ -46,6 +46,7 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
   NS_ASSERT (src == route->GetSource ());
   NS_LOG_DEBUG ("in c3p before forward down");
 
+  bool send = true;
   if(protocol == 6) // TCP
   {
     TcpHeader tcpHeader;
@@ -116,7 +117,7 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
       // set packet size before forward down
       c3Tag.SetPacketSize (GetPacketSize (packet, protocol));
       packet->AddPacketTag (c3Tag);
-      flow->NotifySend(packet);
+      send = flow->NotifySend(packet);
       //return;
       /*
       Ptr<ADDCNTunnel> tunnel = ADDCNDivision::GetDivision (c3Tag.GetTenantId (), c3Tag.GetType ())->GetTunnel (src, dst);
@@ -135,11 +136,12 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
       rtuple.sourcePort = tcpHeader.GetDestinationPort ();
       rtuple.destinationPort = tcpHeader.GetSourcePort ();
       Ptr<ADDCNFlow> flow = ADDCNSlice::GetSliceFromTuple(rtuple)->GetFlow(tuple);
-      flow->NotifySend(packet);
+      send = flow->NotifySend(packet);
     }
   }
   // check tag before send
-  ForwardDown (packet, src, dst, protocol, route);
+  if (send)
+    ForwardDown (packet, src, dst, protocol, route);
 }
 
 void
@@ -161,6 +163,7 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
   NS_LOG_FUNCTION (this << packet << ipHeader);
   uint8_t protocol = ipHeader.GetProtocol ();
 
+  bool receive = true;
   if(protocol == 6) // TCP
   {
     C3Tag c3Tag;
@@ -184,7 +187,7 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
     { // At the receiver side
 #ifdef DCTCPACK
       Ptr<ADDCNFlow> rflow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(rtuple);
-      rflow->NotifyReceive (packet, ipHeader);
+      receive = rflow->NotifyReceive (packet, ipHeader);
 #else
       Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple);
       //if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
@@ -196,7 +199,7 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
     else // TODO: What if both side supports C3Tag?
     { // At the sender side
       Ptr<ADDCNFlow> rflow = ADDCNSlice::GetSliceFromTuple(rtuple)->GetFlow(rtuple);
-      rflow->NotifyReceive (packet, ipHeader);
+      receive = rflow->NotifyReceive (packet, ipHeader);
 
     /*
     //if((tcpHeader.GetFlags() & TcpHeader::SYN) == TcpHeader::SYN)
@@ -236,7 +239,10 @@ ADDCNL3_5Protocol::Receive (Ptr<Packet> packet,
       //NS_LOG_FUNCTION(this << "Window Set Header " << tcpHeader);
     }
   }
-  return ForwardUp (packet, ipHeader, incomingInterface, ipHeader.GetProtocol ());
+  if (receive)
+    return ForwardUp (packet, ipHeader, incomingInterface, ipHeader.GetProtocol ());
+  else
+    return IpL4Protocol::RX_OK;
 }
 
 enum IpL4Protocol::RxStatus
