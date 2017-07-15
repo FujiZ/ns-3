@@ -1,9 +1,12 @@
+import sys
+
 STOP_TIME = 15
 DEADLINE_DELTA = -0.000
 
 flow_info = {}  # fid->(flowSize, startTime, deadline)
 flow_result = {}  # fid->(flowSize, startTime, stopTime)
 
+result_path = sys.argv[1]
 
 def parse_flow_info(filename):
     for line in open(filename):
@@ -54,12 +57,13 @@ def process_deadline(fid_begin, fid_end):
 
 
 if __name__ == '__main__':
-    path = "result/c3p/cs-ds"
+    #path = "result/c3p/cs-ds"
+    path = "result/noecmp-nosched/c3p/" + result_path
     for i in range(1, 10):
         parse_flow_info(path + "/flow-info-0." + str(i) + ".txt")
         parse_flow_result(path + "/flow-result-0." + str(i) + ".txt")
-        print(str(i) + ", " + str(process_deadline(100000, 200000)))
-        print(str(i) + ", " + str(process_afct(200000, 300000)))
+        print(str(i) + " DS, MISS=" + str(process_deadline(100000, 200000)))
+        print(str(i) + " CS, AFCT=" + str(process_afct(200000, 300000)))
         flow_info.clear()
         flow_result.clear()
         # print("Deadline Missed Ratio for DS flows: " + str(process_deadline(10000, 20000)))
