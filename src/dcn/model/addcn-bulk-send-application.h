@@ -104,6 +104,8 @@ public:
 
   void SetTenantId(uint32_t tenantId);
   uint32_t GetTenantId();
+  void SetFlowId(uint32_t flowId);
+  uint32_t GetFlowId();
   void SetFlowType(C3Type &flowType);
   C3Type GetFlowType();
   void SetFlowSize(uint64_t flowSize);
@@ -114,6 +116,7 @@ public:
   uint32_t GetSegSize();
 
   void SocketTxTracer(Ptr<Packet const> packet, const TcpHeader &header, Ptr<TcpSocketBase const> socketBase);
+  typedef void (* SocketCreateTracedCallback) (Ptr<Socket> socket);
 
 protected:
   virtual void DoDispose (void);
@@ -136,12 +139,14 @@ private:
   TypeId          m_tid;          //!< The type of protocol to use.
 
   uint32_t        m_tenantId;     //!< Tenant ID of current flow
+  uint32_t        m_flowId;       //!< Flow ID of current flow
   C3Type          m_flowType;     //!< Flow type of current flow
   uint64_t        m_flowSize;     //!< Size of flow to send
   Time            m_deadline;     //!< Deadline of current flow
   uint32_t        m_segSize;      //!< Semgment size; // TODO
   /// Traced Callback: sent packets
   TracedCallback<Ptr<const Packet> > m_txTrace;
+  TracedCallback<Ptr<Socket> > m_socketCreateTrace;
 
 private:
   /**

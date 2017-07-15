@@ -74,6 +74,9 @@ AddcnBulkSendApplication::GetTypeId (void)
     .AddTraceSource ("Tx", "A new packet is created and is sent",
                      MakeTraceSourceAccessor (&AddcnBulkSendApplication::m_txTrace),
                      "ns3::Packet::TracedCallback")
+    .AddTraceSource ("SocketCreate", "A new socket is created",
+                     MakeTraceSourceAccessor (&AddcnBulkSendApplication::m_socketCreateTrace),
+                     "ns3::dcn::AddcnBuldSendApplication::SocketCreateTracedCallback")
   ;
   return tid;
 }
@@ -84,6 +87,7 @@ AddcnBulkSendApplication::AddcnBulkSendApplication ()
     m_connected (false),
     m_totBytes (0),
     m_tenantId (0),
+    m_flowId (0),
     m_flowType (ns3::dcn::C3Type::DS),
     m_flowSize (100000),
     m_deadline (Seconds(5.0)),
@@ -100,16 +104,19 @@ AddcnBulkSendApplication::~AddcnBulkSendApplication ()
 void 
 AddcnBulkSendApplication::SocketTxTracer(Ptr<Packet const> packet, const TcpHeader &header, Ptr<TcpSocketBase const> socketBase)
 {
-  static FlowIdTag flowIdTag;
+  FlowIdTag flowIdTag;
+  flowIdTag.SetFlowId (m_flowId);
+
   ns3::dcn::C3Tag c3Tag;
   c3Tag.SetTenantId(m_tenantId);
   c3Tag.SetType (m_flowType);
   c3Tag.SetFlowSize (m_flowSize);
   c3Tag.SetDeadline (m_deadline);
   c3Tag.SetSegmentSize (m_segSize);
+
   packet->AddPacketTag (flowIdTag);
   packet->AddPacketTag (c3Tag);
-  packet->AddByteTag (c3Tag);
+  // packet->AddByteTag (c3Tag);
 }
 
 void
@@ -138,6 +145,20 @@ AddcnBulkSendApplication::GetTenantId()
 {
   NS_LOG_FUNCTION (this );
   return m_tenantId;
+}
+
+void 
+AddcnBulkSendApplication::SetFlowId(uint32_t flowId)
+{
+  NS_LOG_FUNCTION (this );
+  m_flowId = flowId;
+}
+
+uint32_t 
+AddcnBulkSendApplication::GetFlowId()
+{
+  NS_LOG_FUNCTION (this );
+  return m_flowId;
 }
 
 void 
@@ -226,6 +247,8 @@ void AddcnBulkSendApplication::StartApplication (void) // Called at time specifi
                           "In other words, use TCP instead of UDP.");
         }
 
+      m_socketCreateTrace (m_socket);
+
       if (Inet6SocketAddress::IsMatchingType (m_peer))
         {
           m_socket->Bind6 ();
@@ -236,6 +259,7 @@ void AddcnBulkSendApplication::StartApplication (void) // Called at time specifi
         }
 
       m_socket->TraceConnectWithoutContext("Tx", MakeCallback(&AddcnBulkSendApplication::SocketTxTracer, this));
+
       m_socket->Connect (m_peer);
       m_socket->ShutdownRecv ();
       m_socket->SetConnectCallback (

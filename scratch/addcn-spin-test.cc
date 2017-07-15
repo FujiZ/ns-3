@@ -103,7 +103,8 @@ RxTrace (Ptr<const Packet> packet, const Address &from)
 {
   NS_LOG_FUNCTION (packet << from);
   FlowIdTag flowIdTag;
-  bool retval = packet->FindFirstMatchingByteTag (flowIdTag);
+  //bool retval = packet->FindFirstMatchingByteTag (flowIdTag);
+  bool retval = packet->PeekPacketTag (flowIdTag);
   NS_ASSERT (retval);
   if (totalRx.find (flowIdTag.GetFlowId ()) != totalRx.end ())
     {
@@ -279,9 +280,10 @@ BuildAppsTest (void)
       Ptr<dcn::AddcnBulkSendApplication> app = StaticCast<dcn::AddcnBulkSendApplication> (*it);
       app->SetStartTime (Seconds (clientStartTime));
       app->SetStopTime (Seconds (clientStopTime));
-      app->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, i*2+j));
+      //app->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, i*2+j));
       app->SetFlowSize (0);
       app->SetTenantId (i*2+j);
+      app->SetFlowId (i*2+j);
       app->SetSegSize (packet_size);
       clientStartTime += client_interval_time;
       }
