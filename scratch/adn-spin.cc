@@ -352,7 +352,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("workload", "workload type", workload);
   cmd.AddValue ("miceLoad", "network load factor", mice_load);
   cmd.AddValue ("simTime", "simulation time", sim_time);
-  cmd.AddValue ("enableC3P", "<0/1> enable C3 in test", adnEnable);
+  cmd.AddValue ("enableADN", "<0/1> enable ADN in test", adnEnable);
   cmd.AddValue ("pathOut", "Path to save results", pathOut);
   cmd.AddValue ("writeResult", "<0/1> to write result", writeResult);
   cmd.AddValue ("writeFlowInfo", "<0/1> to write flow info", writeFlowInfo);
