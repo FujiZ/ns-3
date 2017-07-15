@@ -271,17 +271,20 @@ BuildAppsTest (void)
   //int i = 3;
   for (int i = 0; i < 2; i++)
     {
+      for (int j = 0; j < 2; j++)
+      {
       dcn::AddcnBulkSendHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (i + 2), port));
       ApplicationContainer clientApps = clientHelper.Install (servers.Get (i));
       auto it = clientApps.Begin();
       Ptr<dcn::AddcnBulkSendApplication> app = StaticCast<dcn::AddcnBulkSendApplication> (*it);
       app->SetStartTime (Seconds (clientStartTime));
       app->SetStopTime (Seconds (clientStopTime));
-      app->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, i));
+      app->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, i*2+j));
       app->SetFlowSize (0);
-      app->SetTenantId (i);
+      app->SetTenantId (i*2+j);
       app->SetSegSize (packet_size);
       clientStartTime += client_interval_time;
+      }
     }
 }
 
@@ -305,6 +308,8 @@ SetConfig (bool useEcn, bool useDctcp)
   Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true)); // Should always be true
 
   // TCP params
+  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (1e7));
+  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (1e7));
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packet_size));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
@@ -346,7 +351,7 @@ main (int argc, char *argv[])
   std::string pathOut;
 
   global_start_time = 0.0;
-  global_stop_time = 25.0;
+  global_stop_time = 50.0;
   sink_start_time = global_start_time;
   sink_stop_time = global_stop_time + 3.0;
   client_start_time = sink_start_time + 0.2;

@@ -199,6 +199,7 @@ protected:
   uint32_t m_sentSize;      //!< the sent size of current flow
   //int32_t m_bufferedSize;  //!< the size of current buffer
   uint32_t m_segSize;       //!< Setmeng size
+  uint32_t m_lastSentSize;  
 
   FiveTuple m_tuple; //!< <srcIP, srcPort, dstIP, dstPort, protocol> tuple of current flow
 
@@ -235,6 +236,8 @@ private:
   SequenceNumber32 m_ecnEchoSeq;
   SequenceNumber32 m_SND_UNA;           //!<
   SequenceNumber32 m_SND_NXT;           //!<
+
+  SequenceNumber32 m_nextAckSequence;
   //Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
   ForwardTargetCallback m_forwardTarget;    //!< callback to forward packet
 

@@ -128,6 +128,7 @@ ADDCNFlow::Initialize ()
   m_rWnd = 0;
   m_flowSize = 0;
   m_sentSize = 0;
+  m_lastSentSize = 0;
   m_g = 1.0 / 16.0;
   m_alpha = 1.0;
   m_scale = 1.0;
@@ -140,6 +141,7 @@ ADDCNFlow::Initialize ()
   m_updateRwndSeq = 0;
   m_updateAlphaSeq = 0;
   m_nextRxSequence = 0;
+  m_nextAckSequence = 0;
   m_dctcpMaxSeq = 0;
   m_recover = 0;
   m_highRxAckMark = 0;
@@ -367,6 +369,7 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
   }
 
   uint32_t sz = packet->GetSize ();
+  m_lastSentSize = sz;
 
   m_sentSize += sz;
   
@@ -568,10 +571,10 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
   else if (tcpHeader.GetFlags () & TcpHeader::ACK)
    {
      EstimateRtt (tcpHeader);
-     if (tcpHeader.GetAckNumber () >= m_highRxAckMark)
+     if (tcpHeader.GetAckNumber () > m_highRxAckMark)
        m_highRxAckMark = tcpHeader.GetAckNumber ();
-     else if(m_disableReorder)
-       return false;
+    // else if(m_disableReorder && (tcpHeader.GetAckNumber () != m_tcb->m_nextTxSequence))
+    //   return false;
    }
 
   /*
@@ -606,6 +609,20 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
   switch (m_state)
     {
     case TcpSocket::ESTABLISHED:
+      /*
+      if (m_disableReorder)
+      {
+        if (tcpHeader.GetFlags () & TcpHeader::ACK)
+        {
+          //if (tcpHeader.GetAckNumber () <= m_tcb->m_lastAckedSeq)
+          {
+            packet->RemoveHeader(tcpHeader);
+            tcpHeader.SetAckNumber(m_tcb->m_lastAckedSeq + m_lastSentSize);
+            packet->AddHeader(tcpHeader);
+          }
+        }
+      }
+      */
       ProcessEstablished (packet, tcpHeader);
       break;
     case TcpSocket::LISTEN:

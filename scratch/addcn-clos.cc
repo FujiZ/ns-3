@@ -314,7 +314,7 @@ BuildAppsTest (void)
       app->SetFlowSize (0);
       app->SetTenantId (i);
       app->SetSegSize (packet_size);
-      //clientStartTime += client_interval_time;
+      clientStartTime += client_interval_time;
     }
 }
 
@@ -379,7 +379,7 @@ main (int argc, char *argv[])
   std::string pathOut;
 
   global_start_time = 0.0;
-  global_stop_time = 80.0;
+  global_stop_time = 40.0;
   sink_start_time = global_start_time;
   sink_stop_time = global_stop_time + 3.0;
   client_start_time = sink_start_time + 0.2;
