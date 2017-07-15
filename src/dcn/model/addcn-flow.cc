@@ -571,10 +571,12 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
   else if (tcpHeader.GetFlags () & TcpHeader::ACK)
    {
      EstimateRtt (tcpHeader);
-     if (tcpHeader.GetAckNumber () > m_highRxAckMark)
+     if (tcpHeader.GetAckNumber () >= m_highRxAckMark)
        m_highRxAckMark = tcpHeader.GetAckNumber ();
-    // else if(m_disableReorder && (tcpHeader.GetAckNumber () != m_tcb->m_nextTxSequence))
-    //   return false;
+     //else if(m_disableReorder && (tcpHeader.GetAckNumber () != m_tcb->m_nextTxSequence))
+     //else if(m_disableReorder && m_highRxAckMark.GetValue() > 1)
+     //else if(m_disableReorder)
+       //return false;
    }
 
   /*
@@ -609,7 +611,7 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
   switch (m_state)
     {
     case TcpSocket::ESTABLISHED:
-      /*
+      
       if (m_disableReorder)
       {
         if (tcpHeader.GetFlags () & TcpHeader::ACK)
@@ -617,12 +619,15 @@ ADDCNFlow::NotifyReceive (Ptr<Packet>& packet, const Ipv4Header& header)
           //if (tcpHeader.GetAckNumber () <= m_tcb->m_lastAckedSeq)
           {
             packet->RemoveHeader(tcpHeader);
-            tcpHeader.SetAckNumber(m_tcb->m_lastAckedSeq + m_lastSentSize);
+            //if(m_tcb->m_lastAckedSeq.GetValue() == 0)
+            //  tcpHeader.SetAckNumber(SequenceNumber32(1) + m_lastSentSize);
+            //else
+              tcpHeader.SetAckNumber(m_tcb->m_lastAckedSeq + m_lastSentSize);
             packet->AddHeader(tcpHeader);
           }
         }
       }
-      */
+      
       ProcessEstablished (packet, tcpHeader);
       break;
     case TcpSocket::LISTEN:

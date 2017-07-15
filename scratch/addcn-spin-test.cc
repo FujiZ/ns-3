@@ -178,8 +178,9 @@ BuildTopo (uint32_t srvNum, uint32_t lefNum, uint32_t spiNum)
   l3_5Helper.Install(servers);
 
   TrafficControlHelper tchPfifo;
-  uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc");//, "Limit", UintegerValue (90));
-  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue");//, "MaxPackets", UintegerValue (90));
+  //uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc");//, "Limit", UintegerValue (90));
+  tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc");//, "Limit", UintegerValue (90));
+  //tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue");//, "MaxPackets", UintegerValue (90));
 
   TrafficControlHelper tchRed;
   tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", StringValue (link_rate_spi2lef),
@@ -337,7 +338,7 @@ main (int argc, char *argv[])
   // LogComponentEnable ("ADDCNExample", LOG_LEVEL_ALL);
   //LogComponentEnable ("ADDCNL3_5Protocol", LOG_LEVEL_ALL);
   //LogComponentEnable ("ADDCNSlice", LOG_LEVEL_ALL);
-  //LogComponentEnable ("ADDCNFlow", LOG_LEVEL_ALL);
+  LogComponentEnable ("ADDCNFlow", LOG_LEVEL_FUNCTION);
   //LogComponentEnable ("TcpSocketBase", LOG_LEVEL_DEBUG);
   //LogComponentEnable ("TcpCongestionOps", LOG_LEVEL_ALL);
   
