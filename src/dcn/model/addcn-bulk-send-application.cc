@@ -162,7 +162,7 @@ AddcnBulkSendApplication::GetFlowId()
 }
 
 void 
-AddcnBulkSendApplication::SetFlowType(C3Type &flowType)
+AddcnBulkSendApplication::SetFlowType(C3Type flowType)
 {
   NS_LOG_FUNCTION (this );
   m_flowType = flowType;
@@ -191,7 +191,7 @@ AddcnBulkSendApplication::GetFlowSize()
 }
 
 void 
-AddcnBulkSendApplication::SetDeadline(Time &deadline)
+AddcnBulkSendApplication::SetDeadline(Time deadline)
 {
   NS_LOG_FUNCTION (this );
   m_deadline = deadline;

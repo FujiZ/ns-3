@@ -106,11 +106,11 @@ public:
   uint32_t GetTenantId();
   void SetFlowId(uint32_t flowId);
   uint32_t GetFlowId();
-  void SetFlowType(C3Type &flowType);
+  void SetFlowType(C3Type flowType);
   C3Type GetFlowType();
   void SetFlowSize(uint64_t flowSize);
   uint64_t GetFlowSize();
-  void SetDeadline(Time &deadline);
+  void SetDeadline(Time deadline);
   Time GetDeadline();
   void SetSegSize(uint32_t segSize);
   uint32_t GetSegSize();
