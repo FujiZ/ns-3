@@ -3,7 +3,7 @@
 CMDBASE="./build/master/optimized/scratch/"
 OPTBASE=" --enableC3P --writeResult --writeFlowInfo "
 DIRBASE="result/c3p/"
-PROGRAM="c3p-clos"
+PROGRAM="c3p-spin"
 PATHOUT="ds"
 OPTIONS="--enableDS"
 COMMAND=${CMDBASE}${PROGRAM}${OPTBASE}${OPTIONS}" --pathOut="${DIRBASE}${PATHOUT}

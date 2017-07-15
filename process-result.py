@@ -54,7 +54,7 @@ def process_deadline(fid_begin, fid_end):
 
 
 if __name__ == '__main__':
-    path = "result/c3p/ds"
+    path = "result/c3p/cs-ds"
     for i in range(1, 10):
         parse_flow_info(path + "/flow-info-0." + str(i) + ".txt")
         parse_flow_result(path + "/flow-result-0." + str(i) + ".txt")
