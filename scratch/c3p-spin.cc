@@ -355,6 +355,13 @@ main (int argc, char *argv[])
   Time sinkStopTime = globalStopTime + Seconds (3);
   Time clientStopTime = globalStopTime;
 
+  if (useECMP)
+    {
+      Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_HASH"));
+      //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_RANDOM"));
+      //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_FLOWCELL"));
+    }
+
   SetupConfig ();
   SetupTopo (spin_num, leaf_num, host_num,
              btnk_bw, non_btnk_bw, link_delay);
@@ -365,13 +372,6 @@ main (int argc, char *argv[])
   dctcpHelper.AddSocketFactory ("ns3::D2tcpSocketFactory");
   dctcpHelper.AddSocketFactory ("ns3::L2dctSocketFactory");
   dctcpHelper.Install (hosts);
-
-  if (useECMP)
-    {
-      Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_HASH"));
-      //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_RANDOM"));
-      //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_FLOWCELL"));
-    }
 
   if (c3pEnable)
     {
