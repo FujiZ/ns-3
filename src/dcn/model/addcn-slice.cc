@@ -1,5 +1,8 @@
 #include "addcn-slice.h"
 
+#include "addcn-cs-flow.h"
+#include "addcn-ds-flow.h"
+
 #include "cmath"
 
 #include "ns3/log.h"
@@ -115,7 +118,7 @@ ADDCNSlice::CreateSlice (uint32_t tenantId, C3Type type)
 }
 
 Ptr<ADDCNFlow>
-ADDCNSlice::GetFlow(const ADDCNFlow::FiveTuple &tup)
+ADDCNSlice::GetFlow(const ADDCNFlow::FiveTuple &tup, C3Tag* c3Tag)
 {
   NS_LOG_FUNCTION (tup.sourceAddress << tup.destinationAddress << tup.sourcePort << tup.destinationPort << tup.protocol);
 
@@ -126,7 +129,26 @@ ADDCNSlice::GetFlow(const ADDCNFlow::FiveTuple &tup)
   }
   else
   {
-    Ptr<ADDCNFlow> flow = CreateObject<ADDCNFlow> ();
+    Ptr<ADDCNFlow> flow;
+    switch (m_type){
+      case C3Type::CS: 
+        flow = CreateObject<ADNCsFlow> ();
+        break;
+      
+      case C3Type::DS: 
+        flow = CreateObject<ADNDsFlow> ();
+        break;
+      
+      default:
+        flow = CreateObject<ADDCNFlow> ();
+        break;
+    }
+    if (c3Tag)
+    {
+      flow->SetFlowSize(c3Tag->GetFlowSize());
+      flow->SetSegmentSize(c3Tag->GetSegmentSize());
+      flow->SetDeadline(c3Tag->GetDeadline());
+    }
     flow->SetTenantId(m_tenantId);
     flow->SetFiveTuple(tup);
     flow->UpdateScale(m_scale);
@@ -211,11 +233,38 @@ ADDCNSlice::UpdateAll (void)
   for (auto it = m_sliceList.begin (); it != m_sliceList.end (); ++it)
   {
       Ptr<ADDCNSlice> slice = it->second;
-      slice->Update ();
+      //slice->Update ();
+      slice->ScheduleFlow ();
   }
   if (Simulator::Now () + m_interval <= m_stopTime)
   {
       m_timer.Schedule (m_interval);
+  }
+}
+
+void
+ADDCNSlice::ScheduleFlow (void)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  double request_weight_sum = 0.0;
+  for(auto it = m_flowList.begin(); it != m_flowList.end(); it++)
+  {
+    Ptr<ADDCNFlow> flow = it->second;
+    if (flow->IsFinished())
+      continue;
+    flow->UpdateRequestedWeight();
+    request_weight_sum += flow->GetRequestedWeight();
+  }
+  double lamda = m_weight / (request_weight_sum > 10e-7 ? request_weight_sum : m_weight);
+  double request_weight = 0.0;
+  for(auto it = m_flowList.begin(); it != m_flowList.end(); it++)
+  {
+    Ptr<ADDCNFlow> flow = it->second;
+    if (flow->IsFinished())
+      continue;
+    request_weight = flow->GetRequestedWeight();
+    flow->UpdateScale(request_weight * lamda);
   }
 }
 

@@ -389,6 +389,9 @@ main (int argc, char *argv[])
       l3_5Helper.AddIpL4Protocol ("ns3::TcpL4Protocol");
       l3_5Helper.Install(hosts);
 
+      ns3::dcn::ADDCNSlice::SetInterval(MilliSeconds (2));
+      ns3::dcn::ADDCNSlice::Start(Seconds(globalStartTime));
+      ns3::dcn::ADDCNSlice::Stop(Seconds(globalStopTime));
       /*
       dcn::C3Division::AddDivisionType (dcn::C3Type::CS, "ns3::dcn::C3CsDivision");
       dcn::C3Division::AddDivisionType (dcn::C3Type::DS, "ns3::dcn::C3DsDivision");

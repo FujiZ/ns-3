@@ -19,6 +19,7 @@
 
 #include "addcn-flow.h"
 #include "c3-type.h"
+#include "c3-tag.h"
 
 namespace ns3 {
 namespace dcn {
@@ -64,7 +65,7 @@ public:
    * @param tup <srcIP, srcPort, dstIP, dstPort, protocol> tuple
    * @return required flow
    */
-  Ptr<ADDCNFlow> GetFlow (const ADDCNFlow::FiveTuple &tup);
+  Ptr<ADDCNFlow> GetFlow (const ADDCNFlow::FiveTuple &tup, C3Tag* c3Tag=0);
 
    // static Ptr<ADDCNFlow> GetFlow(const Ipv4Address &src, const Ipv4Address &dst, uint32_t srcPort, uint32_t dstPort, uint8_t protocol);
 
@@ -110,6 +111,8 @@ public:
    * called by global timer (?)
    */
   void Update (void);
+
+  void ScheduleFlow (void);
 
   void SetWeight (double weight);
 

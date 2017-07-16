@@ -64,6 +64,12 @@ public:
 
   uint32_t GetSegSize();
 
+  void SetFlowSize (uint64_t flowSize);
+  uint64_t GetFlowSize (void) const;
+
+  void SetDeadline (Time deadline);
+  Time GetDeadline (void) const;
+
   uint32_t GetInitialCwnd ();
 
   uint32_t GetInitialSSThresh ();
@@ -189,17 +195,23 @@ public:
 
   void ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeader);
 
+  virtual void UpdateRequestedWeight ();
+  double GetRequestedWeight ();
+
+  virtual bool IsFinished ();
+
 protected:
   virtual void DoDispose (void);
 
 protected:
   int32_t m_tenantId;
   uint32_t m_rWnd;          //!< current receive window
-  uint32_t m_flowSize;      //!< the total size of current flow
-  uint32_t m_sentSize;      //!< the sent size of current flow
+  uint64_t m_flowSize;      //!< the total size of current flow
+  uint64_t m_sentSize;      //!< the sent size of current flow
   //int32_t m_bufferedSize;  //!< the size of current buffer
   uint32_t m_segSize;       //!< Setmeng size
   uint32_t m_lastSentSize;  
+  Time m_deadline;        //!< deadline of current flow
 
   FiveTuple m_tuple; //!< <srcIP, srcPort, dstIP, dstPort, protocol> tuple of current flow
 
@@ -217,6 +229,7 @@ protected:
   // flow weight parameter
   TracedValue<double> m_scale;   //!< scale updated by corresponding slice
   TracedValue<double> m_weight;  //!< real flow weight
+  double m_weightRequest;
   //DataRate m_rate;  //!< current flow rate
 
   bool m_winScalingEnabled;

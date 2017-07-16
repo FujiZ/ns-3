@@ -96,6 +96,7 @@ ADDCNFlow::ADDCNFlow ()
     m_alpha (1.0),
     m_scale (1.0),
     m_weight (1.0),
+    m_weightRequest (1.0),
     m_winScalingEnabled (true),
     m_timestampEnabled(true),
     m_weightScaled(1.0),
@@ -133,6 +134,7 @@ ADDCNFlow::Initialize ()
   m_alpha = 1.0;
   m_scale = 1.0;
   m_weight = 1.0;
+  m_weightRequest = 1.0;
   m_winScalingEnabled = true;
   m_timestampEnabled = true;
   m_segSize = 536;
@@ -207,6 +209,34 @@ ADDCNFlow::GetSegSize ()
   NS_LOG_FUNCTION (this);
   return m_tcb->m_segmentSize;
 }
+
+void
+ADDCNFlow::SetFlowSize (uint64_t flowSize)
+{
+  NS_LOG_FUNCTION (this);
+  m_flowSize = flowSize;
+}
+
+uint64_t
+ADDCNFlow::GetFlowSize (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_flowSize;
+}
+
+void
+ADDCNFlow::SetDeadline (Time deadline)
+{
+  NS_LOG_FUNCTION (this << deadline);
+  m_deadline = deadline;
+}
+
+Time
+ADDCNFlow::GetDeadline (void) const
+{
+  return m_deadline;
+}
+
 
 uint32_t
 ADDCNFlow::GetInitialCwnd ()
@@ -720,6 +750,24 @@ ADDCNFlow::UpdateScale(const double s)
     m_scale = s;
     m_weightScaled = m_weight * m_scale;
   }
+}
+
+void
+ADDCNFlow::UpdateRequestedWeight()
+{
+  return;
+}
+
+double
+ADDCNFlow::GetRequestedWeight()
+{
+  return m_weightRequest;
+}
+
+bool
+ADDCNFlow::IsFinished()
+{
+  return m_sentSize >= m_flowSize;
 }
 
 void
