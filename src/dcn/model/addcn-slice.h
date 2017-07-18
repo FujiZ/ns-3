@@ -116,6 +116,8 @@ public:
 
   void SetWeight (double weight);
 
+  void SetScale (double scale);
+
   static int GetSliceNumber (void);
 protected:
 

@@ -83,6 +83,10 @@ ADDCNFlow::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::dcn::ADDCNFlow")
       .SetParent<Object> ()
       .SetGroupName ("DCN")
+      .AddAttribute ("DisableReorder", "Forcely sequencialize disorderd packets",
+                     BooleanValue (false),
+                     MakeBooleanAccessor (&ADDCNFlow::m_disableReorder),
+                     MakeBooleanChecker ())
   ;
   return tid;
 }
@@ -148,8 +152,6 @@ ADDCNFlow::Initialize ()
   m_recover = 0;
   m_highRxAckMark = 0;
   m_sndWindShift = 0;
-
-  m_disableReorder = true;
 
   m_rto = Seconds(0.0);
   m_minRto = Seconds(1.0); // RFC 6298 says min RTO=1 sec, but Linux uses 200ms

@@ -2,6 +2,7 @@
 
 #include "addcn-cs-flow.h"
 #include "addcn-ds-flow.h"
+#include "addcn-ls-flow.h"
 
 #include "cmath"
 
@@ -139,6 +140,10 @@ ADDCNSlice::GetFlow(const ADDCNFlow::FiveTuple &tup, C3Tag* c3Tag)
         flow = CreateObject<ADNDsFlow> ();
         break;
       
+      case C3Type::LS:
+        flow = CreateObject<ADNLsFlow> ();
+        break;
+
       default:
         flow = CreateObject<ADDCNFlow> ();
         break;
@@ -312,6 +317,13 @@ ADDCNSlice::SetWeight (double weight)
 {
   NS_LOG_FUNCTION (this);
   m_weight = weight;
+}
+
+void
+ADDCNSlice::SetScale (double scale)
+{
+  NS_LOG_FUNCTION (this);
+  m_scale = scale;
 }
 
 int
