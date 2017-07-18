@@ -293,6 +293,20 @@ main (int argc, char *argv[])
     return -1;
   }
 
+  double scaleA = 1;
+  double scaleB = 1;
+
+  if (scale > 1)
+  {
+    scaleA = 1.0;
+    scaleB = 1.0 / scale;
+  }
+  else
+  {
+    scaleA = scale;
+    scaleB = 1.0;
+  }
+
   SetupConfig ();
   SetupDumbellTopo (dumbell_host_num, non_btnk_bw, btnk_bw, link_delay);
 
@@ -307,8 +321,8 @@ main (int argc, char *argv[])
   Ptr<ns3::dcn::ADDCNSlice> sliceA = ns3::dcn::ADDCNSlice::GetSlice(0, dcn::C3Type::LS);
   Ptr<ns3::dcn::ADDCNSlice> sliceB = ns3::dcn::ADDCNSlice::GetSlice(1, dcn::C3Type::LS);
   
-  sliceA->SetScale(scale);
-  sliceB->SetScale(1.0);
+  sliceA->SetScale(scaleA);
+  sliceB->SetScale(scaleB);
 
   dcn::IpL3_5ProtocolHelper l3_5Helper ("ns3::dcn::ADDCNL3_5Protocol");
   l3_5Helper.AddIpL4Protocol ("ns3::TcpL4Protocol");
