@@ -85,6 +85,8 @@ ADDCNL3_5Protocol::Send (Ptr<Packet> packet,
     if(packet->RemovePacketTag (c3Tag))
     { // From Sender side, even EMPTY packets like ACK, SYN. Done through socket level send trace
       Ptr<ADDCNFlow> flow = ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->GetFlow(tuple, &c3Tag);
+      //double scale = ((double)(c3Tag.GetTenantId() + 1)) / 4; // three flows start concurrently
+      //flow->UpdateScale(scale);
       //double scale = ((double)(c3Tag.GetTenantId() + 1)) / 6.5; // Four flows start concurrently
       //flow->UpdateScale(scale);
       // ADDCNSlice::GetSlice(c3Tag.GetTenantId(), c3Tag.GetType())->SetWeight(c3Tag.GetTenantId() + 1);

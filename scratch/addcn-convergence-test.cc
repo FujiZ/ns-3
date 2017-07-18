@@ -239,6 +239,11 @@ BuildAppsTest (void)
   dcn::AddcnBulkSendHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (serverInterfaces.GetAddress (0), port));
   ApplicationContainer clientApps = clientHelper.Install (clients);
 
+  for (int i = 0; i < 3; i++)
+  {
+    Ptr<ns3::dcn::ADDCNSlice> sliceA = ns3::dcn::ADDCNSlice::GetSlice(i, dcn::C3Type::DS);
+    sliceA->SetScale((i + 1.0)/4.0);
+  }
   // set different start/stop time for each app
   double clientStartTime = client_start_time;
   double clientStopTime = client_stop_time;
@@ -316,12 +321,12 @@ main (int argc, char *argv[])
   bool printRedStats = true;
 
   global_start_time = 0.0;
-  global_stop_time = 88.0;
+  global_stop_time = 20.0;
   sink_start_time = global_start_time;
-  sink_stop_time = global_stop_time + 3.0;
+  sink_stop_time = global_stop_time + 1.0;
   client_start_time = sink_start_time + 0.2;
   client_stop_time = global_stop_time - 1.0;
-  client_interval_time = 25.0;
+  client_interval_time = 5.0;
 
   link_data_rate = "200Mbps";
   link_delay = "1ms";

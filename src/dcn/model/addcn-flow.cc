@@ -410,8 +410,8 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
   {// Initialize from sender side
     if((flags & TcpHeader::SYN) == TcpHeader::SYN)
     {
-      Initialize(); // New connection
-      SetSegmentSize(segSize);
+      //Initialize(); // New connection
+      //SetSegmentSize(segSize);
       if((flags & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
         m_ecnEnabled = true;
       else
@@ -438,8 +438,8 @@ ADDCNFlow::NotifySend (Ptr<Packet>& packet)
   {// From Send side
     if((flags & TcpHeader::SYN) == TcpHeader::SYN)
     {
-      Initialize(); // New connection
-      SetSegmentSize(segSize);
+      //Initialize(); // New connection
+      //SetSegmentSize(segSize);
       if((flags & (TcpHeader::CWR | TcpHeader::ECE)) == (TcpHeader::CWR | TcpHeader::ECE))
         m_ecnEnabled = true;
       else
