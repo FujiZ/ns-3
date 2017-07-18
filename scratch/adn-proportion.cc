@@ -172,7 +172,7 @@ SetupDumbellTopo (uint32_t hostNum,
   for (NodeContainer::Iterator i = dsts.Begin (); i != dsts.End (); i++)
     {
       auto interfaces = MakeLink ("pfifo", routers.Get (1), *i, host2Switch, linkDelay, ipv4AddrHelper);
-      src_interfaces.Add (interfaces.Get (0));
+      dst_interfaces.Add (interfaces.Get (1));
     }
   // Set up the routing
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
