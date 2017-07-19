@@ -376,10 +376,10 @@ bool
 ADDCNFlow::NotifySend (Ptr<Packet>& packet)
 {
   C3Tag c3Tag;
-  uint32_t segSize = 536;
+  //uint32_t segSize = 536;
   if (packet->PeekPacketTag (c3Tag))
   {
-    segSize = c3Tag.GetSegmentSize ();
+    //segSize = c3Tag.GetSegmentSize ();
     m_flowSize = c3Tag.GetFlowSize ();
   }
 
