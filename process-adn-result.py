@@ -32,7 +32,7 @@ def process_afct(fid_begin, fid_end):
                 count += 1
             else:
                 unfinished_count += 1
-    print("unfinished CS flow: " + str(unfinished_count))
+    print("unfinished CS flow: " + str(unfinished_count) + " finished CS flow: " + str(count))
     if count != 0:
         return total_time / count
     else:
