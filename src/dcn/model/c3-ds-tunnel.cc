@@ -53,7 +53,6 @@ void
 C3DsTunnel::ScheduleFlow (void)
 {
   NS_LOG_FUNCTION (this);
-  if (!m_isExperiment)
   {
     std::vector<Ptr<C3DsFlow> > flowList;
     uint64_t rateRequest = 0;
@@ -89,17 +88,6 @@ C3DsTunnel::ScheduleFlow (void)
           flow->SetRate (DataRate (allocRate));
           remainRate -= allocRate;
         }
-    }
-  }
-  else
-  {
-    int size = m_flowList.size();
-    if (size <= 0) return;
-    uint64_t avg_rate = GetRate().GetBitRate () / size;
-    for (auto it = m_flowList.begin (); it != m_flowList.end (); it++)
-    {
-      Ptr<C3Flow> flow = it->second;
-      flow->SetRate (DataRate (avg_rate));
     }
   }
 }

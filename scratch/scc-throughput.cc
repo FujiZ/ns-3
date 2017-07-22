@@ -100,7 +100,7 @@ CheckTunnelRate ()
     {
       Ptr<ns3::dcn::C3Tunnel> tunnel = jt->second;
       DataRate rate = tunnel->GetRate();
-      totalGbps += ((double)rate.GetBitRate ()) / ((double)1e8);
+      totalGbps += ((double)rate.GetBitRate ()) / ((double)1e9);
     }
     std::ofstream fPlotRate (filePlotRate.str ().c_str (), std::ios::out | std::ios::app);
     fPlotRate << Simulator::Now ().GetSeconds () << " " << totalGbps << std::endl;
@@ -227,7 +227,7 @@ BuildTopo (uint32_t clientNo, uint32_t serverNo, DataRate host2rout, DataRate ro
 void
 InstallSink (NodeContainer nodes, uint16_t port, const Time &startTime, const Time &stopTime)
 {
-  PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), port));
+  PacketSinkHelper sinkHelper ("ns3::DctcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), port));
   ApplicationContainer sinkApps = sinkHelper.Install (nodes);
   sinkApps.Start (startTime);
   sinkApps.Stop (stopTime);
@@ -243,7 +243,7 @@ InstallLsClient (Ptr<Node> node, const Address &sinkAddr, uint32_t tenantId,
                  uint32_t flowId, uint64_t flowSize, uint64_t packetSize,
                  const Time &startTime, const Time &stopTime)
 {
-  dcn::AddcnBulkSendHelper clientHelper ("ns3::TcpSocketFactory", sinkAddr);
+  dcn::AddcnBulkSendHelper clientHelper ("ns3::DctcpSocketFactory", sinkAddr);
   //clientHelper.SetAttribute ("MaxBytes", UintegerValue (flowSize));
   //clientHelper.SetAttribute ("SendSize", UintegerValue (packetSize));
   ApplicationContainer clientApp = clientHelper.Install (node);
@@ -255,7 +255,7 @@ InstallLsClient (Ptr<Node> node, const Address &sinkAddr, uint32_t tenantId,
 
   app->SetTenantId (tenantId);
   //app->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId));
-  app->SetFlowType (dcn::C3Type::DS);
+  app->SetFlowType (dcn::C3Type::LS);
   app->SetFlowId (flowId);
   app->SetFlowSize (flowSize);
   app->SetSegSize (packetSize);
@@ -454,9 +454,9 @@ main (int argc, char *argv[])
   l3_5Helper.Install(servers);
 
 
-  dcn::C3Division::AddDivisionType (dcn::C3Type::DS, "ns3::dcn::C3DsDivision");
-  Ptr<ns3::dcn::C3Division> sliceA = ns3::dcn::C3Division::CreateDivision(0, dcn::C3Type::DS);
-  Ptr<ns3::dcn::C3Division> sliceB = ns3::dcn::C3Division::CreateDivision(1, dcn::C3Type::DS);
+  dcn::C3Division::AddDivisionType (dcn::C3Type::LS, "ns3::dcn::C3LsDivision");
+  Ptr<ns3::dcn::C3Division> sliceA = ns3::dcn::C3Division::CreateDivision(0, dcn::C3Type::LS);
+  Ptr<ns3::dcn::C3Division> sliceB = ns3::dcn::C3Division::CreateDivision(1, dcn::C3Type::LS);
 
   sliceA->SetAttribute("Weight", DoubleValue (scaleA));
   sliceB->SetAttribute("Weight", DoubleValue (scaleB));
