@@ -155,6 +155,9 @@ private:
   // tunnel timer parameter
   Timer m_timer;
   Time m_interval;
+
+protected:
+  bool m_isExperiment;
 };
 
 } //namespace dcn

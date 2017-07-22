@@ -48,6 +48,11 @@ C3Tunnel::GetTypeId (void)
                      DataRateValue (DataRate ("500Mbps")),
                      MakeDataRateAccessor (&C3Tunnel::m_rateThresh),
                      MakeDataRateChecker ())
+      .AddAttribute ("IsExperiment",
+                     "Is in experiment environment.",
+                     BooleanValue (false),
+                     MakeBooleanAccessor (&C3Tunnel::m_isExperiment),
+                     MakeBooleanChecker ())
       .AddTraceSource ("Alpha",
                        "an estimate of the fraction of packets that are marked",
                        MakeTraceSourceAccessor (&C3Tunnel::m_alpha),

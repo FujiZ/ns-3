@@ -54,3 +54,4 @@ result.*
 temp*
 poster
 nohup.out
+*.plotme

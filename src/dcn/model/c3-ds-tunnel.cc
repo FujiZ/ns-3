@@ -53,9 +53,11 @@ void
 C3DsTunnel::ScheduleFlow (void)
 {
   NS_LOG_FUNCTION (this);
-  std::vector<Ptr<C3DsFlow> > flowList;
-  uint64_t rateRequest = 0;
-  for (auto it = m_flowList.begin (); it != m_flowList.end (); ++it)
+  if (!m_isExperiment)
+  {
+    std::vector<Ptr<C3DsFlow> > flowList;
+    uint64_t rateRequest = 0;
+    for (auto it = m_flowList.begin (); it != m_flowList.end (); ++it)
     {
       Ptr<C3DsFlow> flow = StaticCast<C3DsFlow> (it->second);
       if (!flow->IsFinished ())
@@ -64,7 +66,7 @@ C3DsTunnel::ScheduleFlow (void)
           flowList.push_back (flow);
         }
     }
-  if (DataRate (rateRequest) <= GetRate ())
+    if (DataRate (rateRequest) <= GetRate ())
     {
       double factor = static_cast<double> (GetRate ().GetBitRate ()) / rateRequest;
       for (auto flow : flowList)
@@ -72,7 +74,7 @@ C3DsTunnel::ScheduleFlow (void)
           flow->SetRate (DataRate (factor * flow->GetRateRequest ().GetBitRate ()));
         }
     }
-  else
+    else
     {
       auto cmp = [] (const Ptr<C3DsFlow> &a, const Ptr<C3DsFlow> &b)
         {
@@ -88,6 +90,18 @@ C3DsTunnel::ScheduleFlow (void)
           remainRate -= allocRate;
         }
     }
+  }
+  else
+  {
+    int size = m_flowList.size();
+    if (size <= 0) return;
+    uint64_t avg_rate = GetRate().GetBitRate () / size;
+    for (auto it = m_flowList.begin (); it != m_flowList.end (); it++)
+    {
+      Ptr<C3Flow> flow = it->second;
+      flow->SetRate (DataRate (avg_rate));
+    }
+  }
 }
 
 Ptr<C3Flow>
