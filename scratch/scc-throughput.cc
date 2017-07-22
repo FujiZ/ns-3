@@ -100,7 +100,7 @@ CheckTunnelRate ()
     {
       Ptr<ns3::dcn::C3Tunnel> tunnel = jt->second;
       DataRate rate = tunnel->GetRate();
-      totalGbps += ((double)rate.GetBitRate ()) / ((double)1e8);
+      totalGbps += ((double)rate.GetBitRate ()) / ((double)1e9);
     }
     std::ofstream fPlotRate (filePlotRate.str ().c_str (), std::ios::out | std::ios::app);
     fPlotRate << Simulator::Now ().GetSeconds () << " " << totalGbps << std::endl;
