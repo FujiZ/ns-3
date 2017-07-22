@@ -231,7 +231,7 @@ InstallLsClient (Ptr<Node> node, const Address &sinkAddr, uint32_t tenantId,
 
   app->SetTenantId (tenantId);
   //app->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId));
-  //app->SetFlowType (dcn::C3Type::LS);
+  app->SetFlowType (dcn::C3Type::LS);
   app->SetFlowId (flowId);
   app->SetFlowSize (flowSize);
   app->SetSegSize (packetSize);
@@ -390,8 +390,8 @@ main (int argc, char *argv[])
   SetConfig (useEcn, useDctcp);
   BuildTopo (dumbell_host_num, dumbell_host_num, DataRate(non_btnk_rate), DataRate(link_data_rate), Time(link_delay));
 
-  Ptr<ns3::dcn::ADDCNSlice> sliceA = ns3::dcn::ADDCNSlice::GetSlice(0, dcn::C3Type::DS);
-  Ptr<ns3::dcn::ADDCNSlice> sliceB = ns3::dcn::ADDCNSlice::GetSlice(1, dcn::C3Type::DS);
+  Ptr<ns3::dcn::ADDCNSlice> sliceA = ns3::dcn::ADDCNSlice::GetSlice(0, dcn::C3Type::LS);
+  Ptr<ns3::dcn::ADDCNSlice> sliceB = ns3::dcn::ADDCNSlice::GetSlice(1, dcn::C3Type::LS);
 
   sliceA->SetScale(scaleA);
   sliceB->SetScale(scaleB);

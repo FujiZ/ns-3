@@ -255,7 +255,7 @@ InstallLsClient (Ptr<Node> node, const Address &sinkAddr, uint32_t tenantId,
 
   app->SetTenantId (tenantId);
   //app->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId));
-  app->SetFlowType (dcn::C3Type::DS);
+  app->SetFlowType (dcn::C3Type::LS);
   app->SetFlowId (flowId);
   app->SetFlowSize (flowSize);
   app->SetSegSize (packetSize);
@@ -454,9 +454,9 @@ main (int argc, char *argv[])
   l3_5Helper.Install(servers);
 
 
-  dcn::C3Division::AddDivisionType (dcn::C3Type::DS, "ns3::dcn::C3DsDivision");
-  Ptr<ns3::dcn::C3Division> sliceA = ns3::dcn::C3Division::CreateDivision(0, dcn::C3Type::DS);
-  Ptr<ns3::dcn::C3Division> sliceB = ns3::dcn::C3Division::CreateDivision(1, dcn::C3Type::DS);
+  dcn::C3Division::AddDivisionType (dcn::C3Type::LS, "ns3::dcn::C3LsDivision");
+  Ptr<ns3::dcn::C3Division> sliceA = ns3::dcn::C3Division::CreateDivision(0, dcn::C3Type::LS);
+  Ptr<ns3::dcn::C3Division> sliceB = ns3::dcn::C3Division::CreateDivision(1, dcn::C3Type::LS);
 
   sliceA->SetAttribute("Weight", DoubleValue (scaleA));
   sliceB->SetAttribute("Weight", DoubleValue (scaleB));
