@@ -89,6 +89,8 @@ protected:
 
   virtual void DoDispose (void);
 
+public:
+
   /**
    * @brief GetTenantId
    * @return tenant id of current division
@@ -100,6 +102,13 @@ protected:
 
   TunnelList_t m_tunnelList;    //!< tunnel list
 
+  typedef std::pair<uint32_t, C3Type> DivisionListKey_t;
+  typedef std::map<DivisionListKey_t, Ptr<C3Division> > DivisionList_t;
+  typedef std::map<C3Type, std::string> DivisionTypeList_t;
+
+  static DivisionList_t m_divisionList;
+  static DivisionTypeList_t m_divisionTypeList;
+
 private:
 
   uint32_t m_tenantId;  //!< tenant id of divison
@@ -110,13 +119,6 @@ private:
   // timer parameter
   Timer m_timer;     //!< timer to call Update ()
   Time m_interval;   //!< interval to call Update ()
-
-  typedef std::pair<uint32_t, C3Type> DivisionListKey_t;
-  typedef std::map<DivisionListKey_t, Ptr<C3Division> > DivisionList_t;
-  typedef std::map<C3Type, std::string> DivisionTypeList_t;
-
-  static DivisionList_t m_divisionList;
-  static DivisionTypeList_t m_divisionTypeList;
 };
 
 } //namespace dcn

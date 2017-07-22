@@ -104,12 +104,6 @@ protected:
   void Forward (Ptr<Packet> packet, uint8_t protocol);
 
   /**
-   * @brief GetRate
-   * @return tunnel data rate
-   */
-  DataRate GetRate (void) const;
-
-  /**
    * @brief Update tunnel info (weight, congestion status)
    * called by upper division
    */
@@ -131,6 +125,13 @@ protected:
   typedef std::map<uint32_t, Ptr<C3Flow> > FlowList_t;
 
   FlowList_t m_flowList;    //!< flow list
+
+public:
+  /**
+   * @brief GetRate
+   * @return tunnel data rate
+   */
+  DataRate GetRate (void) const;
 
 private:
 

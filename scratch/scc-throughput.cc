@@ -18,6 +18,8 @@ NS_LOG_COMPONENT_DEFINE ("SCCGoodputTest");
 uint32_t checkTimes;
 double avgQueueSize;
 
+std::string pathOut;
+
 // attributes
 std::string non_btnk_rate;
 std::string link_data_rate;
@@ -82,6 +84,29 @@ CheckQueueSize (Ptr<QueueDisc> queue)
   std::ofstream fPlotQueueAvg (filePlotQueueAvg.str ().c_str (), std::ios::out|std::ios::app);
   fPlotQueueAvg << Simulator::Now ().GetSeconds () << " " << avgQueueSize / checkTimes << std::endl;
   fPlotQueueAvg.close ();
+}
+
+void
+CheckTunnelRate ()
+{
+  for (auto it = ns3::dcn::C3Division::m_divisionList.begin(); it != ns3::dcn::C3Division::m_divisionList.end(); it++)
+  {
+    Ptr<ns3::dcn::C3Division> division = it->second;
+    uint32_t tenantId = division->GetTenantId();
+    std::stringstream filePlotRate;
+    filePlotRate << pathOut << "/division-" << tenantId << ".plotme";
+    double totalGbps = 0;
+    for (auto jt = division->m_tunnelList.begin(); jt != division->m_tunnelList.end(); jt++)
+    {
+      Ptr<ns3::dcn::C3Tunnel> tunnel = jt->second;
+      DataRate rate = tunnel->GetRate();
+      totalGbps += ((double)rate.GetBitRate ()) / ((double)1e8);
+    }
+    std::ofstream fPlotRate (filePlotRate.str ().c_str (), std::ios::out | std::ios::app);
+    fPlotRate << Simulator::Now ().GetSeconds () << " " << totalGbps << std::endl;
+    fPlotRate.close();
+  }
+  Simulator::Schedule (Seconds(0.01), &CheckTunnelRate);
 }
 
 void
@@ -273,11 +298,11 @@ SetConfig (bool useEcn, bool useDctcp)
   NS_LOG_INFO ("Set RED params");
   Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
   Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (packet_size));
-  Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (true));
-  Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (true));
+  //Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (true));
+  Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (false));
   Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (1.0));
   Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (threshold));
-  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (2*threshold));
+  Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (threshold));
   Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (queue_size));
   Config::SetDefault ("ns3::RedQueueDisc::UseMarkP", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::MarkP", DoubleValue (2.0));
@@ -339,7 +364,6 @@ main (int argc, char *argv[])
   
   bool useEcn = true;
   bool useDctcp = false; 
-  std::string pathOut;
   bool writeForPlot = true;
   bool writePcap = false;
   bool flowMonitor = false;
@@ -503,6 +527,7 @@ main (int argc, char *argv[])
       remove (filePlotQueueAvg.str ().c_str ());
       Ptr<QueueDisc> queue = queueDiscs.Get (0);
       Simulator::ScheduleNow (&CheckQueueSize, queue);
+      Simulator::ScheduleNow (&CheckTunnelRate);
     }
 
   if (writeThroughput)
