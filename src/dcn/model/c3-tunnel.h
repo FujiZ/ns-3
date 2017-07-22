@@ -149,6 +149,7 @@ private:
   TracedValue<double> m_weight;  //!< real tunnel weight
   TracedValue<double> m_weightRequest;   //!< tunnel weight request
   DataRate m_rate;  //!< current tunnel rate
+  uint32_t m_sentBytes; //!< sent bytes in last timeslice (used in rate control)
   // tunnel rate bound
   DataRate m_rateMax;   //!< max tunnel rate
   DataRate m_rateMin;   //!< min tunnel rate

@@ -28,11 +28,6 @@ C3Tunnel::GetTypeId (void)
                      TimeValue (Time ("100us")),
                      MakeTimeAccessor (&C3Tunnel::m_interval),
                      MakeTimeChecker (Time (0)))
-      .AddAttribute ("Rate",
-                     "Initial data rate of current tunnel.",
-                     DataRateValue (DataRate ("10Mbps")),
-                     MakeDataRateAccessor (&C3Tunnel::m_rate),
-                     MakeDataRateChecker ())
       .AddAttribute ("MaxRate",
                      "Max data rate of current tunnel.",
                      DataRateValue (DataRate ("1000Mbps")),
@@ -78,6 +73,7 @@ C3Tunnel::C3Tunnel (uint32_t tenantId, C3Type type,
     m_weight (0.0),
     m_weightRequest (0.0),
     m_rate (0),
+    m_sentBytes (0),
     m_timer (Timer::CANCEL_ON_DESTROY)
 {
   NS_LOG_FUNCTION (this);
@@ -111,6 +107,9 @@ C3Tunnel::Update (void)
   UpdateInfo ();
   UpdateRate ();
   ScheduleFlow ();
+  // clear stat in last timeslice
+  m_ecnRecorder->Reset ();
+  m_sentBytes = 0;
   // schedule next event
   m_timer.Schedule (m_interval);
 }
@@ -162,6 +161,8 @@ void
 C3Tunnel::Forward (Ptr<Packet> packet,  uint8_t protocol)
 {
   NS_LOG_FUNCTION (this << packet << (uint32_t)protocol);
+  // record bytes sent
+  m_sentBytes += packet->GetSize ();
   m_forwardTarget (packet, m_src, m_dst, protocol, m_route);
 }
 
@@ -197,13 +198,15 @@ C3Tunnel::UpdateRate (void)
 {
   NS_LOG_FUNCTION (this);
   DataRate rate;
+  // calculate last rate (in bps)
+  double prevRate = m_sentBytes * 8 / m_interval.GetSeconds ();
   if (m_ecnRecorder->GetMarkedBytes ())
     {
       NS_LOG_DEBUG ("Congestion detected, decrease tunnel rate.");
       ///\todo change congestion operations
       // rate = DataRate ((1 - m_alpha / 2) * m_rate.GetBitRate ());
       // rate = DataRate ((1 - std::pow (m_alpha.Get (), m_weight) / 2) * m_rate.GetBitRate ());
-      rate = DataRate ((1 - m_alpha / 2) * m_rate.GetBitRate ());
+      rate = DataRate ((1 - m_alpha / 2) * prevRate);
     }
   else
     {
@@ -211,16 +214,15 @@ C3Tunnel::UpdateRate (void)
       if (m_rate < m_rateThresh)
         {
           NS_LOG_LOGIC ("Slow start like behavior.");
-          rate = DataRate ((1 + m_weight) * m_rate.GetBitRate ());
+          rate = DataRate ((1 + m_weight) * prevRate);
         }
       else
         {
           NS_LOG_LOGIC ("Congestion avoidance like behavior.");
-          rate = DataRate (m_rate.GetBitRate () + m_weight * DataRate ("10Mbps").GetBitRate ());
+          rate = DataRate (prevRate + m_weight * DataRate ("10Mbps").GetBitRate ());
         }
     }
   m_rate = std::max (std::min (rate, m_rateMax), m_rateMin);
-  m_ecnRecorder->Reset ();
 }
 
 } //namespace dcn
