@@ -343,7 +343,7 @@ SetConfig (bool useEcn, bool useDctcp)
 
   Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (tunnel_interval));
   Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (1.0 / 16));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (tunnel_bw));
+  // Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (tunnel_bw));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MaxRate", DataRateValue (DataRate(link_data_rate)));
   Config::SetDefault ("ns3::dcn::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
   Config::SetDefault ("ns3::dcn::C3Tunnel::RateThresh", DataRateValue (tunnel_bw));
