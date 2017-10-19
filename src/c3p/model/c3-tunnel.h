@@ -18,7 +18,7 @@
 #include "c3-flow.h"
 
 namespace ns3 {
-namespace dcn {
+namespace c3p {
 
 /**
  * \ingroup dcn
@@ -162,7 +162,7 @@ protected:
   bool m_isExperiment;
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 
 #endif // C3_TUNNEL_H

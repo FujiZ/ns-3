@@ -9,7 +9,7 @@
 #include "c3-type.h"
 
 namespace ns3 {
-namespace dcn {
+namespace c3p {
 
 class C3Tag : public Tag
 {

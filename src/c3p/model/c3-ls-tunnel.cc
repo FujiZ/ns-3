@@ -12,16 +12,16 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3LsTunnel");
 
-namespace dcn {
+namespace c3p {
 
 NS_OBJECT_ENSURE_REGISTERED (C3LsTunnel);
 
 TypeId
 C3LsTunnel::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::C3LsTunnel")
+  static TypeId tid = TypeId ("ns3::c3p::C3LsTunnel")
       .SetParent<C3Tunnel> ()
-      .SetGroupName ("DCN")
+      .SetGroupName ("C3P")
   ;
   return tid;
 }
@@ -83,5 +83,5 @@ C3LsTunnel::GetFlow (uint32_t fid, uint8_t protocol)
     }
 }
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3

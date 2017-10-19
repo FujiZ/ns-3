@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
-#include "dcn-helper.h"
+#include "c3p-helper.h"
 
 namespace ns3 {
 

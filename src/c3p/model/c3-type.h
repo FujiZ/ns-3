@@ -4,7 +4,7 @@
 #include "stdint.h"
 
 namespace ns3{
-namespace dcn{
+namespace c3p{
 
 enum class C3Type : uint8_t
 {

@@ -6,16 +6,16 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3Tag");
 
-namespace dcn {
+namespace c3p {
 
 NS_OBJECT_ENSURE_REGISTERED (C3Tag);
 
 TypeId
 C3Tag::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::C3Tag")
+  static TypeId tid = TypeId ("ns3::c3p::C3Tag")
     .SetParent<Tag> ()
-    .SetGroupName("DCN")
+    .SetGroupName("C3P")
     .AddConstructor<C3Tag> ()
   ;
   return tid;
@@ -187,5 +187,5 @@ C3Tag::operator != (const C3Tag &other) const
   return !operator == (other);
 }
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3

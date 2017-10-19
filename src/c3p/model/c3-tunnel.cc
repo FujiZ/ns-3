@@ -7,16 +7,16 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3Tunnel");
 
-namespace dcn {
+namespace c3p {
 
 NS_OBJECT_ENSURE_REGISTERED (C3Tunnel);
 
 TypeId
 C3Tunnel::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::C3Tunnel")
+  static TypeId tid = TypeId ("ns3::c3p::C3Tunnel")
       .SetParent<Object> ()
-      .SetGroupName ("DCN")
+      .SetGroupName ("C3P")
       .AddAttribute ("Gamma",
                      "0 < Gamma < 1 is the weight given to new samples"
                      " against the past in the estimation of alpha.",
@@ -207,6 +207,7 @@ C3Tunnel::UpdateRate (void)
       // rate = DataRate ((1 - m_alpha / 2) * m_rate.GetBitRate ());
       // rate = DataRate ((1 - std::pow (m_alpha.Get (), m_weight) / 2) * m_rate.GetBitRate ());
       rate = DataRate ((1 - m_alpha / 2) * prevRate);
+      m_rateThresh = rate;
     }
   else
     {

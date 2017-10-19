@@ -1,7 +1,6 @@
-#include "c3-cs-division.h"
-
 #include "ns3/log.h"
 
+#include "c3-cs-division.h"
 #include "c3-cs-tunnel.h"
 
 
