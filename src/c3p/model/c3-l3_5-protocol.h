@@ -1,4 +1,4 @@
-// DCN - C3 Protocol class
+// C3p - C3 Protocol class
 // Fuji Z, Winter 2016
 #ifndef C3_L3_5_PROTOCOL_H
 #define C3_L3_5_PROTOCOL_H
@@ -6,20 +6,20 @@
 #include <map>
 #include <stdint.h>
 
-#include "ip-l3_5-protocol.h"
+#include "ns3/ip-l3_5-protocol.h"
 
 namespace ns3 {
-namespace dcn {
+namespace c3p {
 
 /**
- * \ingroup dcn
+ * \ingroup c3p
  *
  * \brief c3 protocol class.
  *
  * This class implement the c3 protocol which provides
  * multi-tenant multi-objective bandwidth allocation.
  */
-class C3L3_5Protocol : public IpL3_5Protocol
+class C3L3_5Protocol : public dcn::IpL3_5Protocol
 {
 public:
   /**
@@ -52,7 +52,7 @@ protected:
 
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 
 #endif // C3_L3_5_PROTOCOL_H

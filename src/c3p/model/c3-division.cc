@@ -9,7 +9,7 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3Division");
 
-namespace dcn {
+namespace c3p {
 
 NS_OBJECT_ENSURE_REGISTERED (C3Division);
 
@@ -19,9 +19,9 @@ C3Division::DivisionTypeList_t C3Division::m_divisionTypeList;
 TypeId
 C3Division::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::C3Division")
+  static TypeId tid = TypeId ("ns3::c3p::C3Division")
       .SetParent<Object> ()
-      .SetGroupName ("DCN")
+      .SetGroupName ("C3p")
       .AddAttribute ("TenantId",
                      "The tenantId of division",
                      UintegerValue (0),
@@ -172,5 +172,5 @@ C3Division::GetTenantId (void) const
   return m_tenantId;
 }
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3

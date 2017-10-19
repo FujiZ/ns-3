@@ -13,16 +13,16 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3L3_5Protocol");
 
-namespace dcn {
+namespace c3p {
 
 NS_OBJECT_ENSURE_REGISTERED (C3L3_5Protocol);
 
 TypeId
 C3L3_5Protocol::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::C3L3_5Protocol")
+  static TypeId tid = TypeId ("ns3::c3p::C3L3_5Protocol")
     .SetParent<IpL3_5Protocol> ()
-    .SetGroupName ("DCN")
+    .SetGroupName ("C3p")
     .AddConstructor<C3L3_5Protocol> ()
   ;
   return tid;
@@ -103,8 +103,8 @@ void
 C3L3_5Protocol::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
-  IpL3_5Protocol::DoDispose ();
+  dcn::IpL3_5Protocol::DoDispose ();
 }
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3

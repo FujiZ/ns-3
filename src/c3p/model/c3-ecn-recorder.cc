@@ -7,7 +7,7 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3EcnRecorder");
 
-namespace dcn {
+namespace c3p {
 
 NS_OBJECT_ENSURE_REGISTERED (C3EcnRecorder);
 
@@ -16,9 +16,9 @@ C3EcnRecorder::EcnRecorderList_t C3EcnRecorder::m_ecnRecorderList;
 TypeId
 C3EcnRecorder::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::C3EcnRecorder")
+  static TypeId tid = TypeId ("ns3::c3p::C3EcnRecorder")
       .SetParent<Object> ()
-      .SetGroupName ("DCN")
+      .SetGroupName ("C3p")
       .AddConstructor<C3EcnRecorder> ();
   ;
   return tid;
@@ -133,5 +133,5 @@ C3EcnRecorder::EcnRecorderListKey_t::operator == (const C3EcnRecorder::EcnRecord
       && (m_dst == other.m_dst);
 }
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3

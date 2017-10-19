@@ -85,7 +85,7 @@ SNRToBlockErrorRateManager::LoadTraces (void)
 
   for (int i = 0; i < 7; i++)
     {
-      char traceFile[1024];
+      char traceFile[1050];
       sprintf (traceFile, "%s/modulation%d.txt", m_traceFilePath, i);
 
       m_ifTraceFile.open (traceFile, std::ifstream::in);
@@ -243,7 +243,7 @@ SNRToBlockErrorRateManager::ReLoadTraces (void)
 
   for (int i = 0; i < 7; i++)
     {
-      char traceFile[1024];
+      char traceFile[1050];
       sprintf (traceFile, "%s/Modulation%d.txt", m_traceFilePath, i);
 
       m_ifTraceFile.open (traceFile, std::ifstream::in);

@@ -6,10 +6,10 @@
 #include "c3-flow.h"
 
 namespace ns3 {
-namespace dcn {
+namespace c3p {
 
 /**
- * \ingroup dcn
+ * \ingroup c3p
  * the class for Deadline Sensitive Flow
  */
 class C3LsFlow : public C3Flow
@@ -31,7 +31,7 @@ public:
   virtual bool IsFinished (void) const;
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 
 #endif // C3_LS_FLOW_H

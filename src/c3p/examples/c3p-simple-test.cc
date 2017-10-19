@@ -4,6 +4,7 @@
 #include "ns3/point-to-point-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/traffic-control-module.h"
+#include "ns3/c3p-module.h"
 #include "ns3/dcn-module.h"
 
 #include <string>
@@ -76,12 +77,12 @@ SetupConfig (void)
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
 
   // C3 params
-  Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (MilliSeconds (1)));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (MilliSeconds (1)));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (1.0 / 16));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (link_data_rate));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::MaxRate", DataRateValue (link_data_rate));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
+  Config::SetDefault ("ns3::c3p::C3Division::Interval", TimeValue (MilliSeconds (1)));
+  Config::SetDefault ("ns3::c3p::C3Tunnel::Interval", TimeValue (MilliSeconds (1)));
+  Config::SetDefault ("ns3::c3p::C3Tunnel::Gamma", DoubleValue (1.0 / 16));
+  Config::SetDefault ("ns3::c3p::C3Tunnel::Rate", DataRateValue (link_data_rate));
+  Config::SetDefault ("ns3::c3p::C3Tunnel::MaxRate", DataRateValue (link_data_rate));
+  Config::SetDefault ("ns3::c3p::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
 
   // TBF params
   Config::SetDefault ("ns3::dcn::TokenBucketFilter::DataRate", DataRateValue (link_data_rate));
@@ -178,7 +179,7 @@ SetupTopo (uint32_t srcNum, uint32_t dstNum, const DataRate &linkBandwidth, cons
 }
 
 void
-TxTrace (uint32_t flowId, dcn::C3Tag c3Tag, Ptr<const Packet> p)
+TxTrace (uint32_t flowId, c3p::C3Tag c3Tag, Ptr<const Packet> p)
 {
   FlowIdTag flowIdTag;
   flowIdTag.SetFlowId (flowId);
@@ -243,9 +244,9 @@ SetupCsClient (Ptr<Node> node, const Address &serverAddr,
   clientApp.Start (startTime);
   clientApp.Stop (client_stop_time);
 
-  dcn::C3Tag c3Tag;
+  c3p::C3Tag c3Tag;
   c3Tag.SetTenantId (0);    /// set all tenant id to 0
-  c3Tag.SetType (dcn::C3Type::CS);
+  c3Tag.SetType (c3p::C3Type::CS);
   c3Tag.SetFlowSize (flowSize);
   clientApp.Get (0)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId, c3Tag));
   // no need to set flow size in socket
@@ -283,9 +284,9 @@ SetupDsClient (Ptr<Node> node, const Address &serverAddr,
   clientApp.Start (startTime);
   clientApp.Stop (client_stop_time);
 
-  dcn::C3Tag c3Tag;
+  c3p::C3Tag c3Tag;
   c3Tag.SetTenantId (0);    /// set all tenant id to 0
-  c3Tag.SetType (dcn::C3Type::DS);
+  c3Tag.SetType (c3p::C3Type::DS);
   c3Tag.SetFlowSize (flowSize);
   c3Tag.SetDeadline (startTime + deadline);
   clientApp.Get (0)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId, c3Tag));
@@ -414,17 +415,17 @@ main (int argc, char *argv[])
       l3_5Helper.AddIpL4Protocol ("ns3::TcpL4Protocol");
       l3_5Helper.Install(srcs);
       l3_5Helper.Install (dsts);
-      dcn::C3Division::AddDivisionType (dcn::C3Type::CS, "ns3::dcn::C3CsDivision");
-      dcn::C3Division::AddDivisionType (dcn::C3Type::DS, "ns3::dcn::C3DsDivision");
+      c3p::C3Division::AddDivisionType (c3p::C3Type::CS, "ns3::c3p::C3CsDivision");
+      c3p::C3Division::AddDivisionType (c3p::C3Type::DS, "ns3::c3p::C3DsDivision");
       // create division : one division just for test
       if (enableCS)
         {
-          Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::CS);
+          Ptr<c3p::C3Division> division = c3p::C3Division::CreateDivision (0, c3p::C3Type::CS);
           division->SetAttribute ("Weight", DoubleValue (0.2));
         }
       if (enableDS)
         {
-          Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::DS);
+          Ptr<c3p::C3Division> division = c3p::C3Division::CreateDivision (0, c3p::C3Type::DS);
           division->SetAttribute ("Weight", DoubleValue (0.2));
         }
     }

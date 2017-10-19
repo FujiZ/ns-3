@@ -8,16 +8,16 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3CsDivision");
 
-namespace dcn {
+namespace c3p {
 
 NS_OBJECT_ENSURE_REGISTERED (C3CsDivision);
 
 TypeId
 C3CsDivision::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::C3CsDivision")
+  static TypeId tid = TypeId ("ns3::c3p::C3CsDivision")
       .SetParent<C3Division> ()
-      .SetGroupName ("DCN")
+      .SetGroupName ("C3p")
       .AddConstructor<C3CsDivision> ();
   ;
   return tid;
@@ -51,5 +51,5 @@ C3CsDivision::GetTunnel (const Ipv4Address &src, const Ipv4Address &dst)
     }
 }
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3

@@ -36,7 +36,7 @@ private:
 
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 
 #endif // C3_LS_TUNNEL_H

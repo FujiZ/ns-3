@@ -10,16 +10,16 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3Flow");
 
-namespace dcn {
+namespace c3p {
 
 NS_OBJECT_ENSURE_REGISTERED (C3Flow);
 
 TypeId
 C3Flow::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::C3Flow")
+  static TypeId tid = TypeId ("ns3::c3p::C3Flow")
       .SetParent<Object> ()
-      .SetGroupName ("DCN")
+      .SetGroupName ("C3p")
   ;
   return tid;
 }
@@ -32,7 +32,7 @@ C3Flow::C3Flow ()
     m_protocol (0)
 {
   NS_LOG_FUNCTION (this);
-  m_tbf = CreateObject<TokenBucketFilter> ();
+  m_tbf = CreateObject<dcn::TokenBucketFilter> ();
   m_tbf->SetSendTarget (MakeCallback (&C3Flow::Forward, this));
   m_tbf->SetDropTarget (MakeCallback (&C3Flow::Drop, this));
 }
@@ -153,5 +153,5 @@ C3Flow::GetPacketSize (Ptr<const Packet> packet) const
 
 }
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3

@@ -11,10 +11,10 @@
 #include "c3-type.h"
 
 namespace ns3 {
-namespace dcn {
+namespace c3p {
 
 /**
- * \ingroup dcn
+ * \ingroup c3p
  *
  * \brief c3 ecn recorder
  * ecn recorder to record the ratio of marked ip packets in receive end.
@@ -106,7 +106,7 @@ private:
 
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 
 #endif // C3_ECN_RECORDER_H

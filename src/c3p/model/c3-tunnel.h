@@ -21,7 +21,7 @@ namespace ns3 {
 namespace c3p {
 
 /**
- * \ingroup dcn
+ * \ingroup c3p
  * the base class for various type of tunnel (eg: LS, DS)
  */
 class C3Tunnel : public Object

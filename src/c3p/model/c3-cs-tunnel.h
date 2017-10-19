@@ -6,7 +6,7 @@
 #include "c3-tunnel.h"
 
 namespace ns3 {
-namespace dcn {
+namespace c3p {
 
 class C3CsTunnel : public C3Tunnel
 {
@@ -36,6 +36,6 @@ private:
 
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 #endif // C3CSTUNNEL_H

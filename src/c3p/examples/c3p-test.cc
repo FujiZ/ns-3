@@ -4,6 +4,7 @@
 #include "ns3/point-to-point-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/traffic-control-module.h"
+#include "ns3/c3p-module.h"
 #include "ns3/dcn-module.h"
 
 #include <iostream>
@@ -15,13 +16,14 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("ADN_SPINE");
+NS_LOG_COMPONENT_DEFINE ("C3pTest");
 
 // topo attributes
-uint32_t spin_num = 4;
-uint32_t leaf_num = 4;
-uint32_t host_num = 4;
-Time link_delay ("0.0375ms");
+uint32_t cores_num = 1;
+uint32_t aggs_num = 2;
+uint32_t tors_num = 2;
+uint32_t hosts_num = 10;
+Time link_delay ("0.025ms");
 DataRate btnk_bw ("1Gbps");
 DataRate non_btnk_bw ("10Gbps");
 uint32_t queue_size = 250;
@@ -89,17 +91,15 @@ SetupConfig (void)
   Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
 
   // C3 params
-  /*
-  Config::SetDefault ("ns3::dcn::C3Division::Interval", TimeValue (division_interval));
-  Config::SetDefault ("ns3::dcn::C3Division::RateThresh", DataRateValue (btnk_bw));
+  Config::SetDefault ("ns3::c3p::C3Division::Interval", TimeValue (division_interval));
+  Config::SetDefault ("ns3::c3p::C3Division::RateThresh", DataRateValue (btnk_bw));
 
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Interval", TimeValue (tunnel_interval));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Gamma", DoubleValue (1.0 / 16));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::Rate", DataRateValue (tunnel_bw));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::MaxRate", DataRateValue (btnk_bw));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
-  Config::SetDefault ("ns3::dcn::C3Tunnel::RateThresh", DataRateValue (tunnel_bw));
-  */
+  Config::SetDefault ("ns3::c3p::C3Tunnel::Interval", TimeValue (tunnel_interval));
+  Config::SetDefault ("ns3::c3p::C3Tunnel::Gamma", DoubleValue (1.0 / 16));
+  Config::SetDefault ("ns3::c3p::C3Tunnel::Rate", DataRateValue (tunnel_bw));
+  Config::SetDefault ("ns3::c3p::C3Tunnel::MaxRate", DataRateValue (btnk_bw));
+  Config::SetDefault ("ns3::c3p::C3Tunnel::MinRate", DataRateValue (DataRate ("1Mbps")));
+  Config::SetDefault ("ns3::c3p::C3Tunnel::RateThresh", DataRateValue (tunnel_bw));
 }
 
 Ipv4InterfaceContainer
@@ -138,48 +138,52 @@ MakeLink (const std::string &type, Ptr<Node> src, Ptr<Node> dst,
 }
 
 void
-SetupTopo (uint32_t spinNum, uint32_t leafNum, uint32_t hostNum,
-           DataRate spin2leaf, DataRate leaf2host, Time linkDelay)
+SetupTopo (uint32_t coresNum, uint32_t aggsNum, uint32_t torsNum, uint32_t hostsNum,
+           DataRate coreAggBW, DataRate aggTorBW, DataRate torHostBW, Time linkDelay)
 {
   InternetStackHelper internetHelper;
   Ipv4AddressHelper  ipv4AddrHelper ("10.1.1.0", "255.255.255.0");
 
-  NodeContainer spines, leafs;
-  spines.Create (spinNum);
-  leafs.Create (leafNum);
-  internetHelper.Install (spines);
-  internetHelper.Install (leafs);
-  for (NodeContainer::Iterator i = spines.Begin (); i != spines.End (); ++i)
+  NodeContainer cores;
+  cores.Create (coresNum);
+  internetHelper.Install (cores);
+  for (NodeContainer::Iterator i = cores.Begin (); i != cores.End (); ++i)
     {
-      for (NodeContainer::Iterator j = leafs.Begin (); j != leafs.End (); ++j)
+      NodeContainer aggs;
+      aggs.Create (aggsNum);
+      internetHelper.Install (aggs);
+      for (NodeContainer::Iterator j = aggs.Begin (); j != aggs.End (); ++j)
         {
-          MakeLink ("red", *i, *j, spin2leaf, linkDelay, ipv4AddrHelper);
+          MakeLink ("red", *i, *j, coreAggBW, linkDelay, ipv4AddrHelper);
+          NodeContainer tors;
+          tors.Create (torsNum);
+          internetHelper.Install (tors);
+          for (NodeContainer::Iterator k = tors.Begin (); k != tors.End (); ++k)
+            {
+              MakeLink ("red", *j, *k, aggTorBW, linkDelay, ipv4AddrHelper);
+              NodeContainer endhosts;
+              endhosts.Create (hostsNum);
+              internetHelper.Install (endhosts);
+              for (NodeContainer::Iterator l = endhosts.Begin (); l != endhosts.End (); ++l)
+                {
+                  auto interfaces = MakeLink ("pfifo", *k, *l, torHostBW, linkDelay, ipv4AddrHelper);
+                  hosts_interfaces.Add (interfaces.Get (1));
+                }
+              hosts.Add (endhosts);
+            }
         }
-    }
-
-  for (NodeContainer::Iterator k = leafs.Begin (); k != leafs.End (); ++k)
-    {
-      NodeContainer endhosts;
-      endhosts.Create (hostNum);
-      internetHelper.Install (endhosts);
-      for (NodeContainer::Iterator l = endhosts.Begin (); l != endhosts.End (); ++l)
-        {
-          auto interfaces = MakeLink ("pfifo", *k, *l, leaf2host, linkDelay, ipv4AddrHelper);
-          hosts_interfaces.Add (interfaces.Get (1));
-        }
-      hosts.Add (endhosts);
     }
   // Set up the routing
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 }
 
 void
-TxTrace (uint32_t flowId, /*dcn::C3Tag c3Tag, */Ptr<const Packet> p)
+TxTrace (uint32_t flowId, c3p::C3Tag c3Tag, Ptr<const Packet> p)
 {
-  //FlowIdTag flowIdTag;
-  //flowIdTag.SetFlowId (flowId);
-  //p->AddPacketTag (flowIdTag);
-  //p->AddPacketTag (c3Tag);
+  FlowIdTag flowIdTag;
+  flowIdTag.SetFlowId (flowId);
+  p->AddPacketTag (flowIdTag);
+  p->AddPacketTag (c3Tag);
   if (tx_time.find (flowId) == tx_time.end ())
     {
       tx_time[flowId] = Simulator::Now ().GetSeconds ();
@@ -217,22 +221,18 @@ InstallCsClient (Ptr<Node> node, const Address &sinkAddr, uint32_t tenantId,
                  uint32_t flowId, uint64_t flowSize, uint64_t packetSize,
                  const Time &startTime, const Time &stopTime)
 {
-  dcn::AddcnBulkSendHelper clientHelper ("ns3::L2dctSocketFactory", sinkAddr);
+  BulkSendHelper clientHelper ("ns3::L2dctSocketFactory", sinkAddr);
   clientHelper.SetAttribute ("MaxBytes", UintegerValue (flowSize));
   clientHelper.SetAttribute ("SendSize", UintegerValue (packetSize));
   ApplicationContainer clientApp = clientHelper.Install (node);
   clientApp.Start (startTime);
   clientApp.Stop (stopTime);
 
-  auto it = clientApp.Begin();
-  Ptr<dcn::AddcnBulkSendApplication> app = StaticCast<dcn::AddcnBulkSendApplication> (*it);
-
-  app->SetTenantId (tenantId);
-  app->SetFlowType (dcn::C3Type::CS);
-  app->SetFlowId (flowId);
-  app->SetFlowSize (flowSize);
-  app->SetSegSize (packetSize);
-  app->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId));
+  c3p::C3Tag c3Tag;
+  c3Tag.SetTenantId (tenantId);
+  c3Tag.SetType (c3p::C3Type::CS);
+  c3Tag.SetFlowSize (flowSize);
+  clientApp.Get (0)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId, c3Tag));
   // no need to set flow size in socket
 }
 
@@ -249,24 +249,20 @@ InstallDsClient (Ptr<Node> node, const Address &sinkAddr, uint32_t tenantId,
                  uint32_t flowId, uint64_t flowSize, uint64_t packetSize, const Time &deadline,
                  const Time &startTime, const Time &stopTime)
 {
-  dcn::AddcnBulkSendHelper clientHelper ("ns3::D2tcpSocketFactory", sinkAddr);
+  BulkSendHelper clientHelper ("ns3::D2tcpSocketFactory", sinkAddr);
   clientHelper.SetAttribute ("MaxBytes", UintegerValue (flowSize));
   clientHelper.SetAttribute ("SendSize", UintegerValue (packetSize));
   ApplicationContainer clientApp = clientHelper.Install (node);
   clientApp.Start (startTime);
   clientApp.Stop (stopTime);
 
-  auto it = clientApp.Begin();
-  Ptr<dcn::AddcnBulkSendApplication> app = StaticCast<dcn::AddcnBulkSendApplication> (*it);
-
-  app->SetTenantId (tenantId);
-  app->SetFlowType (dcn::C3Type::DS);
-  app->SetFlowId (flowId);
-  app->SetFlowSize (flowSize);
-  app->SetSegSize (packetSize);
-  app->SetDeadline (startTime + deadline);
-  app->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId));
-  app->TraceConnectWithoutContext ("SocketCreate", MakeBoundCallback (&DsSocketCreateTrace, flowSize, deadline));
+  c3p::C3Tag c3Tag;
+  c3Tag.SetTenantId (tenantId);
+  c3Tag.SetType (c3p::C3Type::DS);
+  c3Tag.SetFlowSize (flowSize);
+  c3Tag.SetDeadline (startTime + deadline);
+  clientApp.Get (0)->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&TxTrace, flowId, c3Tag));
+  clientApp.Get (0)->TraceConnectWithoutContext ("SocketCreate", MakeBoundCallback (&DsSocketCreateTrace, flowSize, deadline));
 }
 
 Ptr<RandomVariableStream>
@@ -335,12 +331,11 @@ GetWebSearchStream (void)
 int
 main (int argc, char *argv[])
 {
-  bool adnEnable = false;
+  bool c3pEnable = false;
   bool dsEnable = false;
   bool csEnable = false;
   bool writeResult = false;
   bool writeFlowInfo = false;
-  bool useECMP = false;
   std::string pathOut ("."); // Current directory
 
   CommandLine cmd;
@@ -352,11 +347,10 @@ main (int argc, char *argv[])
   cmd.AddValue ("workload", "workload type", workload);
   cmd.AddValue ("miceLoad", "network load factor", mice_load);
   cmd.AddValue ("simTime", "simulation time", sim_time);
-  cmd.AddValue ("enableADN", "<0/1> enable ADN in test", adnEnable);
+  cmd.AddValue ("enableC3P", "<0/1> enable C3 in test", c3pEnable);
   cmd.AddValue ("pathOut", "Path to save results", pathOut);
   cmd.AddValue ("writeResult", "<0/1> to write result", writeResult);
   cmd.AddValue ("writeFlowInfo", "<0/1> to write flow info", writeFlowInfo);
-  cmd.AddValue ("enableECMP", "<0/1> enable flow-level ecmp", useECMP);
   cmd.Parse (argc, argv);
 
   Time globalStartTime = Seconds (0);
@@ -365,16 +359,9 @@ main (int argc, char *argv[])
   Time sinkStopTime = globalStopTime + Seconds (3);
   Time clientStopTime = globalStopTime;
 
-  if (useECMP)
-    {
-      //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_HASH"));
-      Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_RANDOM"));
-      //Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue ("ECMP_FLOWCELL"));
-    }
-
   SetupConfig ();
-  SetupTopo (spin_num, leaf_num, host_num,
-             btnk_bw, non_btnk_bw, link_delay);
+  SetupTopo (cores_num, aggs_num, tors_num, hosts_num,
+             non_btnk_bw, non_btnk_bw, btnk_bw, link_delay);
 
   // install dctcp socket factory to hosts
   DctcpSocketFactoryHelper dctcpHelper;
@@ -383,29 +370,24 @@ main (int argc, char *argv[])
   dctcpHelper.AddSocketFactory ("ns3::L2dctSocketFactory");
   dctcpHelper.Install (hosts);
 
-  if (adnEnable)
+  if (c3pEnable)
     {
-      dcn::IpL3_5ProtocolHelper l3_5Helper ("ns3::dcn::ADDCNL3_5Protocol");
+      dcn::IpL3_5ProtocolHelper l3_5Helper ("ns3::dcn::C3L3_5Protocol");
       l3_5Helper.AddIpL4Protocol ("ns3::TcpL4Protocol");
       l3_5Helper.Install(hosts);
 
-      ns3::dcn::ADDCNSlice::SetInterval(MilliSeconds (2));
-      ns3::dcn::ADDCNSlice::Start(Seconds(globalStartTime));
-      ns3::dcn::ADDCNSlice::Stop(Seconds(globalStopTime));
-      /*
-      dcn::C3Division::AddDivisionType (dcn::C3Type::CS, "ns3::dcn::C3CsDivision");
-      dcn::C3Division::AddDivisionType (dcn::C3Type::DS, "ns3::dcn::C3DsDivision");
+      c3p::C3Division::AddDivisionType (c3p::C3Type::CS, "ns3::c3p::C3CsDivision");
+      c3p::C3Division::AddDivisionType (c3p::C3Type::DS, "ns3::c3p::C3DsDivision");
       if (csEnable)
         {
-          Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::CS);
+          Ptr<c3p::C3Division> division = c3p::C3Division::CreateDivision (0, c3p::C3Type::CS);
           division->SetAttribute ("Weight", DoubleValue (1.0));
         }
       if (dsEnable)
         {
-          Ptr<dcn::C3Division> division = dcn::C3Division::CreateDivision (0, dcn::C3Type::DS);
+          Ptr<c3p::C3Division> division = c3p::C3Division::CreateDivision (0, c3p::C3Type::DS);
           division->SetAttribute ("Weight", DoubleValue (1.0));
         }
-      */
     }
   // install ip sink on all hosts
   InstallSink (hosts, sink_port, sinkStartTime, sinkStopTime);
@@ -426,7 +408,7 @@ main (int argc, char *argv[])
       break;
     }
 
-  Time avInterArrival = Seconds ((av_flow_size * 1000 * 8)/ (mice_load * btnk_bw.GetBitRate () * host_num));
+  Time avInterArrival = Seconds ((av_flow_size * 1000 * 8)/ (mice_load * btnk_bw.GetBitRate () * hosts.GetN ()));
   auto interArrivalStream = CreateObject<ExponentialRandomVariable> ();
   interArrivalStream->SetStream (random_seed);
   interArrivalStream->SetAttribute ("Mean", DoubleValue (avInterArrival.GetSeconds ()));

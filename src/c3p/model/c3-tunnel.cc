@@ -16,7 +16,7 @@ C3Tunnel::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::c3p::C3Tunnel")
       .SetParent<Object> ()
-      .SetGroupName ("C3P")
+      .SetGroupName ("C3p")
       .AddAttribute ("Gamma",
                      "0 < Gamma < 1 is the weight given to new samples"
                      " against the past in the estimation of alpha.",
@@ -226,5 +226,5 @@ C3Tunnel::UpdateRate (void)
   m_rate = std::max (std::min (rate, m_rateMax), m_rateMin);
 }
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3

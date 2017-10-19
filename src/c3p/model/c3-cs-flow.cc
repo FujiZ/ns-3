@@ -8,16 +8,16 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3CsFlow");
 
-namespace dcn {
+namespace c3p {
 
 NS_OBJECT_ENSURE_REGISTERED (C3CsFlow);
 
 TypeId
 C3CsFlow::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::C3CsFlow")
+  static TypeId tid = TypeId ("ns3::c3p::C3CsFlow")
       .SetParent<C3Flow> ()
-      .SetGroupName ("DCN")
+      .SetGroupName ("C3p")
       .AddConstructor<C3CsFlow> ()
       .AddAttribute ("WeightMax",
                      "Max weight a flow can get.",
@@ -87,5 +87,5 @@ C3CsFlow::GetWeightMin ()
   return m_weightMin;
 }
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3

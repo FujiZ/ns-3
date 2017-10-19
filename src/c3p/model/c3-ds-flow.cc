@@ -11,16 +11,16 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("C3DsFlow");
 
-namespace dcn {
+namespace c3p {
 
 NS_OBJECT_ENSURE_REGISTERED (C3DsFlow);
 
 TypeId
 C3DsFlow::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::dcn::C3DsFlow")
+  static TypeId tid = TypeId ("ns3::c3p::C3DsFlow")
       .SetParent<C3Flow> ()
-      .SetGroupName ("DCN")
+      .SetGroupName ("C3p")
       .AddConstructor<C3DsFlow> ();
   ;
   return tid;
@@ -64,5 +64,5 @@ C3DsFlow::GetRateRequest (void) const
   return m_rateRequest;
 }
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3

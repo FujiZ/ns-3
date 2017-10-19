@@ -21,7 +21,7 @@ C3LsTunnel::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::c3p::C3LsTunnel")
       .SetParent<C3Tunnel> ()
-      .SetGroupName ("C3P")
+      .SetGroupName ("C3p")
   ;
   return tid;
 }

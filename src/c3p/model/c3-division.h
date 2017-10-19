@@ -21,10 +21,10 @@
 #include "c3-type.h"
 
 namespace ns3 {
-namespace dcn {
+namespace c3p {
 
 /**
- * \ingroup dcn
+ * \ingroup c3p
  *
  * \brief c3 division base class
  */
@@ -121,7 +121,7 @@ private:
   Time m_interval;   //!< interval to call Update ()
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 
 #endif // C3_DIVISION_H

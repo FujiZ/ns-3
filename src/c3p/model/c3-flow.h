@@ -6,13 +6,13 @@
 #include "ns3/object.h"
 #include "ns3/packet.h"
 
-#include "token-bucket-filter.h"
+#include "ns3/token-bucket-filter.h"
 
 namespace ns3 {
-namespace dcn {
+namespace c3p {
 
 /**
- * \ingroup dcn
+ * \ingroup c3p
  *
  * \brief c3 flow
  * the base class for various type of flow (eg: LS, DS)
@@ -117,11 +117,11 @@ private:
   uint32_t GetPacketSize (Ptr<const Packet> packet) const;
 
   uint8_t m_protocol;    //!< the protocol number of current flow
-  Ptr<TokenBucketFilter> m_tbf; //!< tbf to control rate
+  Ptr<dcn::TokenBucketFilter> m_tbf; //!< tbf to control rate
   ForwardTargetCallback m_forwardTarget;    //!< callback to forward packet
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 
 #endif // C3_FLOW_H

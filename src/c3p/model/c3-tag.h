@@ -61,7 +61,7 @@ private:
   Time m_deadline;       //!< deadline of flow(used in DS flow)
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 
 #endif // C3_TAG_H

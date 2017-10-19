@@ -15,7 +15,7 @@ C3Tag::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::c3p::C3Tag")
     .SetParent<Tag> ()
-    .SetGroupName("C3P")
+    .SetGroupName("C3p")
     .AddConstructor<C3Tag> ()
   ;
   return tid;

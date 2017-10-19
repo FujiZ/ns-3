@@ -6,10 +6,10 @@
 #include "c3-flow.h"
 
 namespace ns3 {
-namespace dcn {
+namespace c3p {
 
 /**
- * \ingroup dcn
+ * \ingroup c3p
  * the class for Deadline Sensitive Flow
  */
 class C3CsFlow : public C3Flow
@@ -36,7 +36,7 @@ private:
   double m_weightMin;
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 
 

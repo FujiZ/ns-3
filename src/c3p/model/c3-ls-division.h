@@ -4,10 +4,10 @@
 #include "c3-division.h"
 
 namespace ns3 {
-namespace dcn {
+namespace c3p {
 
 /**
- * \ingroup dcn
+ * \ingroup c3p
  *
  * \brief c3 LS division
  */
@@ -28,7 +28,7 @@ public:
   virtual Ptr<C3Tunnel> GetTunnel (const Ipv4Address &src, const Ipv4Address &dst);
 };
 
-} //namespace dcn
+} //namespace c3p
 } //namespace ns3
 
 #endif // C3_LS_DIVISION_H
