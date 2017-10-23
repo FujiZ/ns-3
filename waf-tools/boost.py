@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 # encoding: utf-8
 #
 # partially based on boost.py written by Gernot Vormayr

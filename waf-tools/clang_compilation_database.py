@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 # encoding: utf-8
 # Christoph Koke, 2013
 

@@ -487,7 +487,7 @@ Isto executa o Waf fora do diretório local (o que é bem conveniente). Como o sis
   Checking for program python                             : ok /usr/bin/python
   Checking for Python version >= 2.3                      : ok 2.5.2
   Checking for library python2.5                          : ok
-  Checking for program python2.5-config                   : ok /usr/bin/python2.5-config
+  Checking for program python2.5-config                   : ok /usr/bin/env python.5-config
   Checking for header Python.h                            : ok
   Checking for -fvisibility=hidden support                : yes
   Checking for pybindgen location                         : ok ../pybindgen (guessed)

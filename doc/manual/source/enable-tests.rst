@@ -100,7 +100,7 @@ The .ns3rc file should now be in your top level |ns3| directory, and it contains
 
 .. sourcecode:: python
 
-  #! /usr/bin/python2
+  #! /usr/bin/env python
   
   # A list of the modules that will be enabled when ns-3 is run.
   # Modules that depend on the listed modules will be enabled also.
@@ -132,7 +132,7 @@ examples_enabled and tests_enabled file to be True:
 
 .. sourcecode:: python
 
-  #! /usr/bin/python2
+  #! /usr/bin/env python
   
   # A list of the modules that will be enabled when ns-3 is run.
   # Modules that depend on the listed modules will be enabled also.

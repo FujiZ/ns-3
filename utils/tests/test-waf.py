@@ -1,4 +1,4 @@
-#! /usr/bin/python2
+#! /usr/bin/env python
 ## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 #
 # Copyright (c) 2014 Siddharth Santurkar
@@ -93,7 +93,7 @@ def main(argv):
         "--nopyo",
         "--disable-python",
         "--apiscan=all",
-        "--with-python=/usr/bin/python2.7",
+        "--with-python=/usr/bin/env python.7",
         "--no32bit-scan",
         "-o test_out && rm -rf test_out",
         "--out=test_out && rm -rf test_out",
