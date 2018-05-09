@@ -43,4 +43,5 @@ build/
 .directory
 
 /src/c3p
+/src/byte-count
 
