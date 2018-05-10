@@ -4,8 +4,6 @@
 #include "dctcp-socket-factory-base.h"
 #include "tcp-l4-protocol.h"
 
-#include "ns3/ptr.h"
-
 namespace ns3 {
 
 class L2dctSocketFactory : public DctcpSocketFactoryBase

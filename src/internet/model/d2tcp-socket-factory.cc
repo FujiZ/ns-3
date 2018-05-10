@@ -2,9 +2,6 @@
 
 #include "d2tcp-socket.h"
 
-#include "ns3/assert.h"
-#include "ns3/socket.h"
-
 namespace ns3 {
 
 NS_OBJECT_ENSURE_REGISTERED (D2tcpSocketFactory);

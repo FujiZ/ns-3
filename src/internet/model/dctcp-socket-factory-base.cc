@@ -1,7 +1,6 @@
 #include "dctcp-socket-factory-base.h"
 
 #include "ns3/assert.h"
-#include "ns3/socket.h"
 
 namespace ns3 {
 

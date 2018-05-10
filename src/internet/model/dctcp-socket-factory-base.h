@@ -3,7 +3,6 @@
 
 #include "tcp-l4-protocol.h"
 
-#include "ns3/ptr.h"
 #include "ns3/socket-factory.h"
 
 namespace ns3 {
@@ -19,6 +18,7 @@ public:
   static TypeId GetTypeId (void);
 
   DctcpSocketFactoryBase ();
+
   virtual ~DctcpSocketFactoryBase ();
 
   /**

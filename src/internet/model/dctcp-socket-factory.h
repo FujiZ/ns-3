@@ -2,9 +2,6 @@
 #define DCTCP_SOCKET_FACTORY_H
 
 #include "dctcp-socket-factory-base.h"
-#include "tcp-l4-protocol.h"
-
-#include "ns3/ptr.h"
 
 namespace ns3 {
 
