@@ -130,9 +130,9 @@ TcpSocketBase::GetTypeId (void)
                    MakeBooleanAccessor (&TcpSocketBase::m_limitedTx),
                    MakeBooleanChecker ())
     .AddAttribute ("UseEcn", "True to use ECN functionality",
-                    BooleanValue (false),
-                    MakeBooleanAccessor (&TcpSocketBase::m_ecn),
-                    MakeBooleanChecker ())
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&TcpSocketBase::m_ecn),
+                   MakeBooleanChecker ())
     .AddTraceSource ("RTO",
                      "Retransmission timeout",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_rto),
