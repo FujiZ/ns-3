@@ -69,7 +69,13 @@ BulkSendApplication::GetTypeId (void)
                      "ns3::Packet::TracedCallback")
     .AddTraceSource ("SocketCreate", "Socket is created.",
                      MakeTraceSourceAccessor (&BulkSendApplication::m_socketCreateTrace),
-                     "ns3::BulkSendApplication::SocketCreateTracedCallback")
+                     "ns3::BulkSendApplication::SocketTracedCallback")
+    .AddTraceSource ("SocketConnect", "Socket connection succeeds.",
+                     MakeTraceSourceAccessor (&BulkSendApplication::m_socketCreateTrace),
+                     "ns3::BulkSendApplication::SocketTracedCallback")
+    .AddTraceSource ("SocketClose", "Socket closed by client.",
+                     MakeTraceSourceAccessor (&BulkSendApplication::m_socketCreateTrace),
+                     "ns3::BulkSendApplication::SocketTracedCallback")
   ;
   return tid;
 }
@@ -212,6 +218,7 @@ void BulkSendApplication::SendData (void)
     {
       m_socket->Close ();
       m_connected = false;
+      m_socketCloseTrace (m_socket);
     }
 }
 
@@ -220,6 +227,7 @@ void BulkSendApplication::ConnectionSucceeded (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this << socket);
   NS_LOG_LOGIC ("BulkSendApplication Connection succeeded");
   m_connected = true;
+  m_socketConnectTrace (socket);
   SendData ();
 }
 
