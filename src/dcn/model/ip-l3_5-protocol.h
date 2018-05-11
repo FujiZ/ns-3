@@ -42,6 +42,7 @@ public:
   static TypeId GetTypeId (void);
 
   IpL3_5Protocol ();
+  /** Dummy destructor, see DoDispose. */
   virtual ~IpL3_5Protocol ();
 
   /**

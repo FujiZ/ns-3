@@ -266,8 +266,7 @@ IpL3_5Protocol::ForwardDown (Ptr<Packet> p,
 {
   NS_LOG_FUNCTION (this << p << source << destination << route);
   NS_ASSERT_MSG (!m_downTarget.IsNull (), "Error, IpL3.5Protocol cannot send downward");
-  Ptr<Packet> copy = p->Copy ();
-  m_downTarget (copy, source, destination, protocol, route);
+  m_downTarget (p, source, destination, protocol, route);
 }
 
 void
@@ -277,8 +276,7 @@ IpL3_5Protocol::ForwardDown6 (Ptr<Packet> p,
 {
   NS_LOG_FUNCTION (this << p << source << destination << route);
   NS_ASSERT_MSG (!m_downTarget.IsNull (), "Error, IpL3.5Protocol cannot send downward");
-  Ptr<Packet> copy = p->Copy ();
-  m_downTarget6 (copy, source, destination, protocol, route);
+  m_downTarget6 (p, source, destination, protocol, route);
 }
 
 } //namespace dcn
