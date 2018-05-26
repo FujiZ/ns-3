@@ -18,6 +18,7 @@
 
 #include "point-to-point-channel.h"
 #include "point-to-point-net-device.h"
+#include "ns3/boolean.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/packet.h"
 #include "ns3/simulator.h"
@@ -40,6 +41,21 @@ PointToPointChannel::GetTypeId (void)
                    TimeValue (Seconds (0)),
                    MakeTimeAccessor (&PointToPointChannel::m_delay),
                    MakeTimeChecker ())
+    .AddAttribute ("UseJitter",
+                   "Whether or not use random Jitter between each sending packet",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&PointToPointChannel::m_useJitter),
+                   MakeBooleanChecker ())
+    .AddAttribute ("MinJitter",
+                   "Min Jitter between each sending packet",
+                   TimeValue (NanoSeconds (10)),
+                   MakeTimeAccessor (&PointToPointChannel::m_minJitter),
+                   MakeTimeChecker ())
+    .AddAttribute ("MaxJitter",
+                   "Max Jitter between each sending packet",
+                   TimeValue (NanoSeconds (100)),
+                   MakeTimeAccessor (&PointToPointChannel::m_maxJitter),
+                   MakeTimeChecker ())
     .AddTraceSource ("TxRxPointToPoint",
                      "Trace source indicating transmission of packet "
                      "from the PointToPointChannel, used by the Animation "
@@ -60,6 +76,7 @@ PointToPointChannel::PointToPointChannel()
     m_nDevices (0)
 {
   NS_LOG_FUNCTION_NOARGS ();
+  m_rand_delay = CreateObject<UniformRandomVariable> ();
 }
 
 void
@@ -96,6 +113,12 @@ PointToPointChannel::TransmitStart (
   NS_ASSERT (m_link[1].m_state != INITIALIZING);
 
   uint32_t wire = src == m_link[0].m_src ? 0 : 1;
+
+  if (m_useJitter)
+    {
+      txTime += NanoSeconds (m_rand_delay->GetInteger (m_minJitter.GetNanoSeconds (),
+                                                       m_maxJitter.GetNanoSeconds ()));
+    }
 
   Simulator::ScheduleWithContext (m_link[wire].m_dst->GetNode ()->GetId (),
                                   txTime + m_delay, &PointToPointNetDevice::Receive,

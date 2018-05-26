@@ -25,6 +25,7 @@
 #include "ns3/nstime.h"
 #include "ns3/data-rate.h"
 #include "ns3/traced-callback.h"
+#include "ns3/random-variable-stream.h"
 
 namespace ns3 {
 
@@ -151,6 +152,11 @@ private:
 
   Time          m_delay;    //!< Propagation delay
   int32_t       m_nDevices; //!< Devices of this channel
+
+  bool          m_useJitter;
+  Time 					m_minJitter; //!<minimum jitter delay time for packets sent
+  Time 					m_maxJitter; //!<maximum jitter delay time for packets sent
+  Ptr<UniformRandomVariable> m_rand_delay; //!<random value used to add jitter to transmission
 
   /**
    * The trace source for the packet transmission animation events that the 
