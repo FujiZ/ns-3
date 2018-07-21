@@ -125,7 +125,7 @@ DctcpSocket::UpdateAlpha (const TcpHeader &tcpHeader)
       m_alphaUpdateSeq = m_dctcpMaxSeq;
       NS_LOG_DEBUG ("Before alpha update: " << m_alpha.Get ());
       m_ackedBytesTotal = m_ackedBytesTotal ? m_ackedBytesTotal : 1;
-      m_alpha = (1 - m_g) * m_alpha + m_g * (static_cast<double> (m_ackedBytesEcn) / m_ackedBytesTotal);
+      m_alpha = (1 - m_g) * m_alpha + m_g * m_ackedBytesEcn / m_ackedBytesTotal;
       NS_LOG_DEBUG ("After alpha update: " << m_alpha.Get ());
       NS_LOG_DEBUG ("[ALPHA] " << Simulator::Now ().GetSeconds () << " " << m_alpha.Get ());
       m_ackedBytesEcn = m_ackedBytesTotal = 0;

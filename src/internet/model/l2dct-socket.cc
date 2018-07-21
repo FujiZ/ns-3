@@ -132,7 +132,7 @@ L2dctSocket::SlowStart (uint32_t segmentsAcked)
   NS_LOG_FUNCTION (this << segmentsAcked);
   if (segmentsAcked >= 1)
     {
-      m_tcb->m_cWnd += GetSegSize ();
+      m_tcb->m_cWnd += m_tcb->m_segmentSize;
       NS_LOG_INFO ("In SlowStart, updated to cwnd " << m_tcb->m_cWnd << " ssthresh " << m_tcb->m_ssThresh);
       return segmentsAcked - 1;
     }
@@ -149,7 +149,7 @@ L2dctSocket::CongestionAvoidance (uint32_t segmentsAcked)
       UpdateWeightC ();
 
       double k = m_weightC / m_weightMax;
-      double adder = k * GetSegSize () * GetSegSize () / m_tcb->m_cWnd.Get ();
+      double adder = k * m_tcb->m_segmentSize * m_tcb->m_segmentSize / m_tcb->m_cWnd.Get ();
       m_tcb->m_cWnd += static_cast<uint32_t> (std::round (std::max (1.0, adder)));
       NS_LOG_INFO ("In CongAvoid, updated to cwnd " << m_tcb->m_cWnd <<
                    " ssthresh " << m_tcb->m_ssThresh);
@@ -161,7 +161,7 @@ L2dctSocket::UpdateWeightC (void)
 {
   NS_LOG_FUNCTION (this);
 
-  uint32_t segCount = m_sentBytes / GetSegSize ();
+  uint32_t segCount = m_sentBytes / m_tcb->m_segmentSize;
 
   double weightC = segCount <= 200 ? m_weightMax : (m_weightMax - (m_weightMax - m_weightMin) * (segCount - 200) / 800);
   m_weightC = std::max (std::min (weightC, m_weightMax), m_weightMin);
