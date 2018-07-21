@@ -135,23 +135,6 @@ D2tcpSocket::Connect (const Address &address)
   return DoConnect ();
 }
 
-/*
-uint32_t
-D2tcpSocket::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck)
-{
-  if (CheckDeadline ())
-    {
-      return DctcpSocket::SendDataPacket (seq, maxSize, withAck);
-    }
-  else
-    {
-      NS_LOG_DEBUG (this << " Deadline exceeded");
-      DoClose ();
-      return 0;
-    }
-}
-*/
-
 void
 D2tcpSocket::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz, bool isRetransmission)
 {
@@ -189,8 +172,8 @@ D2tcpSocket::Fork (void)
   return CopyObject<D2tcpSocket> (this);
 }
 
-void
-D2tcpSocket::DecreaseWindow (void)
+uint32_t
+D2tcpSocket::GetSsThresh (void)
 {
   NS_LOG_FUNCTION (this);
 
@@ -210,18 +193,8 @@ D2tcpSocket::DecreaseWindow (void)
         }
     }
   double p = std::pow (m_alpha, d);
-  uint32_t newWnd =  (1 - p / 2.0) * Window ();
-  // halve cwnd according to D2TCP algo
-  m_tcb->m_ssThresh = std::max (newWnd, 2 * GetSegSize ());
-  m_tcb->m_cWnd = std::max (newWnd, GetSegSize ());
+  uint32_t newWnd =  (1 - p / 2.0) * m_tcb->m_cWnd;
+  return std::max (newWnd, 2 * m_tcb->m_segmentSize);
 }
-
-/*
-bool
-D2tcpSocket::CheckDeadline (void) const
-{
-  return m_deadline == Time (0) || Simulator::Now () <= m_finishTime;
-}
-*/
 
 } // namespace ns3

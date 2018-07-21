@@ -167,14 +167,12 @@ DctcpSocket::UpdateEcnState (const TcpHeader &tcpHeader)
     }
 }
 
-void
-DctcpSocket::DecreaseWindow (void)
+uint32_t
+DctcpSocket::GetSsThresh (void)
 {
   NS_LOG_FUNCTION (this);
-  // halve cwnd according to DCTCP algo
-  uint32_t newWnd = (1 - m_alpha / 2.0) * Window ();
-  m_tcb->m_ssThresh = std::max (newWnd, 2 * GetSegSize ());
-  m_tcb->m_cWnd = std::max (newWnd, GetSegSize ());
+  uint32_t newWnd = (1 - m_alpha / 2.0) * m_tcb->m_cWnd;
+  return std::max (newWnd, 2 * m_tcb->m_segmentSize);
 }
 
 bool

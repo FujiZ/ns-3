@@ -1521,8 +1521,7 @@ TcpSocketBase::FastRetransmit ()
   m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_RECOVERY);
   m_tcb->m_congState = TcpSocketState::CA_RECOVERY;
 
-  m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb,
-                                                        BytesInFlight ());
+  m_tcb->m_ssThresh = GetSsThresh ();
   m_tcb->m_cWnd = m_tcb->m_ssThresh + m_dupAckCount * m_tcb->m_segmentSize;
 
   NS_LOG_INFO (m_dupAckCount << " dupack. Enter fast recovery mode." <<
@@ -2822,16 +2821,10 @@ TcpSocketBase::SendPendingData (bool withAck)
     {
       if ((m_ecnState & (ECN_RX_ECHO | ECN_SEND_CWR)) == ECN_RX_ECHO)
         {
-          NS_LOG_INFO ("Halving CWND duo to receiving ECN Echo.");
+          NS_LOG_INFO ("ECE received: decrease ssthresh && cwnd");
           m_ecnState |= ECN_SEND_CWR;
-          DecreaseWindow ();
-          /*
-          if (m_tcb->m_congState == TcpSocketState::CA_OPEN)
-            {
-              m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_CWR);
-              m_tcb->m_congState = TcpSocketState::CA_CWR;
-            }
-            */
+          m_tcb->m_ssThresh = GetSsThresh ();
+          m_tcb->m_cWnd = std::max (m_tcb->m_ssThresh.Get (), m_tcb->m_segmentSize);
         }
       uint32_t w = AvailableWindow (); // Get available window size
       // Stop sending if we need to wait for a larger Tx window (prevent silly window syndrome)
@@ -3261,7 +3254,7 @@ TcpSocketBase::Retransmit ()
     {
       m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_LOSS);
       m_tcb->m_congState = TcpSocketState::CA_LOSS;
-      m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
+      m_tcb->m_ssThresh = GetSsThresh ();
       m_tcb->m_cWnd = m_tcb->m_segmentSize;
     }
 
@@ -3782,12 +3775,11 @@ TcpSocketBase::UpdateEcnState (const TcpHeader &tcpHeader)
     }
 }
 
-void
-TcpSocketBase::DecreaseWindow (void)
+uint32_t
+TcpSocketBase::GetSsThresh (void)
 {
   NS_LOG_FUNCTION (this);
-  m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
-  m_tcb->m_cWnd = std::max (Window () / 2, GetSegSize ());
+  return m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
 }
 
 void

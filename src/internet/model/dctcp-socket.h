@@ -45,7 +45,7 @@ protected:
   virtual void DoRetransmit (void);
   virtual Ptr<TcpSocketBase> Fork (void);
   virtual void UpdateEcnState (const TcpHeader &tcpHeader);
-  virtual void DecreaseWindow (void);
+  virtual uint32_t GetSsThresh (void);
   virtual bool MarkEmptyPacket (void) const;
 
   void UpdateAlpha (const TcpHeader &tcpHeader);

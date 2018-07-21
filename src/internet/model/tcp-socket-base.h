@@ -977,10 +977,9 @@ protected:
   virtual void UpdateEcnState (const TcpHeader &tcpHeader);
 
   /**
-   * @brief Decrease window when receive ECE ACK before send another data packet;
-   * called in sendDataPacket; cut down cwnd && ssthresh
+   * @brief Get ssthresh after a loss event
    */
-  virtual void DecreaseWindow (void);
+  virtual uint32_t GetSsThresh (void);
 
   /**
    * @brief Congestion avoidance algorithm implementation

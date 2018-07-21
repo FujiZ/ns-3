@@ -39,7 +39,7 @@ protected:
   virtual void UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                  bool isRetransmission);
   virtual Ptr<TcpSocketBase> Fork (void);
-  virtual void DecreaseWindow (void);
+  virtual uint32_t GetSsThresh (void);
   virtual void IncreaseWindow (uint32_t segmentAcked);
 
   uint32_t SlowStart (uint32_t segmentsAcked);
