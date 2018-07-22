@@ -27,10 +27,6 @@ L2dctSocket::GetTypeId (void)
                      DoubleValue (0.125),
                      MakeDoubleAccessor (&L2dctSocket::m_weightMin),
                      MakeDoubleChecker<double> (0.0))
-      .AddTraceSource ("WeightC",
-                       "Current flow weight.",
-                       MakeTraceSourceAccessor (&L2dctSocket::m_weightC),
-                       "ns3::TracedValueCallback::Double")
       .AddTraceSource ("SentBytes",
                        "Bytes already sent.",
                        MakeTraceSourceAccessor (&L2dctSocket::m_sentBytes),
@@ -48,7 +44,6 @@ L2dctSocket::L2dctSocket (void)
   : DctcpSocket (),
     m_weightMax (2.5),
     m_weightMin (0.125),
-    m_weightC (0.0),
     m_sentBytes (0)
 {
 }
@@ -57,7 +52,6 @@ L2dctSocket::L2dctSocket (const L2dctSocket &sock)
   : DctcpSocket (sock),
     m_weightMax (sock.m_weightMax),
     m_weightMin (sock.m_weightMin),
-    m_weightC (sock.m_weightC),
     m_sentBytes (sock.m_sentBytes)
 {
 }
@@ -104,8 +98,8 @@ L2dctSocket::GetSsThresh (void)
 {
   NS_LOG_FUNCTION (this);
 
-  UpdateWeightC ();
-  double b = std::pow (m_alpha, m_weightC);
+  double weightC = GetWeightC ();
+  double b = std::pow (m_alpha, weightC);
   uint32_t newWnd = (1 - b / 2) * m_tcb->m_cWnd;
   return std::max (newWnd, 2 * m_tcb->m_segmentSize);
 }
@@ -146,9 +140,9 @@ L2dctSocket::CongestionAvoidance (uint32_t segmentsAcked)
 
   if (segmentsAcked > 0)
     {
-      UpdateWeightC ();
+      double weightC = GetWeightC ();
 
-      double k = m_weightC / m_weightMax;
+      double k = weightC / m_weightMax;
       double adder = k * m_tcb->m_segmentSize * m_tcb->m_segmentSize / m_tcb->m_cWnd.Get ();
       m_tcb->m_cWnd += static_cast<uint32_t> (std::round (std::max (1.0, adder)));
       NS_LOG_INFO ("In CongAvoid, updated to cwnd " << m_tcb->m_cWnd <<
@@ -156,15 +150,15 @@ L2dctSocket::CongestionAvoidance (uint32_t segmentsAcked)
     }
 }
 
-void
-L2dctSocket::UpdateWeightC (void)
+double
+L2dctSocket::GetWeightC (void) const
 {
   NS_LOG_FUNCTION (this);
 
   uint32_t segCount = m_sentBytes / m_tcb->m_segmentSize;
 
   double weightC = segCount <= 200 ? m_weightMax : (m_weightMax - (m_weightMax - m_weightMin) * (segCount - 200) / 800);
-  m_weightC = std::max (std::min (weightC, m_weightMax), m_weightMin);
+  return std::max (std::min (weightC, m_weightMax), m_weightMin);
 }
 
 } // namespace ns3

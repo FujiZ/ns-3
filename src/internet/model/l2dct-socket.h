@@ -44,12 +44,11 @@ protected:
 
   uint32_t SlowStart (uint32_t segmentsAcked);
   void CongestionAvoidance (uint32_t segmentsAcked);
-  void UpdateWeightC (void);
+  double GetWeightC (void) const;
 
 
   double m_weightMax;
   double m_weightMin;
-  TracedValue<double> m_weightC;
   TracedValue<uint64_t> m_sentBytes;        //!< bytes already sent
 
 };
